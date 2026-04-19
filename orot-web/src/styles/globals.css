@@ -119,3 +119,9 @@ p {
     color-scheme: dark;
   }
 }
+
+/* orot-ui Modal은 width를 px로 인라인 지정하기 때문에 모바일에서 viewport를 넘을 수 있다.
+   overlay padding(space-4)을 고려해 viewport 폭에 맞춘다. */
+.orot-modal {
+  max-width: calc(100vw - var(--orot-space-4) * 2);
+}

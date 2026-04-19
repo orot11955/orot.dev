@@ -407,4 +407,63 @@
   .listItemActions {
     justify-content: flex-end;
   }
+
+  .tabsCard :global(.orot-tabs--left) {
+    flex-direction: column;
+  }
+  .tabsCard :global(.orot-tabs--left .orot-tabs__nav) {
+    flex-direction: row;
+    overflow-x: auto;
+    border-right: none;
+    border-bottom: var(--orot-border-width) solid var(--orot-color-border);
+    scrollbar-width: thin;
+  }
+  .tabsCard :global(.orot-tabs--left .orot-tabs__tab) {
+    margin-bottom: -1px;
+  }
+  .tabsCard :global(.orot-tabs--left .orot-tabs__tab::after) {
+    top: auto;
+    bottom: -1px;
+    left: 0;
+    right: 0;
+    width: auto;
+    height: 2px;
+  }
+  .tabsCard :global(.orot-tabs--left .orot-tabs__content) {
+    padding-left: 0;
+    padding-top: var(--orot-space-4);
+  }
+}
+
+@media (max-width: 600px) {
+  .header {
+    padding: var(--orot-space-5) var(--orot-space-4);
+  }
+  .section,
+  .tabsCard {
+    padding: var(--orot-space-3);
+  }
+  .actions {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  .nametagMediaRow {
+    gap: var(--orot-space-3);
+  }
+  .nametagMediaImage,
+  .nametagMediaFallback {
+    width: 72px;
+    height: 72px;
+  }
+  .nametagMediaActions {
+    min-width: 0;
+    flex-basis: 100%;
+  }
+  .previewMediaCircle {
+    width: 120px;
+    min-height: 120px;
+  }
+  .mediaPickerGrid {
+    grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  }
 }

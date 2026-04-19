@@ -244,7 +244,16 @@
 }
 
 @media (max-width: 600px) {
-  .topbarAction {
+  .topbarAction :global(.orot-btn__label) {
     display: none;
+  }
+  .topbarAction {
+    padding: 0 var(--orot-space-2);
+  }
+  .pageTitle {
+    font-size: var(--orot-font-size-md);
+  }
+  .topbarRight {
+    gap: var(--orot-space-1);
   }
 }

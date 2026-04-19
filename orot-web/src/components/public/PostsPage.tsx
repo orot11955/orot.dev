@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useMemo, useState, type FormEvent } from 'react';
 import {
   FileText,
-  Filter,
+  Input,
   Pagination,
   Search,
   Segmented,
@@ -85,6 +85,17 @@ export function PostsPage({
     ...series.map((s) => ({ label: s.title, value: String(s.id) })),
   ];
 
+  const sortSegmented = (
+    <Segmented
+      size="sm"
+      value={currentSort}
+      onChange={(val) =>
+        updateParams({ sort: val === 'latest' ? null : String(val) })
+      }
+      options={sortOptions}
+    />
+  );
+
   return (
     <div className={styles.page}>
       <div className={styles.shell}>
@@ -99,66 +110,43 @@ export function PostsPage({
           </p>
         </header>
 
-        {/* ─── Filters ─── */}
-        <div className={styles.filters}>
+        {/* ─── Toolbar ─── */}
+        <div className={styles.toolbar}>
           <form onSubmit={handleSearchSubmit} className={styles.searchForm}>
-            <div className={styles.searchInputWrap}>
-              <Search size={14} className={styles.searchIcon} />
-              <input
-                type="search"
-                className={styles.searchInput}
-                placeholder="제목, 내용으로 검색"
-                value={keyword}
-                onChange={(e) => setKeyword(e.target.value)}
-              />
-              {keyword && (
-                <button
-                  type="button"
-                  className={styles.searchClear}
-                  aria-label="검색어 지우기"
-                  onClick={() => {
-                    setKeyword('');
-                    updateParams({ search: null });
-                  }}
-                >
-                  <X size={14} />
-                </button>
-              )}
-            </div>
+            <Input
+              type="search"
+              size="md"
+              prefix={<Search size={14} />}
+              placeholder="제목, 내용으로 검색"
+              value={keyword}
+              onChange={(e) => {
+                const next = e.target.value;
+                setKeyword(next);
+                if (next === '' && currentSearch) updateParams({ search: null });
+              }}
+              allowClear
+              className={styles.search}
+            />
           </form>
 
-          <div className={styles.filterControls}>
+          <div className={styles.toolbarControls}>
             <Select
               size="md"
               value={currentSeries || ''}
-              onChange={(val) => updateParams({ seriesId: String(val) || null })}
+              onChange={(val) =>
+                updateParams({ seriesId: String(val) || null })
+              }
               options={seriesOptions}
               placeholder="시리즈"
               className={styles.select}
             />
-
-            <button
-              type="button"
-              className={[
-                styles.reset,
-                !hasResettableFilters ? styles.resetHidden : '',
-              ].join(' ')}
-              onClick={() => router.push('/posts')}
-              disabled={!hasResettableFilters}
-              aria-hidden={!hasResettableFilters}
-              tabIndex={hasResettableFilters ? 0 : -1}
-            >
-              <X size={12} /> 필터 초기화
-            </button>
+            <div className={styles.sortWrap}>{sortSegmented}</div>
           </div>
         </div>
 
         {/* ─── Tags chip row ─── */}
         {tags.length > 0 && (
           <div className={styles.tagRow}>
-            <span className={styles.tagRowLabel}>
-              <Filter size={12} /> 태그
-            </span>
             <div className={styles.tagScroll}>
               <button
                 type="button"
@@ -184,29 +172,27 @@ export function PostsPage({
                 </button>
               ))}
             </div>
-            <div className={styles.tagSort}>
-              <Segmented
-                size="sm"
-                value={currentSort}
-                onChange={(val) =>
-                  updateParams({ sort: val === 'latest' ? null : String(val) })
-                }
-                options={sortOptions}
-              />
-            </div>
+            {hasResettableFilters && (
+              <button
+                type="button"
+                className={styles.reset}
+                onClick={() => router.push('/posts')}
+              >
+                <X size={12} /> 필터 초기화
+              </button>
+            )}
           </div>
         )}
 
-        {tags.length === 0 && (
-          <div className={styles.sortRow}>
-            <Segmented
-              size="sm"
-              value={currentSort}
-              onChange={(val) =>
-                updateParams({ sort: val === 'latest' ? null : String(val) })
-              }
-              options={sortOptions}
-            />
+        {tags.length === 0 && hasResettableFilters && (
+          <div className={styles.resetRow}>
+            <button
+              type="button"
+              className={styles.reset}
+              onClick={() => router.push('/posts')}
+            >
+              <X size={12} /> 필터 초기화
+            </button>
           </div>
         )}
 

@@ -271,12 +271,34 @@
     grid-template-columns: 1fr;
   }
   .toolbarActions {
-    justify-content: stretch;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+  .toolbarActions > * {
+    flex: 1 1 auto;
   }
   .formGrid {
     grid-template-columns: 1fr;
   }
   .assignLayout {
     grid-template-columns: 1fr;
+  }
+  .header {
+    padding: var(--orot-space-5) var(--orot-space-4);
+  }
+  .headerActions {
+    align-items: stretch;
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .actions {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 600px) {
+  .headerActions > span {
+    flex: 1;
   }
 }

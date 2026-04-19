@@ -169,4 +169,19 @@
   .toolbar {
     grid-template-columns: 1fr;
   }
+  .header {
+    padding: var(--orot-space-5) var(--orot-space-4);
+  }
+  .headerMeta {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--orot-space-3);
+    width: 100%;
+  }
+  .actions {
+    justify-content: flex-start;
+  }
+  .tableCard {
+    padding: var(--orot-space-3);
+  }
 }

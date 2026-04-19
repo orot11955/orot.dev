@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { PostDetailClientPage } from '@/components/public/PostDetailClientPage';
 import { serverGet } from '@/utils/server-api';
 import { resolveAssetUrl, splitTags } from '@/utils/content';
+import { normalizeSlugParam } from '@/utils/slug';
 import type { PostDetail, PublicSettings } from '@/types';
 
 interface PostDetailRouteProps {
@@ -13,7 +14,8 @@ interface PostDetailRouteProps {
 export async function generateMetadata(
   { params }: PostDetailRouteProps,
 ): Promise<Metadata> {
-  const { slug } = await params;
+  const { slug: rawSlug } = await params;
+  const slug = normalizeSlugParam(rawSlug);
   const [post, settings] = await Promise.all([
     serverGet<PostDetail>(`/public/posts/${slug}`, undefined, {
       cache: 'no-store',
@@ -72,7 +74,8 @@ export async function generateMetadata(
 }
 
 export default async function PostDetailRoute({ params }: PostDetailRouteProps) {
-  const { slug } = await params;
+  const { slug: rawSlug } = await params;
+  const slug = normalizeSlugParam(rawSlug);
   const post = await serverGet<PostDetail>(`/public/posts/${slug}`, undefined, {
     cache: 'no-store',
     revalidate: false,

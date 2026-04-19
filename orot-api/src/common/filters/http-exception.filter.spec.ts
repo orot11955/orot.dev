@@ -4,9 +4,7 @@ import { GlobalExceptionFilter } from './http-exception.filter';
 jest.mock('../../logging/logger', () => ({
   __logMock: jest.fn(),
   createLogger: function createLogger() {
-    const { __logMock } = jest.requireMock('../../logging/logger') as {
-      __logMock: jest.Mock;
-    };
+    const { __logMock } = jest.requireMock('../../logging/logger');
 
     return {
       log: __logMock,
@@ -19,22 +17,15 @@ jest.mock('../../logging/request-context', () => ({
   updateRequestContext: function updateRequestContext(...args: unknown[]) {
     const { __updateRequestContextMock } = jest.requireMock(
       '../../logging/request-context',
-    ) as {
-      __updateRequestContextMock: jest.Mock;
-    };
+    );
 
     return __updateRequestContextMock(...args);
   },
 }));
 
-const { __logMock: logMock } = jest.requireMock('../../logging/logger') as {
-  __logMock: jest.Mock;
-};
-const { __updateRequestContextMock: updateRequestContextMock } = jest.requireMock(
-  '../../logging/request-context',
-) as {
-  __updateRequestContextMock: jest.Mock;
-};
+const { __logMock: logMock } = jest.requireMock('../../logging/logger');
+const { __updateRequestContextMock: updateRequestContextMock } =
+  jest.requireMock('../../logging/request-context');
 
 describe('GlobalExceptionFilter', () => {
   let filter: GlobalExceptionFilter;

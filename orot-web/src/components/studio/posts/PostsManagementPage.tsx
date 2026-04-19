@@ -279,6 +279,7 @@ export function PostsManagementPage() {
         key: 'actions',
         title: '관리',
         width: 340,
+        align: 'left',
         render: (_value, post) => {
           const busy = mutatingId === post.id;
           const editHref = `/editor/posts/${post.id}`;

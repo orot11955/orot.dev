@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Spin } from 'orot-ui';
 import { PageErrorState } from '@/components/PageErrorState';
 import { useAuth } from '@/contexts/AuthContext';
+import { hasAuthSessionHint } from '@/services/auth-session';
 import { publicPostsService, studioPostsService } from '@/services';
 import type { PostDetail } from '@/types';
 import { getErrorMessage } from '@/utils/content';
@@ -34,9 +35,10 @@ export function PostDetailClientPage({
   const [error, setError] = useState<string | null>(null);
 
   const canPreview = user?.role === 'ADMIN' || user?.role === 'EDITOR';
+  const canAttemptPreview = canPreview || hasAuthSessionHint();
 
   const loadPreview = useCallback(async () => {
-    if (!canPreview) {
+    if (!canAttemptPreview) {
       setPost(null);
       setLoading(false);
       setError('발행되지 않은 글은 권한이 있는 로그인 상태에서만 확인할 수 있습니다.');
@@ -55,7 +57,7 @@ export function PostDetailClientPage({
     } finally {
       setLoading(false);
     }
-  }, [canPreview, slug]);
+  }, [canAttemptPreview, slug]);
 
   const handleRetry = useCallback(() => {
     void loadPreview();
@@ -165,7 +167,7 @@ export function PostDetailClientPage({
     <PageErrorState
       title="글을 찾을 수 없습니다."
       description={error ?? '요청하신 글이 없거나 아직 공개되지 않았습니다.'}
-      onRetry={canPreview ? handleRetry : undefined}
+      onRetry={canAttemptPreview ? handleRetry : undefined}
     />
   );
 }

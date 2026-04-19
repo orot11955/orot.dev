@@ -47,6 +47,20 @@ const ALLOWED_IMAGE_MIME = [
   'image/gif',
 ];
 
+function normalizeSlugParam(slug: string): string {
+  const trimmed = slug.trim();
+
+  if (!trimmed) {
+    return '';
+  }
+
+  try {
+    return decodeURIComponent(trimmed);
+  } catch {
+    return trimmed;
+  }
+}
+
 const postCoverMulterOptions = {
   storage: diskStorage({
     destination: (_req, _file, cb) => {
@@ -96,7 +110,7 @@ export class PublicPostsController {
   @Get(':slug')
   @ApiOperation({ summary: 'Get published post by slug' })
   findOne(@Param('slug') slug: string) {
-    return this.postsService.findOneForArea(slug, 'public');
+    return this.postsService.findOneForArea(normalizeSlugParam(slug), 'public');
   }
 
   @Post(':slug/view')
@@ -110,7 +124,7 @@ export class PublicPostsController {
       req.cookies?.[VIEWED_POSTS_COOKIE] as string | undefined,
     );
     const result = await this.postsService.recordPublicView(
-      slug,
+      normalizeSlugParam(slug),
       viewedPostIds,
     );
 
@@ -283,7 +297,7 @@ export class StudioPostsController {
     summary: 'Get studio-visible post by slug for staff preview',
   })
   findBySlug(@Param('slug') slug: string) {
-    return this.postsService.findOneForArea(slug, 'studio');
+    return this.postsService.findOneForArea(normalizeSlugParam(slug), 'studio');
   }
 
   @Get(':id')

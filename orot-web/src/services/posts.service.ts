@@ -11,6 +11,7 @@ import type {
   ApiListPayload,
 } from '@/types';
 import { normalizePostQuery } from '@/utils/post-query';
+import { normalizeSlugParam } from '@/utils/slug';
 
 const postRoutes = createAreaRoutes('posts');
 
@@ -27,13 +28,13 @@ export const publicPostsService = {
   },
 
   async getBySlug(slug: string): Promise<PostDetail> {
-    return api.get<PostDetail>(postRoutes.public(slug));
+    return api.get<PostDetail>(postRoutes.public(normalizeSlugParam(slug)));
   },
 
   async recordView(
     slug: string,
   ): Promise<{ viewCount: number; counted: boolean }> {
-    return api.post(postRoutes.public(slug, 'view'));
+    return api.post(postRoutes.public(normalizeSlugParam(slug), 'view'));
   },
 
   async getAllTags(): Promise<string[]> {
@@ -99,7 +100,9 @@ export const studioPostsService = {
   },
 
   async getBySlug(slug: string): Promise<PostDetail> {
-    return api.get<PostDetail>(apiPaths.studio('posts', 'slug', slug));
+    return api.get<PostDetail>(
+      apiPaths.studio('posts', 'slug', normalizeSlugParam(slug)),
+    );
   },
 
   async update(id: number, payload: UpdatePostPayload): Promise<Post> {

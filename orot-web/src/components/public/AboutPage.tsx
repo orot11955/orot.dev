@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import Image from 'next/image';
 import { ArrowUpRight, Mail, Tag } from 'orot-ui';
 import type { PublicSettings } from '@/types';
@@ -34,6 +35,22 @@ function splitParagraphs(text?: string | null): string[] {
     .split(/\n{2,}/)
     .map((block) => block.trim())
     .filter(Boolean);
+}
+
+function renderInlineCode(text: string): ReactNode[] {
+  const parts = text.split(/(`[^`]+`)/g).filter(Boolean);
+  return parts.map((part, index) => {
+    const isInlineCode = /^`[^`]+`$/.test(part);
+    if (isInlineCode) {
+      return (
+        <code key={index} className={styles.inlineCode}>
+          {part.slice(1, -1)}
+        </code>
+      );
+    }
+    return <span key={index}>{part}</span>;
+  });
+
 }
 
 export function AboutPage({ settings }: AboutPageProps) {
@@ -84,7 +101,7 @@ export function AboutPage({ settings }: AboutPageProps) {
             {intro.length > 0 ? (
               <div className={styles.prose}>
                 {intro.map((p, i) => (
-                  <p key={i}>{p}</p>
+                  <p key={i}>{renderInlineCode(p)}</p>
                 ))}
               </div>
             ) : (
@@ -116,7 +133,7 @@ export function AboutPage({ settings }: AboutPageProps) {
                     <span className={styles.timelineDot} aria-hidden="true" />
                     <div className={styles.timelineBody}>
                       {entry.split('\n').map((line, j) => (
-                        <p key={j}>{line}</p>
+                        <p key={j}>{renderInlineCode(line)}</p>
                       ))}
                     </div>
                   </li>

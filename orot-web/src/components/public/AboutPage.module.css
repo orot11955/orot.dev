@@ -38,8 +38,8 @@
   letter-spacing: -0.04em;
   color: #fff;
   background: linear-gradient(135deg,
-    var(--orot-color-primary),
-    color-mix(in srgb, var(--orot-color-primary) 60%, #7e22ce));
+      var(--orot-color-primary),
+      color-mix(in srgb, var(--orot-color-primary) 60%, #7e22ce));
 }
 
 .avatarImage {
@@ -259,11 +259,22 @@
   max-width: 50%;
 }
 
+.inlineCode {
+  font-family: var(--orot-font-family);
+  font-size: 0.875em;
+  background: var(--orot-color-bg-tertiary);
+  border: var(--orot-border-width) solid var(--orot-color-border);
+  padding: 1px 5px;
+  border-radius: var(--orot-radius-sm);
+  color: var(--orot-color-text);
+}
+
 @media (max-width: 720px) {
   .grid {
     grid-template-columns: 1fr;
     gap: var(--orot-space-8);
   }
+
   .nametag {
     flex-direction: column;
     align-items: flex-start;

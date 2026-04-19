@@ -70,6 +70,7 @@ services:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-/api}
         NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://orot.dev}
         NEXT_PUBLIC_CLIENT_ERROR_LOGGING: ${NEXT_PUBLIC_CLIENT_ERROR_LOGGING:-true}
+        INTERNAL_API_ORIGIN: ${INTERNAL_API_ORIGIN:-http://orot-api:4000}
     container_name: orot-web
     restart: unless-stopped
     depends_on:

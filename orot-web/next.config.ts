@@ -1,6 +1,6 @@
 import type { NextConfig } from 'next';
 
-function resolveDevApiOrigin(): string {
+function resolveApiOrigin(): string {
   const internalApiOrigin = process.env.INTERNAL_API_ORIGIN?.trim();
   if (internalApiOrigin) {
     return internalApiOrigin.replace(/\/+$/, '');
@@ -16,21 +16,22 @@ function resolveDevApiOrigin(): string {
 
 const nextConfig: NextConfig = {
   async rewrites() {
-    if (process.env.NODE_ENV !== 'development') {
-      return [];
-    }
+    const apiOrigin = resolveApiOrigin();
+    const uploadRewrite = {
+      source: '/uploads/:path*',
+      destination: `${apiOrigin}/uploads/:path*`,
+    };
 
-    const apiOrigin = resolveDevApiOrigin();
+    if (process.env.NODE_ENV !== 'development') {
+      return [uploadRewrite];
+    }
 
     return [
       {
         source: '/api/:path*',
         destination: `${apiOrigin}/api/:path*`,
       },
-      {
-        source: '/uploads/:path*',
-        destination: `${apiOrigin}/uploads/:path*`,
-      },
+      uploadRewrite,
     ];
   },
   images: {

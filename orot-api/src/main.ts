@@ -60,6 +60,8 @@ async function bootstrap() {
     ),
   );
   const httpLogging = configService.get<boolean>('httpLogging') ?? false;
+  const requestBodyLimit =
+    configService.get<string>('requestBodyLimit')?.trim() || '20mb';
 
   app.use((req: Request, res: Response, next: NextFunction) => {
     const requestId =
@@ -126,6 +128,12 @@ async function bootstrap() {
 
       next();
     });
+  });
+
+  app.useBodyParser('json', { limit: requestBodyLimit });
+  app.useBodyParser('urlencoded', {
+    extended: true,
+    limit: requestBodyLimit,
   });
 
   app.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/uploads' });

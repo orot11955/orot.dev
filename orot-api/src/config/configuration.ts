@@ -13,6 +13,7 @@ const configuredWebOrigins = (process.env.WEB_ORIGIN || '')
   .filter(Boolean);
 
 const slowQueryMs = Number.parseInt(process.env.SLOW_QUERY_MS || '300', 10);
+const requestBodyLimit = process.env.REQUEST_BODY_LIMIT?.trim() || '20mb';
 
 export default () => ({
   port: parseInt(process.env.PORT || '4000', 10),
@@ -26,6 +27,7 @@ export default () => ({
     (process.env.NODE_ENV === 'production' ? 'info' : 'debug'),
   logPretty: process.env.LOG_PRETTY === 'true',
   slowQueryMs: Number.isFinite(slowQueryMs) ? slowQueryMs : 300,
+  requestBodyLimit,
   auth: {
     accessSecret: process.env.JWT_ACCESS_SECRET || 'access-secret',
     refreshSecret: process.env.JWT_REFRESH_SECRET || 'refresh-secret',

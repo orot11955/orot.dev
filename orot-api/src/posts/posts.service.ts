@@ -345,7 +345,9 @@ export class PostsService {
     return { message: 'Post deleted' };
   }
 
-  private resolveBaseSlug(...candidates: Array<string | null | undefined>): string {
+  private resolveBaseSlug(
+    ...candidates: Array<string | null | undefined>
+  ): string {
     for (const candidate of candidates) {
       const normalized = slugify(candidate ?? '');
       if (normalized) {
@@ -424,7 +426,9 @@ export class PostsService {
       },
     });
 
-    const currentIndex = publishedPosts.findIndex((item) => item.id === post.id);
+    const currentIndex = publishedPosts.findIndex(
+      (item) => item.id === post.id,
+    );
     if (currentIndex === -1) {
       return { prev: null, next: null };
     }

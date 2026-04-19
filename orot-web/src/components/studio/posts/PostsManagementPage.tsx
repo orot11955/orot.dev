@@ -17,6 +17,7 @@ import {
   Typography,
 } from 'orot-ui';
 import type { ColumnType } from 'orot-ui';
+import { useNotificationEffect } from '@/hooks';
 import { studioPostsService } from '@/services';
 import type { PostListItem, PostQuery, PostStatus } from '@/types';
 import { formatDate, getErrorMessage, splitTags } from '@/utils/content';
@@ -74,6 +75,11 @@ export function PostsManagementPage() {
   const [scheduledAt, setScheduledAt] = useState<string>('');
   const [scheduleError, setScheduleError] = useState<string | null>(null);
   const reloadTokenRef = useRef(0);
+
+  useNotificationEffect(error, {
+    type: 'error',
+    title: '요청을 처리하지 못했습니다.',
+  });
 
   const load = useCallback(async () => {
     const token = ++reloadTokenRef.current;
@@ -403,21 +409,13 @@ export function PostsManagementPage() {
         </div>
       </div>
 
-      {error && (
-        <Alert
-          type="error"
-          message="요청을 처리하지 못했습니다."
-          description={error}
-          closable
-          onClose={() => setError(null)}
-        />
-      )}
-
       <div className={styles.tableCard}>
         {loading && posts.length === 0 ? (
           <div style={{ display: 'flex', justifyContent: 'center', padding: 'var(--orot-space-10)' }}>
             <Spin size="lg" />
           </div>
+        ) : error && posts.length === 0 ? (
+          <Empty description={error} />
         ) : posts.length === 0 ? (
           <Empty description="조건에 맞는 글이 없습니다." />
         ) : (

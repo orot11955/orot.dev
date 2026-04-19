@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import {
-  Alert,
   Badge,
   Card,
   Empty,
@@ -11,6 +10,7 @@ import {
   Statistic,
   Typography,
 } from 'orot-ui';
+import { useNotificationEffect } from '@/hooks';
 import {
   studioAnalyticsService,
   studioCommentsService,
@@ -46,6 +46,11 @@ export function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  useNotificationEffect(error, {
+    type: 'error',
+    title: '대시보드를 불러오지 못했습니다.',
+  });
 
   useEffect(() => {
     let active = true;
@@ -94,11 +99,9 @@ export function DashboardPage() {
 
   if (error || !data) {
     return (
-      <Alert
-        type="error"
-        message="데이터를 불러오지 못했습니다."
-        description={error ?? '잠시 후 다시 시도해주세요.'}
-      />
+      <div className={styles.center}>
+        <Empty description={error ?? '잠시 후 다시 시도해주세요.'} />
+      </div>
     );
   }
 

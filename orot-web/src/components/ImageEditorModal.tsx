@@ -18,6 +18,7 @@ import {
   ZoomIn,
   ZoomOut,
 } from 'orot-ui';
+import { getErrorMessage } from '@/utils/content';
 import styles from './ImageEditorModal.module.css';
 
 interface CropBoxSize {
@@ -392,9 +393,7 @@ export function ImageEditorModal({
 
       await onConfirm(editedFile);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : '이미지를 처리하지 못했습니다.',
-      );
+      setError(getErrorMessage(err));
     } finally {
       setSubmitting(false);
     }

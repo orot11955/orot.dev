@@ -14,6 +14,7 @@ import {
   Switch,
   Typography,
 } from 'orot-ui';
+import { useNotificationEffect } from '@/hooks';
 import { studioGalleryService } from '@/services';
 import type { GalleryItem, GalleryQuery } from '@/types';
 import { formatDate, getErrorMessage, resolveAssetUrl } from '@/utils/content';
@@ -78,6 +79,11 @@ export function PhotosManagementPage() {
   const [uploadBusy, setUploadBusy] = useState(false);
 
   const reloadTokenRef = useRef(0);
+
+  useNotificationEffect(error, {
+    type: 'error',
+    title: '요청을 처리하지 못했습니다.',
+  });
 
   const load = useCallback(async () => {
     const token = ++reloadTokenRef.current;
@@ -310,21 +316,13 @@ export function PhotosManagementPage() {
         </div>
       </div>
 
-      {error && (
-        <Alert
-          type="error"
-          message="요청을 처리하지 못했습니다."
-          description={error}
-          closable
-          onClose={() => setError(null)}
-        />
-      )}
-
       <div className={styles.gridCard}>
         {loading && items.length === 0 ? (
           <div style={{ display: 'flex', justifyContent: 'center', padding: 'var(--orot-space-10)' }}>
             <Spin size="lg" />
           </div>
+        ) : error && items.length === 0 ? (
+          <Empty description={error} />
         ) : items.length === 0 ? (
           <Empty description="조건에 맞는 사진이 없습니다." />
         ) : (

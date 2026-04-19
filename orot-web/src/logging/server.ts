@@ -8,6 +8,10 @@ import {
 } from './shared';
 
 function shouldLog(level: WebLogLevel): boolean {
+  if (process.env.NEXT_PHASE === 'phase-production-build') {
+    return false;
+  }
+
   const configuredLevel = normalizeLogLevel(
     process.env.WEB_LOG_LEVEL?.trim().toLowerCase() ??
       process.env.LOG_LEVEL?.trim().toLowerCase(),

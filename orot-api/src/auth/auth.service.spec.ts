@@ -1,4 +1,4 @@
-import type { Response } from 'express';
+import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 
 jest.mock('bcryptjs', () => ({
@@ -6,9 +6,7 @@ jest.mock('bcryptjs', () => ({
   hash: jest.fn(),
 }));
 
-const bcrypt = jest.requireMock('bcryptjs') as {
-  compare: jest.Mock;
-};
+const bcrypt = jest.requireMock('bcryptjs');
 
 describe('AuthService', () => {
   const prisma = {
@@ -43,6 +41,7 @@ describe('AuthService', () => {
   };
 
   let service: AuthService;
+  let request: Pick<Request, 'secure' | 'headers'>;
   let response: Pick<Response, 'cookie'>;
 
   beforeEach(() => {
@@ -53,6 +52,11 @@ describe('AuthService', () => {
       jwtService as never,
       configService as never,
     );
+
+    request = {
+      secure: false,
+      headers: {},
+    };
 
     response = {
       cookie: jest.fn(),
@@ -70,7 +74,10 @@ describe('AuthService', () => {
 
     bcrypt.compare.mockResolvedValue(true);
     jwtService.signAsync.mockImplementation(
-      async (payload: Record<string, unknown>, options?: { secret?: string }) =>
+      async (
+        payload: Record<string, unknown>,
+        options?: { secret?: string },
+      ) =>
         options?.secret === 'refresh-secret'
           ? `refresh-${String(payload.jti)}`
           : 'access-token',
@@ -84,10 +91,12 @@ describe('AuthService', () => {
   it('stores a distinct refresh token for each login', async () => {
     await service.login(
       { username: 'admin', password: 'password' },
+      request as Request,
       response as Response,
     );
     await service.login(
       { username: 'admin', password: 'password' },
+      request as Request,
       response as Response,
     );
 

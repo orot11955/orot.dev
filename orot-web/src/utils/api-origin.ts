@@ -45,8 +45,12 @@ export function resolvePublicApiBaseUrl(): string {
 }
 
 export function resolveServerApiBaseUrl(): string {
-  const configuredApiUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
+  const internalApiOrigin = process.env.INTERNAL_API_ORIGIN?.trim();
+  if (internalApiOrigin && isAbsoluteUrl(internalApiOrigin)) {
+    return normalizeAbsoluteApiBase(internalApiOrigin);
+  }
 
+  const configuredApiUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
   if (configuredApiUrl && isAbsoluteUrl(configuredApiUrl)) {
     return normalizeAbsoluteApiBase(configuredApiUrl);
   }

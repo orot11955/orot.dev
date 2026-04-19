@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Button,
+  Empty,
   Input,
   Popconfirm,
   Select,
@@ -13,6 +14,7 @@ import {
   Typography,
 } from 'orot-ui';
 import { ImageEditorModal } from '@/components/ImageEditorModal';
+import { useNotificationEffect } from '@/hooks';
 import {
   authService,
   studioGalleryService,
@@ -98,6 +100,14 @@ export function SettingsPage() {
     }
   }, []);
 
+  useNotificationEffect(error, {
+    type: 'error',
+    title: settings
+      ? '요청을 처리하지 못했습니다.'
+      : '설정을 불러오지 못했습니다.',
+  });
+  useNotificationEffect(notice, { type: 'success' });
+
   if (loading) {
     return (
       <div className={styles.page}>
@@ -111,11 +121,9 @@ export function SettingsPage() {
   if (!settings) {
     return (
       <div className={styles.page}>
-        <Alert
-          type="error"
-          message="설정을 불러오지 못했습니다."
-          description={error ?? ''}
-        />
+        <div className={styles.loadingBlock}>
+          <Empty description={error ?? '설정을 불러오지 못했습니다.'} />
+        </div>
       </div>
     );
   }
@@ -185,25 +193,6 @@ export function SettingsPage() {
           사이트 정보, 공개 영역 메뉴, 테마, SEO, 댓글 필터, 계정 보안 등 사이트 전반의 공통 설정을 관리합니다.
         </Typography.Paragraph>
       </header>
-
-      {error && (
-        <Alert
-          type="error"
-          message="요청을 처리하지 못했습니다."
-          description={error}
-          closable
-          onClose={() => setError(null)}
-        />
-      )}
-      {notice && (
-        <Alert
-          type="success"
-          message={notice}
-          closable
-          onClose={() => setNotice(null)}
-        />
-      )}
-
       <div className={styles.tabsCard}>
         <Tabs items={tabItems} tabPosition="left" />
       </div>

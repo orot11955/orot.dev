@@ -14,6 +14,7 @@ import {
   Typography,
 } from 'orot-ui';
 import type { ColumnType } from 'orot-ui';
+import { useNotificationEffect } from '@/hooks';
 import { studioPostsService, studioSeriesService } from '@/services';
 import type {
   CreateSeriesPayload,
@@ -113,6 +114,11 @@ export function SeriesManagementPage() {
   const [assignError, setAssignError] = useState<string | null>(null);
   const [assignSearch, setAssignSearch] = useState('');
   const [mutatingId, setMutatingId] = useState<number | null>(null);
+
+  useNotificationEffect(error, {
+    type: 'error',
+    title: '요청을 처리하지 못했습니다.',
+  });
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -432,21 +438,13 @@ export function SeriesManagementPage() {
         </div>
       </div>
 
-      {error && (
-        <Alert
-          type="error"
-          message="요청을 처리하지 못했습니다."
-          description={error}
-          closable
-          onClose={() => setError(null)}
-        />
-      )}
-
       <div className={styles.tableCard}>
         {loading && seriesList.length === 0 ? (
           <div style={{ display: 'flex', justifyContent: 'center', padding: 'var(--orot-space-10)' }}>
             <Spin size="lg" />
           </div>
+        ) : error && seriesList.length === 0 ? (
+          <Empty description={error} />
         ) : filtered.length === 0 ? (
           <Empty description="조건에 맞는 시리즈가 없습니다." />
         ) : (

@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Alert,
   Badge,
   Button,
   Empty,
@@ -15,6 +14,7 @@ import {
   Typography,
 } from 'orot-ui';
 import type { ColumnType } from 'orot-ui';
+import { useNotificationEffect } from '@/hooks';
 import { studioCommentsService } from '@/services';
 import type { Comment, CommentQuery } from '@/types';
 import { getErrorMessage } from '@/utils/content';
@@ -67,6 +67,11 @@ export function CommentsManagementPage() {
   const [filteredCount, setFilteredCount] = useState(0);
   const [approvedCount, setApprovedCount] = useState(0);
   const reloadTokenRef = useRef(0);
+
+  useNotificationEffect(error, {
+    type: 'error',
+    title: '요청을 처리하지 못했습니다.',
+  });
 
   const load = useCallback(async () => {
     const token = ++reloadTokenRef.current;
@@ -318,16 +323,6 @@ export function CommentsManagementPage() {
         </div>
       </div>
 
-      {error && (
-        <Alert
-          type="error"
-          message="요청을 처리하지 못했습니다."
-          description={error}
-          closable
-          onClose={() => setError(null)}
-        />
-      )}
-
       <div className={styles.tableCard}>
         {loading && comments.length === 0 ? (
           <div
@@ -339,6 +334,8 @@ export function CommentsManagementPage() {
           >
             <Spin size="lg" />
           </div>
+        ) : error && comments.length === 0 ? (
+          <Empty description={error} />
         ) : comments.length === 0 ? (
           <Empty description="조건에 맞는 댓글이 없습니다." />
         ) : (

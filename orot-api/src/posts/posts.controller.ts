@@ -17,7 +17,12 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiConsumes,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
 import { mkdirSync, unlinkSync } from 'fs';
 import { diskStorage } from 'multer';
 import type { FileFilterCallback } from 'multer';
@@ -35,7 +40,12 @@ import { PostsService } from './posts.service';
 const VIEWED_POSTS_COOKIE = 'viewed_posts';
 const VIEWED_POSTS_COOKIE_MAX_AGE = 24 * 60 * 60 * 1000;
 const MAX_VIEWED_POST_IDS = 100;
-const ALLOWED_IMAGE_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const ALLOWED_IMAGE_MIME = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+];
 
 const postCoverMulterOptions = {
   storage: diskStorage({
@@ -99,7 +109,10 @@ export class PublicPostsController {
     const viewedPostIds = this.parseViewedPostIds(
       req.cookies?.[VIEWED_POSTS_COOKIE] as string | undefined,
     );
-    const result = await this.postsService.recordPublicView(slug, viewedPostIds);
+    const result = await this.postsService.recordPublicView(
+      slug,
+      viewedPostIds,
+    );
 
     if (result.counted) {
       viewedPostIds.add(result.postId);
@@ -207,7 +220,9 @@ export class EditorPostsController {
 
       if (currentPost.coverImage?.startsWith('/uploads/posts/')) {
         try {
-          unlinkSync(join(process.cwd(), currentPost.coverImage.replace(/^\//, '')));
+          unlinkSync(
+            join(process.cwd(), currentPost.coverImage.replace(/^\//, '')),
+          );
         } catch {
           // noop
         }
@@ -228,11 +243,17 @@ export class EditorPostsController {
   @ApiOperation({ summary: 'Remove editor post cover image' })
   async removeCoverImage(@Param('id', ParseIntPipe) id: number) {
     const currentPost = await this.postsService.findOneForArea(id, 'editor');
-    const updated = await this.postsService.update(id, { coverImage: null }, 'editor');
+    const updated = await this.postsService.update(
+      id,
+      { coverImage: null },
+      'editor',
+    );
 
     if (currentPost.coverImage?.startsWith('/uploads/posts/')) {
       try {
-        unlinkSync(join(process.cwd(), currentPost.coverImage.replace(/^\//, '')));
+        unlinkSync(
+          join(process.cwd(), currentPost.coverImage.replace(/^\//, '')),
+        );
       } catch {
         // noop
       }
@@ -258,7 +279,9 @@ export class StudioPostsController {
 
   @Get('slug/:slug')
   @Roles('ADMIN')
-  @ApiOperation({ summary: 'Get studio-visible post by slug for admin preview' })
+  @ApiOperation({
+    summary: 'Get studio-visible post by slug for admin preview',
+  })
   findBySlug(@Param('slug') slug: string) {
     return this.postsService.findOneForArea(slug, 'studio');
   }

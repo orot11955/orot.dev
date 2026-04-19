@@ -1,7 +1,13 @@
 import { Suspense } from 'react';
 import { serverGet, toPaginatedResponse } from '@/utils/server-api';
 import { PostsPage } from '@/components/public/PostsPage';
-import type { Series, ApiListPayload, PostListItem, PostListResponse } from '@/types';
+import type {
+  Series,
+  Category,
+  ApiListPayload,
+  PostListItem,
+  PostListResponse,
+} from '@/types';
 import { normalizePostQuery } from '@/utils/post-query';
 
 export const revalidate = 60;
@@ -10,6 +16,7 @@ interface SearchParams {
   search?: string;
   tag?: string;
   seriesId?: string;
+  categorySlug?: string;
   sort?: string;
 }
 
@@ -25,16 +32,18 @@ async function PostsContent({ searchParams }: { searchParams: SearchParams }) {
       search: searchParams.search,
       tag: searchParams.tag,
       seriesId: searchParams.seriesId,
+      categorySlug: searchParams.categorySlug,
       sort: searchParams.sort,
     }),
   } satisfies Record<string, string | number>;
   const liveOptions = { cache: 'no-store' as const, revalidate: false as const };
 
-  const [rawPosts, rawAllPosts, series, tags] = await Promise.all([
+  const [rawPosts, rawAllPosts, series, tags, categories] = await Promise.all([
     serverGet<ApiListPayload<PostListItem>>('/public/posts', params, liveOptions),
     serverGet<ApiListPayload<PostListItem>>('/public/posts', { limit: 1 }, liveOptions),
     serverGet<Series[]>('/public/series', undefined, liveOptions),
     serverGet<string[]>('/public/posts/tags', undefined, liveOptions),
+    serverGet<Category[]>('/public/categories', undefined, liveOptions),
   ]);
 
   const postList: PostListResponse = rawPosts
@@ -47,6 +56,7 @@ async function PostsContent({ searchParams }: { searchParams: SearchParams }) {
       overallTotal={rawAllPosts?.meta.total ?? postList.total}
       series={series ?? []}
       tags={tags ?? []}
+      categories={categories ?? []}
     />
   );
 }

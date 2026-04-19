@@ -17,15 +17,19 @@ import { ImageEditorModal } from '@/components/ImageEditorModal';
 import { useNotificationEffect } from '@/hooks';
 import {
   authService,
+  studioCategoriesService,
   studioGalleryService,
   studioSettingsService,
 } from '@/services';
 import type {
+  Category,
+  CreateCategoryPayload,
   GalleryItem,
   PublicMenuItem,
   SocialLinkItem,
   StudioSettings,
   Theme,
+  UpdateCategoryPayload,
   UpdateSettingsPayload,
 } from '@/types';
 import { getErrorMessage, resolveAssetUrl } from '@/utils/content';
@@ -164,6 +168,16 @@ export function SettingsPage() {
       key: 'seo',
       label: 'SEO',
       children: <SeoSection settings={settings} onSave={save} />,
+    },
+    {
+      key: 'categories',
+      label: '카테고리',
+      children: (
+        <CategoriesSection
+          onError={(m) => setError(m)}
+          onSuccess={(m) => setNotice(m)}
+        />
+      ),
     },
     {
       key: 'comments',
@@ -1025,6 +1039,218 @@ function CommentFilterSection({ settings, onSave }: SectionProps) {
           저장
         </Button>
       </div>
+    </div>
+  );
+}
+
+// ─── Section: 카테고리 ────────────────────────────────────────────────────────
+
+interface CategoriesSectionProps {
+  onError: (message: string) => void;
+  onSuccess: (message: string) => void;
+}
+
+type CategoryDraft = {
+  id: number | 'new';
+  name: string;
+  slug: string;
+  description: string;
+  sortOrder: number;
+  postCount: number;
+  dirty: boolean;
+};
+
+function fromCategory(c: Category): CategoryDraft {
+  return {
+    id: c.id,
+    name: c.name,
+    slug: c.slug,
+    description: c.description ?? '',
+    sortOrder: c.sortOrder,
+    postCount: c._count?.posts ?? 0,
+    dirty: false,
+  };
+}
+
+function CategoriesSection({ onError, onSuccess }: CategoriesSectionProps) {
+  const [drafts, setDrafts] = useState<CategoryDraft[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [busyId, setBusyId] = useState<number | 'new' | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const list = await studioCategoriesService.getAll();
+      setDrafts(list.map(fromCategory));
+    } catch (err) {
+      onError(getErrorMessage(err));
+    } finally {
+      setLoading(false);
+    }
+  }, [onError]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const patch = (id: number | 'new', next: Partial<CategoryDraft>) => {
+    setDrafts((prev) =>
+      prev.map((d) => (d.id === id ? { ...d, ...next, dirty: true } : d)),
+    );
+  };
+
+  const addDraft = () => {
+    if (drafts.some((d) => d.id === 'new')) return;
+    setDrafts((prev) => [
+      {
+        id: 'new',
+        name: '',
+        slug: '',
+        description: '',
+        sortOrder: prev.length,
+        postCount: 0,
+        dirty: true,
+      },
+      ...prev,
+    ]);
+  };
+
+  const cancelNew = () => {
+    setDrafts((prev) => prev.filter((d) => d.id !== 'new'));
+  };
+
+  const saveDraft = async (draft: CategoryDraft) => {
+    if (!draft.name.trim()) {
+      onError('이름을 입력해주세요.');
+      return;
+    }
+    setBusyId(draft.id);
+    try {
+      if (draft.id === 'new') {
+        const payload: CreateCategoryPayload = {
+          name: draft.name.trim(),
+          slug: draft.slug.trim() || undefined,
+          description: draft.description.trim() || undefined,
+          sortOrder: draft.sortOrder,
+        };
+        await studioCategoriesService.create(payload);
+        onSuccess('카테고리가 추가되었습니다.');
+      } else {
+        const payload: UpdateCategoryPayload = {
+          name: draft.name.trim(),
+          slug: draft.slug.trim() || undefined,
+          description: draft.description.trim() || undefined,
+          sortOrder: draft.sortOrder,
+        };
+        await studioCategoriesService.update(draft.id, payload);
+        onSuccess('카테고리가 수정되었습니다.');
+      }
+      await load();
+    } catch (err) {
+      onError(getErrorMessage(err));
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const remove = async (id: number) => {
+    setBusyId(id);
+    try {
+      await studioCategoriesService.remove(id);
+      onSuccess('카테고리가 삭제되었습니다.');
+      await load();
+    } catch (err) {
+      onError(getErrorMessage(err));
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  return (
+    <div className={styles.section}>
+      <div className={styles.sectionHeader}>
+        <Typography.Title level={3} className={styles.sectionTitle}>
+          카테고리 관리
+        </Typography.Title>
+        <Typography.Paragraph className={styles.sectionDesc}>
+          글을 분류하는 카테고리를 추가·수정·삭제합니다. 삭제된 카테고리의 글은 미분류 상태로 돌아갑니다.
+        </Typography.Paragraph>
+      </div>
+
+      {loading ? (
+        <div className={styles.inlineStatus}>
+          <Spin size="sm" />
+          <span className={styles.fieldHelp}>불러오는 중…</span>
+        </div>
+      ) : (
+        <div className={styles.listWrap}>
+          {drafts.length === 0 ? (
+            <div className={styles.emptyList}>등록된 카테고리가 없습니다.</div>
+          ) : (
+            drafts.map((draft) => (
+              <div
+                key={String(draft.id)}
+                className={styles.listItem}
+                style={{ gridTemplateColumns: '1fr 1fr 120px auto' }}
+              >
+                <Input
+                  value={draft.name}
+                  placeholder="이름"
+                  onChange={(e) => patch(draft.id, { name: e.target.value })}
+                />
+                <Input
+                  value={draft.slug}
+                  placeholder="slug (비우면 자동 생성)"
+                  onChange={(e) => patch(draft.id, { slug: e.target.value })}
+                />
+                <Input
+                  type="number"
+                  value={String(draft.sortOrder)}
+                  onChange={(e) =>
+                    patch(draft.id, {
+                      sortOrder: Number(e.target.value) || 0,
+                    })
+                  }
+                />
+                <div className={styles.listItemActions}>
+                  <span className={styles.fieldHelp}>
+                    {draft.id === 'new' ? '신규' : `글 ${draft.postCount}`}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="solid"
+                    loading={busyId === draft.id}
+                    disabled={!draft.dirty}
+                    onClick={() => saveDraft(draft)}
+                  >
+                    저장
+                  </Button>
+                  {draft.id === 'new' ? (
+                    <Button size="sm" variant="text" onClick={cancelNew}>
+                      취소
+                    </Button>
+                  ) : (
+                    <Popconfirm
+                      title="삭제하시겠습니까?"
+                      description="연결된 글은 미분류 상태로 전환됩니다."
+                      onConfirm={() => remove(draft.id as number)}
+                    >
+                      <Button size="sm" variant="text">
+                        삭제
+                      </Button>
+                    </Popconfirm>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
+          <div className={styles.addRow}>
+            <Button variant="outlined" onClick={addDraft}>
+              + 카테고리 추가
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

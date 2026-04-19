@@ -73,12 +73,30 @@ model Post {
   series      Series?    @relation(fields: [seriesId], references: [id], onDelete: SetNull)
   seriesOrder Int?
 
+  categoryId  Int?
+  category    Category?  @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
   comments    Comment[]
 
   @@index([status])
   @@index([slug])
   @@index([seriesId])
+  @@index([categoryId])
   @@map("posts")
+}
+
+model Category {
+  id          Int      @id @default(autoincrement())
+  name        String   @db.VarChar(100)
+  slug        String   @unique @db.VarChar(120)
+  description String?  @db.VarChar(500)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  posts Post[]
+
+  @@map("categories")
 }
 
 model Series {

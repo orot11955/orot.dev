@@ -48,6 +48,17 @@ export class QueryPostDto {
   @IsInt()
   seriesId?: number;
 
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  categoryId?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  categorySlug?: string;
+
   @ApiPropertyOptional({ enum: ['latest', 'popular'], default: 'latest' })
   @IsOptional()
   @IsString()

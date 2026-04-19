@@ -12,7 +12,12 @@ import {
   Select,
   X,
 } from 'orot-ui';
-import type { PostListResponse, PostSort, Series } from '@/types';
+import type {
+  Category,
+  PostListResponse,
+  PostSort,
+  Series,
+} from '@/types';
 import { PostCard } from './PostCard';
 import styles from './PostsPage.module.css';
 
@@ -21,6 +26,7 @@ interface PostsPageProps {
   overallTotal: number;
   series: Series[];
   tags: string[];
+  categories: Category[];
 }
 
 export function PostsPage({
@@ -28,6 +34,7 @@ export function PostsPage({
   overallTotal,
   series,
   tags,
+  categories,
 }: PostsPageProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -35,6 +42,7 @@ export function PostsPage({
   const currentSearch = searchParams.get('search') ?? '';
   const currentTag = searchParams.get('tag') ?? '';
   const currentSeries = searchParams.get('seriesId') ?? '';
+  const currentCategory = searchParams.get('categorySlug') ?? '';
   const currentSort = (searchParams.get('sort') as PostSort) ?? 'latest';
 
   const [keyword, setKeyword] = useState(currentSearch);
@@ -69,10 +77,14 @@ export function PostsPage({
   };
 
   const hasFilters = Boolean(
-    currentSearch || currentTag || currentSeries || currentSort !== 'latest',
+    currentSearch ||
+      currentTag ||
+      currentSeries ||
+      currentCategory ||
+      currentSort !== 'latest',
   );
   const hasResettableFilters = Boolean(
-    currentSearch || currentTag || currentSeries,
+    currentSearch || currentTag || currentSeries || currentCategory,
   );
 
   const sortOptions = [
@@ -83,6 +95,11 @@ export function PostsPage({
   const seriesOptions = [
     { label: '모든 시리즈', value: '' },
     ...series.map((s) => ({ label: s.title, value: String(s.id) })),
+  ];
+
+  const categoryOptions = [
+    { label: '모든 카테고리', value: '' },
+    ...categories.map((c) => ({ label: c.name, value: c.slug })),
   ];
 
   const sortSegmented = (
@@ -132,6 +149,16 @@ export function PostsPage({
           <div className={styles.toolbarControls}>
             <Select
               size="md"
+              value={currentCategory || ''}
+              onChange={(val) =>
+                updateParams({ categorySlug: String(val) || null })
+              }
+              options={categoryOptions}
+              placeholder="카테고리"
+              className={styles.select}
+            />
+            <Select
+              size="md"
               value={currentSeries || ''}
               onChange={(val) =>
                 updateParams({ seriesId: String(val) || null })
@@ -143,6 +170,37 @@ export function PostsPage({
             <div className={styles.sortWrap}>{sortSegmented}</div>
           </div>
         </div>
+
+        {/* ─── Category chip row ─── */}
+        {categories.length > 0 && (
+          <div className={styles.tagRow}>
+            <div className={styles.tagScroll}>
+              <button
+                type="button"
+                onClick={() => updateParams({ categorySlug: null })}
+                className={[
+                  styles.tagChip,
+                  !currentCategory ? styles.tagChipActive : '',
+                ].join(' ')}
+              >
+                전체 카테고리
+              </button>
+              {categories.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => updateParams({ categorySlug: c.slug })}
+                  className={[
+                    styles.tagChip,
+                    currentCategory === c.slug ? styles.tagChipActive : '',
+                  ].join(' ')}
+                >
+                  {c.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* ─── Tags chip row ─── */}
         {tags.length > 0 && (

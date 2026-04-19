@@ -59,11 +59,19 @@ export interface Post {
   seriesId: number | null;
   seriesOrder: number | null;
   series?: SeriesSummary | null;
+  categoryId?: number | null;
+  category?: CategorySummary | null;
 }
 
 export interface SeriesSummary {
   id: number;
   title: string;
+  slug: string;
+}
+
+export interface CategorySummary {
+  id: number;
+  name: string;
   slug: string;
 }
 
@@ -95,6 +103,8 @@ export interface PostQuery {
   search?: string;
   tag?: string;
   seriesId?: number;
+  categoryId?: number;
+  categorySlug?: string;
   sort?: PostSort;
 }
 
@@ -109,6 +119,7 @@ export interface CreatePostPayload {
   metaDesc?: string;
   tags?: string;
   scheduledAt?: string;
+  categoryId?: number | null;
 }
 
 export type UpdatePostPayload = Partial<CreatePostPayload>;
@@ -156,6 +167,30 @@ export type UpdateSeriesPayload = Partial<CreateSeriesPayload>;
 export interface AssignPostsPayload {
   postIds: number[];
 }
+
+// ─── Category ─────────────────────────────────────────────────────────────────
+
+export interface Category {
+  id: number;
+  name: string;
+  slug: string;
+  description: string | null;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+  _count?: {
+    posts: number;
+  };
+}
+
+export interface CreateCategoryPayload {
+  name: string;
+  slug?: string;
+  description?: string;
+  sortOrder?: number;
+}
+
+export type UpdateCategoryPayload = Partial<CreateCategoryPayload>;
 
 // ─── Comment ──────────────────────────────────────────────────────────────────
 

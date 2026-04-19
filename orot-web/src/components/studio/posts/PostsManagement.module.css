@@ -57,7 +57,7 @@
 
 .toolbar {
   display: grid;
-  grid-template-columns: minmax(200px, 260px) minmax(200px, 260px) 1fr auto;
+  grid-template-columns: auto auto auto 1fr auto;
   gap: var(--orot-space-3);
   align-items: center;
   padding: var(--orot-space-4);
@@ -160,6 +160,7 @@
   .toolbar {
     grid-template-columns: 1fr 1fr;
   }
+
   .toolbarActions {
     grid-column: 1 / -1;
   }
@@ -169,18 +170,22 @@
   .toolbar {
     grid-template-columns: 1fr;
   }
+
   .header {
     padding: var(--orot-space-5) var(--orot-space-4);
   }
+
   .headerMeta {
     flex-direction: row;
     align-items: center;
     gap: var(--orot-space-3);
     width: 100%;
   }
+
   .actions {
     justify-content: flex-start;
   }
+
   .tableCard {
     padding: var(--orot-space-3);
   }

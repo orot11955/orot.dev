@@ -45,10 +45,17 @@ export function PostCard({ post, variant = 'default' }: PostCardProps) {
       )}
 
       <div className={styles.body}>
-        {post.series && (
-          <div className={styles.series}>
-            <Layers size={12} />
-            <span>{post.series.title}</span>
+        {(post.category || post.series) && (
+          <div className={styles.badgeRow}>
+            {post.category && (
+              <span className={styles.category}>{post.category.name}</span>
+            )}
+            {post.series && (
+              <span className={styles.series}>
+                <Layers size={12} />
+                {post.series.title}
+              </span>
+            )}
           </div>
         )}
 

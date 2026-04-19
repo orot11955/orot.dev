@@ -8,6 +8,7 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { PostsModule } from './posts/posts.module';
 import { SeriesModule } from './series/series.module';
+import { CategoriesModule } from './categories/categories.module';
 import { CommentsModule } from './comments/comments.module';
 import { GalleryModule } from './gallery/gallery.module';
 import { AnalyticsModule } from './analytics/analytics.module';
@@ -29,6 +30,7 @@ import configuration from './config/configuration';
     UsersModule,
     PostsModule,
     SeriesModule,
+    CategoriesModule,
     CommentsModule,
     GalleryModule,
     AnalyticsModule,

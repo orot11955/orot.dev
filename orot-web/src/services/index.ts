@@ -17,6 +17,10 @@ export {
   studioSeriesService,
 } from './series.service';
 export {
+  publicCategoriesService,
+  studioCategoriesService,
+} from './categories.service';
+export {
   publicCommentsService,
   studioCommentsService,
 } from './comments.service';

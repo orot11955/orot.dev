@@ -79,6 +79,10 @@ export class PostsService {
     const slug = this.resolveBaseSlug(dto.slug, dto.title);
     const uniqueSlug = await this.ensureUniqueSlug(slug);
 
+    if (dto.categoryId != null) {
+      await this.assertCategoryExists(dto.categoryId);
+    }
+
     return this.prisma.post.create({
       data: {
         title: dto.title,
@@ -91,9 +95,11 @@ export class PostsService {
         metaDesc: dto.metaDesc,
         tags: dto.tags,
         scheduledAt: dto.scheduledAt ? new Date(dto.scheduledAt) : undefined,
+        categoryId: dto.categoryId ?? null,
       },
       include: {
         series: { select: { id: true, title: true, slug: true } },
+        category: { select: { id: true, name: true, slug: true } },
       },
     });
   }
@@ -106,6 +112,8 @@ export class PostsService {
       search,
       tag,
       seriesId,
+      categoryId,
+      categorySlug,
       sort = 'latest',
     } = query;
     const skip = (page - 1) * limit;
@@ -149,6 +157,12 @@ export class PostsService {
       where.seriesId = seriesId;
     }
 
+    if (categoryId) {
+      where.categoryId = categoryId;
+    } else if (categorySlug) {
+      where.category = { slug: categorySlug };
+    }
+
     const [total, items] = await Promise.all([
       this.prisma.post.count({ where }),
       this.prisma.post.findMany({
@@ -171,7 +185,9 @@ export class PostsService {
           updatedAt: true,
           seriesId: true,
           seriesOrder: true,
+          categoryId: true,
           series: { select: { id: true, title: true, slug: true } },
+          category: { select: { id: true, name: true, slug: true } },
         },
       }),
     ]);
@@ -217,6 +233,7 @@ export class PostsService {
       where,
       include: {
         series: { select: { id: true, title: true, slug: true } },
+        category: { select: { id: true, name: true, slug: true } },
       },
     });
     if (!post) throw new NotFoundException('Post not found');
@@ -287,12 +304,21 @@ export class PostsService {
       data.slug = await this.ensureUniqueSlug(slug, id);
     }
     if (dto.scheduledAt) data.scheduledAt = new Date(dto.scheduledAt);
+    if (dto.categoryId !== undefined) {
+      if (dto.categoryId === null) {
+        data.categoryId = null;
+      } else {
+        await this.assertCategoryExists(dto.categoryId);
+        data.categoryId = dto.categoryId;
+      }
+    }
 
     return this.prisma.post.update({
       where: { id },
       data,
       include: {
         series: { select: { id: true, title: true, slug: true } },
+        category: { select: { id: true, name: true, slug: true } },
       },
     });
   }
@@ -335,6 +361,7 @@ export class PostsService {
       data,
       include: {
         series: { select: { id: true, title: true, slug: true } },
+        category: { select: { id: true, name: true, slug: true } },
       },
     });
   }
@@ -371,6 +398,13 @@ export class PostsService {
       if (!existing || existing.id === excludeId) return slug;
       count += 1;
       slug = `${normalizedBase}-${count}`;
+    }
+  }
+
+  private async assertCategoryExists(id: number) {
+    const found = await this.prisma.category.findUnique({ where: { id } });
+    if (!found) {
+      throw new BadRequestException(`Category ${id} does not exist`);
     }
   }
 

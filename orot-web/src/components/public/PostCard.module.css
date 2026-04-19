@@ -57,15 +57,32 @@
   padding: var(--orot-space-5);
 }
 
+.badgeRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--orot-space-1);
+}
+
 .series {
   display: inline-flex;
   align-items: center;
   gap: var(--orot-space-1);
-  align-self: flex-start;
   padding: 2px 8px;
   border-radius: var(--orot-radius-sm);
   background: color-mix(in srgb, var(--orot-color-primary) 12%, transparent);
   color: var(--orot-color-primary);
+  font-size: var(--orot-font-size-xs);
+  font-weight: var(--orot-font-weight-medium);
+}
+
+.category {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: var(--orot-radius-sm);
+  background: color-mix(in srgb, var(--orot-color-text) 8%, transparent);
+  color: var(--orot-color-text-secondary);
   font-size: var(--orot-font-size-xs);
   font-weight: var(--orot-font-weight-medium);
 }

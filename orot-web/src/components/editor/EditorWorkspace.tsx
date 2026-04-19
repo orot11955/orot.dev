@@ -9,13 +9,14 @@ import {
   Input,
   MarkdownEditor,
   Save,
+  Select,
   Send,
   Spin,
   Tag,
   Typography,
 } from 'orot-ui';
-import { editorPostsService } from '@/services';
-import type { Post, PostStatus, UpdatePostPayload } from '@/types';
+import { editorPostsService, studioCategoriesService } from '@/services';
+import type { Category, Post, PostStatus, UpdatePostPayload } from '@/types';
 import { getErrorMessage, resolveAssetUrl, splitTags } from '@/utils/content';
 import { STATUS_META } from '@/components/studio/dashboard/PostStatusChart';
 import { useEditorRefresh } from '@/layouts/EditorLayout';
@@ -54,6 +55,8 @@ export function EditorWorkspace({ postId }: EditorWorkspaceProps) {
   const [slug, setSlug] = useState('');
   const [tagsText, setTagsText] = useState('');
   const [coverImage, setCoverImage] = useState('');
+  const [categoryId, setCategoryId] = useState<number | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
 
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [savedAt, setSavedAt] = useState<Date | null>(null);
@@ -75,7 +78,23 @@ export function EditorWorkspace({ postId }: EditorWorkspaceProps) {
     setSlug(next.slug ?? '');
     setTagsText(next.tags ?? '');
     setCoverImage(next.coverImage ?? '');
+    setCategoryId(next.categoryId ?? null);
     hydratedRef.current = true;
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    studioCategoriesService
+      .getAll()
+      .then((list) => {
+        if (!cancelled) setCategories(list);
+      })
+      .catch(() => {
+        if (!cancelled) setCategories([]);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -170,6 +189,10 @@ export function EditorWorkspace({ postId }: EditorWorkspaceProps) {
   const onTagsChange = (value: string) => {
     setTagsText(value);
     if (hydratedRef.current) queueSave({ tags: value });
+  };
+  const onCategoryChange = (value: number | null) => {
+    setCategoryId(value);
+    if (hydratedRef.current) queueSave({ categoryId: value });
   };
 
   const handleSaveNow = useCallback(async () => {
@@ -363,6 +386,29 @@ export function EditorWorkspace({ postId }: EditorWorkspaceProps) {
           />
           <span className={styles.metaHelper}>
             저장 시 서버에서 정규화됩니다. 비워두면 제목으로 자동 생성.
+          </span>
+        </div>
+
+        <div className={styles.metaSection}>
+          <Typography.Text className={styles.metaTitle}>카테고리</Typography.Text>
+          <Select
+            size="md"
+            value={categoryId === null ? '' : String(categoryId)}
+            onChange={(val) => {
+              const str = String(val ?? '');
+              onCategoryChange(str ? Number(str) : null);
+            }}
+            options={[
+              { label: '카테고리 없음', value: '' },
+              ...categories.map((c) => ({
+                label: c.name,
+                value: String(c.id),
+              })),
+            ]}
+            placeholder="카테고리 선택"
+          />
+          <span className={styles.metaHelper}>
+            스튜디오 설정에서 카테고리를 추가/관리할 수 있어요.
           </span>
         </div>
 

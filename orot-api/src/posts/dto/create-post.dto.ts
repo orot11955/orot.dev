@@ -5,7 +5,9 @@ import {
   IsEnum,
   MaxLength,
   IsDateString,
+  IsInt,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import { PostStatus } from '@prisma/client';
 
 export class CreatePostDto {
@@ -61,4 +63,10 @@ export class CreatePostDto {
   @IsOptional()
   @IsDateString()
   scheduledAt?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  categoryId?: number | null;
 }

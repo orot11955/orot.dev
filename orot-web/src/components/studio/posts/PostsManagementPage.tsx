@@ -18,8 +18,8 @@ import {
 } from 'orot-ui';
 import type { ColumnType } from 'orot-ui';
 import { useNotificationEffect } from '@/hooks';
-import { studioPostsService } from '@/services';
-import type { PostListItem, PostQuery, PostStatus } from '@/types';
+import { studioCategoriesService, studioPostsService } from '@/services';
+import type { Category, PostListItem, PostQuery, PostStatus } from '@/types';
 import { formatDate, getErrorMessage, splitTags } from '@/utils/content';
 import { STATUS_META } from '@/components/studio/dashboard/PostStatusChart';
 import styles from './PostsManagement.module.css';
@@ -66,6 +66,8 @@ export function PostsManagementPage() {
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState<PostStatus | 'all'>('all');
   const [sort, setSort] = useState<SortValue>('latest');
+  const [categoryId, setCategoryId] = useState<number | 'all'>('all');
+  const [categories, setCategories] = useState<Category[]>([]);
   const [search, setSearch] = useState('');
   const [pendingSearch, setPendingSearch] = useState('');
   const [loading, setLoading] = useState(true);
@@ -92,6 +94,7 @@ export function PostsManagementPage() {
         sort,
       };
       if (status !== 'all') query.status = status;
+      if (categoryId !== 'all') query.categoryId = categoryId;
       if (search) query.search = search;
 
       const result = await studioPostsService.getAll(query);
@@ -104,7 +107,22 @@ export function PostsManagementPage() {
     } finally {
       if (token === reloadTokenRef.current) setLoading(false);
     }
-  }, [page, sort, status, search]);
+  }, [page, sort, status, categoryId, search]);
+
+  useEffect(() => {
+    let cancelled = false;
+    studioCategoriesService
+      .getAll()
+      .then((list) => {
+        if (!cancelled) setCategories(list);
+      })
+      .catch(() => {
+        if (!cancelled) setCategories([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     load();
@@ -202,6 +220,7 @@ export function PostsManagementPage() {
                 {post.title}
               </Link>
               <div className={styles.titleMeta}>
+                {post.category ? `[${post.category.name}] ` : ''}
                 {post.series ? `${post.series.title} · ` : ''}
                 {post.slug}
               </div>
@@ -380,6 +399,21 @@ export function PostsManagementPage() {
           value={status}
           onChange={(value) => {
             setStatus((value as PostStatus | 'all') ?? 'all');
+            setPage(1);
+          }}
+        />
+        <Select
+          options={[
+            { value: 'all', label: '전체 카테고리' },
+            ...categories.map((c) => ({
+              value: String(c.id),
+              label: c.name,
+            })),
+          ]}
+          value={categoryId === 'all' ? 'all' : String(categoryId)}
+          onChange={(value) => {
+            const str = String(value ?? 'all');
+            setCategoryId(str === 'all' ? 'all' : Number(str));
             setPage(1);
           }}
         />

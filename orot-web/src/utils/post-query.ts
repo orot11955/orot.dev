@@ -58,6 +58,16 @@ export function normalizePostQuery(
     normalized.seriesId = seriesId;
   }
 
+  const categoryId = toPositiveInt(query.categoryId);
+  if (categoryId) {
+    normalized.categoryId = categoryId;
+  }
+
+  const categorySlug = toOptionalString(query.categorySlug);
+  if (categorySlug) {
+    normalized.categorySlug = categorySlug;
+  }
+
   const search = toOptionalString(query.search);
   if (search) {
     normalized.search = search;

@@ -1,0 +1,23 @@
+.page {
+  width: 100%;
+  padding: clamp(var(--orot-space-8), 7vw, var(--orot-space-16)) 0;
+}
+
+.shell {
+  width: 100%;
+  max-width: var(--public-shell-max-width);
+  margin: 0 auto;
+  padding: 0 var(--public-shell-padding);
+}
+
+.panel {
+  display: flex;
+  max-width: min(100%, 720px);
+  flex-direction: column;
+  gap: var(--orot-space-4);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-start;
+}

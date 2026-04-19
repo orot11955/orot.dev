@@ -1,0 +1,109 @@
+.page {
+  display: flex;
+  min-height: 100dvh;
+  align-items: center;
+  justify-content: center;
+  padding: var(--orot-space-6);
+  background: var(--orot-color-bg);
+}
+
+.card {
+  display: flex;
+  width: 100%;
+  max-width: 420px;
+  flex-direction: column;
+  gap: var(--orot-space-6);
+  padding: var(--orot-space-8);
+  border: 1px solid var(--public-panel-border);
+  border-radius: var(--orot-radius-lg);
+  background: var(--public-panel-bg);
+  box-shadow: var(--public-panel-shadow);
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--orot-space-2);
+  font-size: var(--orot-font-size-sm);
+  color: var(--orot-color-text-muted);
+  transition: color var(--orot-transition-base);
+}
+
+.backLink:hover {
+  color: var(--orot-color-text-secondary);
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--orot-space-2);
+}
+
+.eyebrow {
+  font-size: var(--orot-font-size-xs);
+  font-weight: var(--orot-font-weight-medium);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--public-accent);
+}
+
+.title {
+  font-size: var(--orot-font-size-2xl);
+  letter-spacing: -0.02em;
+  color: var(--orot-color-text);
+  margin: 0 !important;
+}
+
+.subtitle {
+  font-size: var(--orot-font-size-sm);
+  color: var(--orot-color-text-muted);
+  margin: 0 !important;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--orot-space-4);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--orot-space-2);
+}
+
+.label {
+  font-size: var(--orot-font-size-sm);
+  font-weight: var(--orot-font-weight-medium);
+  color: var(--orot-color-text-secondary);
+}
+
+.error {
+  display: flex;
+  align-items: center;
+  gap: var(--orot-space-2);
+  padding: var(--orot-space-2) var(--orot-space-3);
+  border-radius: var(--orot-radius-md);
+  background: color-mix(in srgb, var(--orot-color-error) 12%, transparent);
+  color: var(--orot-color-error);
+  font-size: var(--orot-font-size-sm);
+}
+
+.page :global(.orot-input-affix) {
+  background: var(--orot-color-bg);
+}
+
+.page :global(.orot-input-affix:focus-within) {
+  border-color: var(--orot-color-border);
+}
+
+.page :global(.orot-input),
+.page :global(.orot-input:-webkit-autofill),
+.page :global(.orot-input:-webkit-autofill:hover),
+.page :global(.orot-input:-webkit-autofill:focus),
+.page :global(.orot-input:-webkit-autofill:active) {
+  -webkit-text-fill-color: var(--orot-color-text);
+  caret-color: var(--orot-color-text);
+  -webkit-box-shadow: 0 0 0 1000px var(--orot-color-bg) inset;
+  box-shadow: 0 0 0 1000px var(--orot-color-bg) inset;
+}

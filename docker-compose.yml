@@ -1,0 +1,124 @@
+services:
+  # ── MariaDB ────────────────────────────────────────────────────────
+  db:
+    image: mariadb:10.11
+    container_name: orot-db
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ:-Asia/Seoul}
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${DB_DATABASE:-orot}
+      MYSQL_USER: ${DB_USERNAME:-orot}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-orotpassword}
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - orot-net
+
+  # ── API (NestJS) ───────────────────────────────────────────────────
+  orot-api:
+    build:
+      context: .
+      dockerfile: ./orot-api/Dockerfile
+    container_name: orot-api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      TZ: ${TZ:-Asia/Seoul}
+      NODE_ENV: production
+      PORT: 4000
+      DATABASE_URL: mysql://${DB_USERNAME:-orot}:${DB_PASSWORD:-orotpassword}@db:3306/${DB_DATABASE:-orot}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-changeme-access}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-changeme-refresh}
+      JWT_ACCESS_EXPIRES_IN: ${JWT_ACCESS_EXPIRES_IN:-15m}
+      JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-30d}
+      STUDIO_USERNAME: ${STUDIO_USERNAME:-admin}
+      STUDIO_PASSWORD: ${STUDIO_PASSWORD:-changeme}
+      WEB_ORIGIN: ${WEB_ORIGIN:-http://localhost}
+      SITE_URL: ${SITE_URL:-https://orot.dev}
+      HTTP_LOGGING: ${HTTP_LOGGING:-false}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      LOG_PRETTY: ${LOG_PRETTY:-false}
+      SLOW_QUERY_MS: ${SLOW_QUERY_MS:-300}
+      COOKIE_DOMAIN: ${COOKIE_DOMAIN:-}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+    volumes:
+      - api_uploads:/app/uploads
+    networks:
+      - orot-net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:4000/api/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ── Web (Next.js) ──────────────────────────────────────────────────
+  orot-web:
+    build:
+      context: .
+      dockerfile: ./orot-web/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-/api}
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://orot.dev}
+        NEXT_PUBLIC_CLIENT_ERROR_LOGGING: ${NEXT_PUBLIC_CLIENT_ERROR_LOGGING:-true}
+    container_name: orot-web
+    restart: unless-stopped
+    depends_on:
+      orot-api:
+        condition: service_healthy
+    environment:
+      TZ: ${TZ:-Asia/Seoul}
+      NODE_ENV: production
+      PORT: 3000
+      SITE_URL: ${SITE_URL:-https://orot.dev}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-/api}
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://orot.dev}
+      NEXT_PUBLIC_CLIENT_ERROR_LOGGING: ${NEXT_PUBLIC_CLIENT_ERROR_LOGGING:-true}
+      CLIENT_ERROR_LOGGING: ${CLIENT_ERROR_LOGGING:-true}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      WEB_LOG_LEVEL: ${WEB_LOG_LEVEL:-info}
+      LOG_PRETTY: ${LOG_PRETTY:-false}
+    networks:
+      - orot-net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ── Nginx (reverse proxy) ──────────────────────────────────────────
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: orot-nginx
+    restart: unless-stopped
+    depends_on:
+      - orot-api
+      - orot-web
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      # Uncomment for TLS:
+      # - "${HTTPS_PORT:-443}:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      # Uncomment for TLS certificates:
+      # - ./nginx/certs:/etc/nginx/certs:ro
+    networks:
+      - orot-net
+
+volumes:
+  db_data:
+  api_uploads:
+
+networks:
+  orot-net:
+    driver: bridge

@@ -1,0 +1,13 @@
+.shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  background: var(--orot-color-bg);
+  color: var(--orot-color-text);
+}
+
+.main {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+}

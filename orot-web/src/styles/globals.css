@@ -1,0 +1,121 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@400;500;700;800&display=swap');
+
+@import 'orot-ui/dist/index.css';
+@import 'orot-ui/themes/base.css';
+@import 'orot-ui/themes/light.css';
+@import 'orot-ui/themes/dark.css';
+@import 'orot-ui/themes/sepia.css';
+@import 'orot-ui/themes/forest.css';
+@import 'orot-ui/themes/ocean.css';
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  --orot-font-family:
+    'Manrope',
+    'Noto Sans KR',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
+  --orot-font-family-sans: var(--orot-font-family);
+  --public-shell-max-width: 1200px;
+  --public-shell-narrow-width: 960px;
+  --public-shell-padding: clamp(var(--orot-space-4), 2vw, var(--orot-space-6));
+  --public-section-gap: clamp(var(--orot-space-10), 5vw, var(--orot-space-16));
+  --public-panel-bg: color-mix(
+    in srgb,
+    var(--orot-color-bg-container) 92%,
+    var(--orot-color-bg)
+  );
+  --public-panel-border: color-mix(
+    in srgb,
+    var(--orot-color-border) 80%,
+    transparent
+  );
+  --public-panel-shadow: 0 20px 48px -32px rgb(0 0 0 / 0.28);
+  --public-accent: color-mix(
+    in srgb,
+    var(--orot-color-primary) 70%,
+    var(--orot-color-text)
+  );
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+html {
+  color-scheme: light;
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  font-family: 'Manrope', 'Noto Sans KR', var(--orot-font-family-sans);
+  font-size: var(--orot-font-size-md);
+  line-height: var(--orot-line-height-base);
+  color: var(--orot-color-text, var(--foreground));
+  background: var(--orot-color-bg, var(--background));
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  min-height: 100dvh;
+  background: var(--orot-color-bg, var(--background));
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  padding: 0;
+  margin: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: var(--orot-font-weight-bold);
+  line-height: var(--orot-line-height-tight);
+  color: var(--orot-color-text, var(--foreground));
+}
+
+p {
+  line-height: var(--orot-line-height-base);
+}
+
+@media (prefers-color-scheme: dark) {
+  html {
+    color-scheme: dark;
+  }
+}

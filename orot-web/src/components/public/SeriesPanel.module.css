@@ -1,0 +1,108 @@
+.panel {
+  position: sticky;
+  top: calc(64px + var(--orot-space-6));
+  display: flex;
+  flex-direction: column;
+  gap: var(--orot-space-4);
+  padding: var(--orot-space-5);
+  border: 1px solid var(--public-panel-border);
+  border-radius: var(--orot-radius-lg);
+  background: var(--public-panel-bg);
+  max-height: calc(100dvh - 100px);
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-bottom: var(--orot-space-3);
+  border-bottom: 1px solid var(--public-panel-border);
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--orot-color-primary);
+  font-size: var(--orot-font-size-xs);
+  font-weight: var(--orot-font-weight-bold);
+  letter-spacing: 0.12em;
+}
+
+.title {
+  font-size: var(--orot-font-size-md);
+  font-weight: var(--orot-font-weight-bold);
+  letter-spacing: -0.02em;
+  color: var(--orot-color-text);
+  line-height: 1.25;
+}
+
+.title:hover {
+  color: var(--orot-color-primary);
+}
+
+.count {
+  color: var(--orot-color-text-muted);
+  font-size: var(--orot-font-size-xs);
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.item {
+  display: flex;
+}
+
+.link {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--orot-space-3);
+  flex: 1;
+  padding: var(--orot-space-2) var(--orot-space-3);
+  border-radius: var(--orot-radius-md);
+  color: var(--orot-color-text-secondary);
+  font-size: var(--orot-font-size-sm);
+  line-height: 1.4;
+  transition:
+    background-color var(--orot-transition-base),
+    color var(--orot-transition-base);
+}
+
+.link:hover {
+  background: var(--orot-color-bg-hover);
+  color: var(--orot-color-text);
+}
+
+.index {
+  flex-shrink: 0;
+  min-width: 24px;
+  color: var(--orot-color-text-muted);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--orot-font-size-xs);
+  padding-top: 2px;
+}
+
+.label {
+  flex: 1;
+  min-width: 0;
+}
+
+.itemActive .link {
+  background: var(--orot-color-bg-active);
+  color: var(--orot-color-text);
+  font-weight: var(--orot-font-weight-medium);
+}
+
+.itemActive .index {
+  color: var(--orot-color-primary);
+  font-weight: var(--orot-font-weight-bold);
+}

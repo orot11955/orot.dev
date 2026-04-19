@@ -1,0 +1,32 @@
+{
+  "name": "orot.dev",
+  "private": true,
+  "packageManager": "yarn@1.22.22",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "workspaces": [
+    "orot-web",
+    "orot-api"
+  ],
+  "scripts": {
+    "dev:web": "yarn --cwd orot-web dev",
+    "dev:api": "yarn --cwd orot-api start:dev",
+    "build:web": "yarn --cwd orot-web build",
+    "build:api": "yarn --cwd orot-api build",
+    "build": "yarn build:api && yarn build:web",
+    "lint:web": "yarn --cwd orot-web lint",
+    "lint:api": "yarn --cwd orot-api lint",
+    "lint": "yarn lint:api && yarn lint:web",
+    "start:web": "yarn --cwd orot-web start",
+    "start:api": "yarn --cwd orot-api start:prod",
+    "db:generate": "yarn --cwd orot-api db:generate",
+    "db:push": "yarn --cwd orot-api db:push",
+    "db:seed": "yarn --cwd orot-api db:seed",
+    "docker:check": "docker compose config",
+    "docker:build": "docker compose build",
+    "docker:up": "docker compose up -d --build",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f"
+  }
+}

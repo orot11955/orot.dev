@@ -1,0 +1,158 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum Role {
+  ADMIN
+  EDITOR
+  VIEWER
+}
+
+enum PostStatus {
+  DRAFT
+  COMPLETED
+  REVIEW
+  SCHEDULED
+  PUBLISHED
+  UPDATED
+  ARCHIVED
+}
+
+// ─── Models ───────────────────────────────────────────────────────────────────
+
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique @db.VarChar(50)
+  password  String   @db.VarChar(255)
+  role      Role     @default(VIEWER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  refreshTokens RefreshToken[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique @db.VarChar(500)
+  userId    Int
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+model Post {
+  id          Int        @id @default(autoincrement())
+  title       String     @db.VarChar(255)
+  slug        String     @unique @db.VarChar(255)
+  content     String     @db.LongText
+  excerpt     String?    @db.VarChar(500)
+  coverImage  String?    @db.VarChar(500)
+  status      PostStatus @default(DRAFT)
+  viewCount   Int        @default(0)
+  metaTitle   String?    @db.VarChar(255)
+  metaDesc    String?    @db.VarChar(500)
+  tags        String?    @db.VarChar(500)
+  scheduledAt DateTime?
+  publishedAt DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  seriesId    Int?
+  series      Series?    @relation(fields: [seriesId], references: [id], onDelete: SetNull)
+  seriesOrder Int?
+
+  comments    Comment[]
+
+  @@index([status])
+  @@index([slug])
+  @@index([seriesId])
+  @@map("posts")
+}
+
+model Series {
+  id          Int      @id @default(autoincrement())
+  title       String   @db.VarChar(255)
+  slug        String   @unique @db.VarChar(255)
+  description String?  @db.VarChar(500)
+  coverImage  String?  @db.VarChar(500)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  posts Post[]
+
+  @@map("series")
+}
+
+model Comment {
+  id         Int      @id @default(autoincrement())
+  postId     Int
+  parentId   Int?
+  authorName String   @db.VarChar(100)
+  authorEmail String  @db.VarChar(255)
+  content    String   @db.Text
+  isApproved Boolean  @default(false)
+  isFiltered Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  post     Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  parent   Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  Comment[] @relation("CommentReplies")
+
+  @@index([postId])
+  @@index([parentId])
+  @@map("comments")
+}
+
+model GalleryItem {
+  id          Int      @id @default(autoincrement())
+  title       String?  @db.VarChar(255)
+  description String?  @db.VarChar(500)
+  imageUrl    String   @db.VarChar(500)
+  thumbnailUrl String? @db.VarChar(500)
+  altText     String?  @db.VarChar(255)
+  width       Int?
+  height      Int?
+  takenAt     DateTime?
+  isPublished Boolean  @default(false)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([isPublished])
+  @@map("gallery_items")
+}
+
+model SiteSetting {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique @db.VarChar(100)
+  value     String   @db.Text
+  updatedAt DateTime @updatedAt
+
+  @@map("site_settings")
+}
+
+model VisitorStat {
+  id        Int      @id @default(autoincrement())
+  path      String   @db.VarChar(500)
+  ip        String?  @db.VarChar(50)
+  userAgent String?  @db.VarChar(500)
+  referer   String?  @db.VarChar(500)
+  visitedAt DateTime @default(now())
+
+  @@index([path])
+  @@index([visitedAt])
+  @@map("visitor_stats")
+}

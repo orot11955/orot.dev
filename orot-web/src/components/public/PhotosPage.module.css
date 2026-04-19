@@ -1,0 +1,140 @@
+.page {
+  width: 100%;
+}
+
+.shell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--orot-space-8);
+  max-width: var(--public-shell-max-width);
+  margin: 0 auto;
+  padding: var(--public-section-gap) var(--public-shell-padding);
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--orot-space-1);
+}
+
+.eyebrow {
+  font-size: var(--orot-font-size-xs);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--orot-color-text-muted);
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  font-weight: var(--orot-font-weight-extrabold);
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+  color: var(--orot-color-text);
+}
+
+.subtitle {
+  margin: 0;
+  color: var(--orot-color-text-secondary);
+  font-size: var(--orot-font-size-sm);
+}
+
+.subtitle strong {
+  color: var(--orot-color-text);
+  font-weight: var(--orot-font-weight-bold);
+}
+
+.masonry {
+  width: 100%;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+}
+
+.tile {
+  display: block;
+  color: inherit;
+}
+
+.tileMedia {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  border-radius: var(--orot-radius-md);
+  background: var(--orot-color-bg-subtle);
+}
+
+.tileImage {
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.tile:hover .tileImage {
+  transform: scale(1.03);
+}
+
+.tilePlaceholder {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  color: var(--orot-color-text-muted);
+}
+
+.tileOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  padding: var(--orot-space-3);
+  background: linear-gradient(180deg,
+    transparent 40%,
+    rgb(0 0 0 / 0.72) 100%);
+  opacity: 0;
+  transition: opacity var(--orot-transition-base);
+}
+
+.tile:hover .tileOverlay,
+.tile:focus-visible .tileOverlay {
+  opacity: 1;
+}
+
+.tileOverlayInner {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: #fff;
+}
+
+.tileTitle {
+  font-size: var(--orot-font-size-sm);
+  font-weight: var(--orot-font-weight-medium);
+  letter-spacing: -0.01em;
+}
+
+.tileDate {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: rgb(255 255 255 / 0.78);
+  font-size: var(--orot-font-size-xs);
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--orot-space-2);
+  padding: var(--orot-space-12);
+  border: 1px dashed var(--public-panel-border);
+  border-radius: var(--orot-radius-lg);
+  color: var(--orot-color-text-muted);
+}
+
+.empty p {
+  margin: 0;
+  font-size: var(--orot-font-size-sm);
+}

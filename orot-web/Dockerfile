@@ -1,0 +1,44 @@
+FROM node:22-alpine AS builder
+
+WORKDIR /app
+
+RUN corepack enable && corepack prepare yarn@1.22.22 --activate
+
+COPY .npmrc ./
+COPY orot-web/package.json ./package.json
+COPY orot-web/yarn.lock ./yarn.lock
+RUN yarn install --frozen-lockfile
+
+COPY orot-web/. ./
+
+ARG NEXT_PUBLIC_API_URL=/api
+ARG NEXT_PUBLIC_SITE_URL=https://orot.dev
+ARG NEXT_PUBLIC_CLIENT_ERROR_LOGGING=true
+ENV NODE_ENV=production
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+ENV NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL}
+ENV NEXT_PUBLIC_CLIENT_ERROR_LOGGING=${NEXT_PUBLIC_CLIENT_ERROR_LOGGING}
+
+RUN yarn build
+
+FROM node:22-alpine AS runner
+
+WORKDIR /app
+
+RUN corepack enable && corepack prepare yarn@1.22.22 --activate
+
+COPY .npmrc ./
+COPY orot-web/package.json ./package.json
+COPY orot-web/yarn.lock ./yarn.lock
+RUN yarn install --frozen-lockfile --production && rm -f .npmrc
+
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/next.config.ts ./next.config.ts
+
+ENV NODE_ENV=production
+ENV PORT=3000
+
+EXPOSE 3000
+
+CMD ["./node_modules/.bin/next", "start", "-H", "0.0.0.0", "-p", "3000"]

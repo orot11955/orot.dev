@@ -1,0 +1,13 @@
+.button {
+  right: 24px !important;
+  bottom: 40px !important;
+  z-index: var(--orot-z-fixed) !important;
+  box-shadow: var(--public-panel-shadow);
+}
+
+@media (max-width: 560px) {
+  .button {
+    right: 16px !important;
+    bottom: 24px !important;
+  }
+}

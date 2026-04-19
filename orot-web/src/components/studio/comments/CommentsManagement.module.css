@@ -1,0 +1,213 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--orot-space-6);
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--orot-space-4);
+  padding: var(--orot-space-6);
+  border: 1px solid var(--public-panel-border);
+  border-radius: var(--orot-radius-lg);
+  background: var(--public-panel-bg);
+}
+
+.headerText {
+  display: flex;
+  flex-direction: column;
+  gap: var(--orot-space-1);
+}
+
+.eyebrow {
+  font-size: var(--orot-font-size-xs);
+  font-weight: var(--orot-font-weight-medium);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--public-accent);
+}
+
+.title {
+  font-size: var(--orot-font-size-xl);
+  letter-spacing: -0.02em;
+  margin: 0 !important;
+  color: var(--orot-color-text);
+}
+
+.subtitle {
+  margin: 0 !important;
+  color: var(--orot-color-text-muted);
+  font-size: var(--orot-font-size-sm);
+}
+
+.headerStats {
+  display: flex;
+  gap: var(--orot-space-4);
+  flex-wrap: wrap;
+}
+
+.statItem {
+  display: flex;
+  flex-direction: column;
+  gap: var(--orot-space-1);
+  padding: var(--orot-space-3) var(--orot-space-4);
+  border: 1px solid var(--public-panel-border);
+  border-radius: var(--orot-radius-md);
+  min-width: 100px;
+  background: var(--orot-color-bg);
+}
+
+.statLabel {
+  font-size: var(--orot-font-size-xs);
+  color: var(--orot-color-text-muted);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.statValue {
+  font-size: var(--orot-font-size-lg);
+  font-weight: var(--orot-font-weight-semibold);
+  color: var(--orot-color-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.toolbar {
+  display: grid;
+  grid-template-columns: minmax(200px, 260px) 1fr auto;
+  gap: var(--orot-space-3);
+  align-items: center;
+  padding: var(--orot-space-4);
+  border: 1px solid var(--public-panel-border);
+  border-radius: var(--orot-radius-lg);
+  background: var(--public-panel-bg);
+}
+
+.toolbarActions {
+  display: flex;
+  gap: var(--orot-space-2);
+  justify-content: flex-end;
+}
+
+.tableCard {
+  padding: var(--orot-space-4);
+  border: 1px solid var(--public-panel-border);
+  border-radius: var(--orot-radius-lg);
+  background: var(--public-panel-bg);
+}
+
+.contentCell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--orot-space-2);
+  min-width: 0;
+}
+
+.contentText {
+  font-size: var(--orot-font-size-sm);
+  color: var(--orot-color-text);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.contentMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--orot-space-2);
+  font-size: var(--orot-font-size-xs);
+  color: var(--orot-color-text-muted);
+  flex-wrap: wrap;
+}
+
+.authorName {
+  font-weight: var(--orot-font-weight-medium);
+  color: var(--orot-color-text);
+}
+
+.authorEmail {
+  color: var(--orot-color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.parentRef {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--orot-space-1);
+  padding: 2px var(--orot-space-2);
+  border-radius: var(--orot-radius-sm);
+  background: var(--orot-color-bg-hover, rgba(0, 0, 0, 0.04));
+  font-size: var(--orot-font-size-xs);
+  color: var(--orot-color-text-muted);
+}
+
+.postCell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--orot-space-1);
+  min-width: 0;
+}
+
+.postLink {
+  font-size: var(--orot-font-size-sm);
+  color: var(--orot-color-text);
+  text-decoration: none;
+  font-weight: var(--orot-font-weight-medium);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.postLink:hover {
+  color: var(--public-accent);
+}
+
+.postMeta {
+  font-size: var(--orot-font-size-xs);
+  color: var(--orot-color-text-muted);
+}
+
+.dateCell {
+  font-size: var(--orot-font-size-xs);
+  color: var(--orot-color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.actions {
+  display: flex;
+  gap: var(--orot-space-1);
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 960px) {
+  .toolbar {
+    grid-template-columns: 1fr 1fr;
+  }
+  .toolbarActions {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 600px) {
+  .toolbar {
+    grid-template-columns: 1fr;
+  }
+  .headerStats {
+    width: 100%;
+  }
+  .statItem {
+    flex: 1;
+  }
+}

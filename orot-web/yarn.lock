@@ -2089,10 +2089,10 @@ optionator@^0.9.3:
     type-check "^0.4.0"
     word-wrap "^1.2.5"
 
-orot-ui@^0.1.5:
-  version "0.1.5"
-  resolved "https://npm.2juho.com/orot-ui/-/orot-ui-0.1.5.tgz#bcfcbf54eaa2c59aa028b8c95be935e8b1004bc6"
-  integrity sha512-eSILs8NhhUhZyXPJfIG5nJrWwSiE6CQomG3YL40pQUzt7bAziWsGK+346ZLZuoI2ogYjwkaZRPclH+2qdSqQMQ==
+orot-ui@^0.1.6:
+  version "0.1.6"
+  resolved "https://npm.2juho.com/orot-ui/-/orot-ui-0.1.6.tgz#53a3ef5b505d5a230a7e276806308ef8370f1789"
+  integrity sha512-+gGeS6x7zz+wWoEfjk0sPdGIbsZBuCxS0ztfi3yMzHreUN5xvC5HLKL90L6NGLt8tWCp7XAtNe98RMHDNw02Tg==
   dependencies:
     lucide-react "^0.511.0"
 

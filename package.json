@@ -6,10 +6,6 @@
   "engines": {
     "node": ">=22.0.0"
   },
-  "workspaces": [
-    "orot-web",
-    "orot-api"
-  ],
   "scripts": {
     "dev:web": "yarn --cwd orot-web dev",
     "dev:api": "yarn --cwd orot-api start:dev",

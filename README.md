@@ -3,6 +3,8 @@
 `orot-web`과 `orot-api`를 루트에서 함께 관리하고 배포하는 모노레포입니다.  
 개발은 각 앱 단위로 진행하고, 빌드와 배포는 루트 스크립트와 Docker Compose를 기준으로 실행합니다.
 
+배포 URL: https://orot.dev
+
 ## 구성
 
 - `orot-web`: Next.js 기반 프론트엔드
@@ -32,6 +34,9 @@ cp .env.example .env
 yarn --cwd orot-api install
 yarn --cwd orot-web install
 ```
+
+각 앱은 독립적인 Yarn 패키지로 관리됩니다.  
+`yarn.lock`은 루트가 아니라 `orot-api/yarn.lock`, `orot-web/yarn.lock`에 각각 생성되고, Docker 빌드도 이 구조를 기준으로 동작합니다.
 
 ## 개발
 
@@ -103,5 +108,6 @@ Compose로 올라가는 서비스:
 
 ## 메모
 
-- 루트 `package.json`이 워크스페이스와 공통 실행 스크립트 진입점 역할을 담당합니다.
+- 루트 `package.json`은 공통 실행 스크립트 진입점 역할을 담당합니다.
+- Docker 이미지는 저장소 루트를 빌드 컨텍스트로 사용합니다.
 - 기존 앱별 Git 히스토리는 `.repo-history/`에 별도로 보관되어 있습니다.

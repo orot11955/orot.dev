@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   Badge,
@@ -22,7 +22,7 @@ import type {
   Series,
   SeriesPostSummary,
 } from '@/types';
-import { formatDate, getErrorMessage } from '@/utils/content';
+import { formatDate, getErrorMessage, resolveAssetUrl } from '@/utils/content';
 import styles from './SeriesManagement.module.css';
 
 type SeriesRow = Omit<Series, never>;
@@ -35,7 +35,6 @@ interface FormState {
   title: string;
   slug: string;
   description: string;
-  coverImage: string;
 }
 
 const MAX_POST_PAGE_SIZE = 100;
@@ -44,7 +43,6 @@ const EMPTY_FORM: FormState = {
   title: '',
   slug: '',
   description: '',
-  coverImage: '',
 };
 
 function toFormState(series: Series): FormState {
@@ -52,7 +50,6 @@ function toFormState(series: Series): FormState {
     title: series.title,
     slug: series.slug,
     description: series.description ?? '',
-    coverImage: series.coverImage ?? '',
   };
 }
 
@@ -106,6 +103,10 @@ export function SeriesManagementPage() {
   const [formState, setFormState] = useState<FormState>(EMPTY_FORM);
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [coverImage, setCoverImage] = useState('');
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [coverPreviewUrl, setCoverPreviewUrl] = useState('');
+  const [coverRemoved, setCoverRemoved] = useState(false);
 
   const [assignTarget, setAssignTarget] = useState<Series | null>(null);
   const [assignPool, setAssignPool] = useState<PostListItem[]>([]);
@@ -114,6 +115,7 @@ export function SeriesManagementPage() {
   const [assignError, setAssignError] = useState<string | null>(null);
   const [assignSearch, setAssignSearch] = useState('');
   const [mutatingId, setMutatingId] = useState<number | null>(null);
+  const coverInputRef = useRef<HTMLInputElement | null>(null);
 
   useNotificationEffect(error, {
     type: 'error',
@@ -137,6 +139,16 @@ export function SeriesManagementPage() {
     load();
   }, [load]);
 
+  useEffect(() => {
+    if (!coverPreviewUrl.startsWith('blob:')) {
+      return;
+    }
+
+    return () => {
+      URL.revokeObjectURL(coverPreviewUrl);
+    };
+  }, [coverPreviewUrl]);
+
   const filtered = useMemo(
     () => filterSeries(seriesList, search),
     [seriesList, search],
@@ -154,21 +166,64 @@ export function SeriesManagementPage() {
   const openCreate = useCallback(() => {
     setEditor({ mode: 'create' });
     setFormState(EMPTY_FORM);
+    setCoverImage('');
+    setCoverFile(null);
+    setCoverPreviewUrl('');
+    setCoverRemoved(false);
     setFormError(null);
   }, []);
 
   const openEdit = useCallback((series: Series) => {
     setEditor({ mode: 'edit', series });
     setFormState(toFormState(series));
+    setCoverImage(series.coverImage ?? '');
+    setCoverFile(null);
+    setCoverPreviewUrl('');
+    setCoverRemoved(false);
     setFormError(null);
   }, []);
 
   const closeEditor = useCallback(() => {
     setEditor(null);
     setFormState(EMPTY_FORM);
+    setCoverImage('');
+    setCoverFile(null);
+    setCoverPreviewUrl('');
+    setCoverRemoved(false);
     setFormError(null);
     setSaving(false);
   }, []);
+
+  const handleCoverFileChange = useCallback((file: File | null) => {
+    if (!file) {
+      return;
+    }
+
+    setFormError(null);
+    setCoverRemoved(false);
+    setCoverFile(file);
+    setCoverPreviewUrl((prev) => {
+      if (prev.startsWith('blob:')) {
+        URL.revokeObjectURL(prev);
+      }
+
+      return URL.createObjectURL(file);
+    });
+  }, []);
+
+  const clearCoverSelection = useCallback(() => {
+    setFormError(null);
+    setCoverFile(null);
+    setCoverPreviewUrl((prev) => {
+      if (prev.startsWith('blob:')) {
+        URL.revokeObjectURL(prev);
+      }
+
+      return '';
+    });
+    setCoverRemoved(Boolean(editor?.mode === 'edit' && (coverImage || editor.series.coverImage)));
+    setCoverImage('');
+  }, [coverImage, editor]);
 
   const submitEditor = useCallback(async () => {
     if (!editor) return;
@@ -184,13 +239,46 @@ export function SeriesManagementPage() {
         title,
         slug: formState.slug.trim() || undefined,
         description: formState.description.trim() || undefined,
-        coverImage: formState.coverImage.trim() || undefined,
       };
+
+      const persistCoverChange = async (id: number) => {
+        if (coverFile) {
+          await studioSeriesService.uploadCoverImage(id, coverFile);
+          return;
+        }
+
+        if (coverRemoved) {
+          await studioSeriesService.removeCoverImage(id);
+        }
+      };
+
       if (editor.mode === 'create') {
-        await studioSeriesService.create(payload);
+        const created = await studioSeriesService.create(payload);
+
+        try {
+          await persistCoverChange(created.id);
+        } catch (err) {
+          closeEditor();
+          await load();
+          setError(
+            `시리즈는 생성되었지만 커버 이미지를 업로드하지 못했습니다. ${getErrorMessage(err)}`,
+          );
+          return;
+        }
       } else {
         await studioSeriesService.update(editor.series.id, payload);
+
+        try {
+          await persistCoverChange(editor.series.id);
+        } catch (err) {
+          await load();
+          setFormError(
+            `시리즈 정보는 저장되었지만 커버 이미지를 반영하지 못했습니다. ${getErrorMessage(err)}`,
+          );
+          return;
+        }
       }
+
       closeEditor();
       await load();
     } catch (err) {
@@ -198,7 +286,14 @@ export function SeriesManagementPage() {
     } finally {
       setSaving(false);
     }
-  }, [editor, formState, closeEditor, load]);
+  }, [
+    editor,
+    formState,
+    coverFile,
+    coverRemoved,
+    closeEditor,
+    load,
+  ]);
 
   const handleDelete = useCallback(
     async (series: Series) => {
@@ -398,6 +493,8 @@ export function SeriesManagementPage() {
     [handleDelete, mutatingId, openAssign, openEdit],
   );
 
+  const coverPreview = coverPreviewUrl || resolveAssetUrl(coverImage);
+
   return (
     <div className={styles.page}>
       <header className={styles.header}>
@@ -493,15 +590,60 @@ export function SeriesManagementPage() {
             <span className={styles.helper}>공개 URL에 사용됩니다. /series/&lt;slug&gt;</span>
           </div>
           <div className={styles.field}>
-            <label className={styles.label} htmlFor="series-cover">커버 이미지 URL</label>
-            <Input
-              id="series-cover"
-              value={formState.coverImage}
-              placeholder="https://..."
-              onChange={(event) =>
-                setFormState((prev) => ({ ...prev, coverImage: event.target.value }))
-              }
+            <span className={styles.label}>커버 이미지</span>
+            <input
+              ref={coverInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              className={styles.hiddenInput}
+              onChange={(event) => {
+                const file = event.target.files?.[0] ?? null;
+                handleCoverFileChange(file);
+                event.currentTarget.value = '';
+              }}
             />
+            <div className={styles.coverCard}>
+              <div className={styles.coverPreview}>
+                {coverPreview ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={coverPreview}
+                    alt="시리즈 커버 미리보기"
+                    className={styles.coverPreviewImage}
+                  />
+                ) : (
+                  <div className={styles.coverPlaceholder}>커버 이미지 없음</div>
+                )}
+              </div>
+              <div className={styles.coverMeta}>
+                <div className={styles.coverActions}>
+                  <Button
+                    size="sm"
+                    variant="outlined"
+                    disabled={saving}
+                    onClick={() => coverInputRef.current?.click()}
+                  >
+                    {coverPreview ? '이미지 교체' : '이미지 선택'}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="text"
+                    disabled={saving || (!coverPreview && !coverFile)}
+                    onClick={clearCoverSelection}
+                  >
+                    이미지 제거
+                  </Button>
+                </div>
+                <span className={styles.helper}>
+                  JPG, PNG, WEBP, GIF 파일을 업로드할 수 있습니다. 저장 버튼을 누르면 반영됩니다.
+                </span>
+                {coverFile && (
+                  <span className={styles.fileMeta}>
+                    {`${coverFile.name} · ${(coverFile.size / 1024 / 1024).toFixed(2)} MB`}
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
           <div className={`${styles.field} ${styles.fieldFull}`}>
             <label className={styles.label} htmlFor="series-desc">설명</label>

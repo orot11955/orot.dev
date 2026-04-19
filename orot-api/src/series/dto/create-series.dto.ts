@@ -23,5 +23,5 @@ export class CreateSeriesDto {
   @IsOptional()
   @IsString()
   @MaxLength(500)
-  coverImage?: string;
+  coverImage?: string | null;
 }

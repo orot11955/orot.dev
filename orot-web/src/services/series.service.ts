@@ -1,4 +1,4 @@
-import { api } from './api';
+import { api, createFormData } from './api';
 import { createAreaRoutes } from './api-routes';
 import type {
   Series,
@@ -38,6 +38,15 @@ export const studioSeriesService = {
 
   async update(id: number, payload: UpdateSeriesPayload): Promise<Series> {
     return api.patch<Series>(seriesRoutes.studio(id), payload);
+  },
+
+  async uploadCoverImage(id: number, file: File): Promise<Series> {
+    const form = createFormData({ image: file });
+    return api.post<Series>(seriesRoutes.studio(id, 'cover-image'), form);
+  },
+
+  async removeCoverImage(id: number): Promise<Series> {
+    return api.delete<Series>(seriesRoutes.studio(id, 'cover-image'));
   },
 
   async assignPosts(id: number, payload: AssignPostsPayload): Promise<Series> {

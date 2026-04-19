@@ -33,13 +33,13 @@ export function PostDetailClientPage({
   const [loading, setLoading] = useState(!initialPost);
   const [error, setError] = useState<string | null>(null);
 
-  const canPreview = user?.role === 'ADMIN';
+  const canPreview = user?.role === 'ADMIN' || user?.role === 'EDITOR';
 
   const loadPreview = useCallback(async () => {
     if (!canPreview) {
       setPost(null);
       setLoading(false);
-      setError('발행되지 않은 글은 관리자 로그인 상태에서만 확인할 수 있습니다.');
+      setError('발행되지 않은 글은 권한이 있는 로그인 상태에서만 확인할 수 있습니다.');
       return;
     }
 

@@ -159,7 +159,7 @@ export interface CreateSeriesPayload {
   title: string;
   slug?: string;
   description?: string;
-  coverImage?: string;
+  coverImage?: string | null;
 }
 
 export type UpdateSeriesPayload = Partial<CreateSeriesPayload>;

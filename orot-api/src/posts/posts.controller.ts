@@ -278,9 +278,9 @@ export class StudioPostsController {
   }
 
   @Get('slug/:slug')
-  @Roles('ADMIN')
+  @Roles('ADMIN', 'EDITOR')
   @ApiOperation({
-    summary: 'Get studio-visible post by slug for admin preview',
+    summary: 'Get studio-visible post by slug for staff preview',
   })
   findBySlug(@Param('slug') slug: string) {
     return this.postsService.findOneForArea(slug, 'studio');

@@ -419,7 +419,7 @@ function Article({ post, cover, published, headings, tags, articleRef }: Article
       <header className={styles.header}>
         {isPreview && (
           <div className={styles.previewNotice}>
-            <span className={styles.previewLabel}>ADMIN PREVIEW</span>
+            <span className={styles.previewLabel}>STAFF PREVIEW</span>
             <span className={styles.previewText}>
               이 글은 현재 {statusLabel} 상태이며 아직 공개되지 않았습니다.
             </span>

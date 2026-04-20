@@ -7,6 +7,17 @@ export const DEFAULT_PUBLIC_NAV: PublicMenuItem[] = [
   { key: 'about', label: 'About', href: '/about', enabled: true },
 ];
 
+export const ASSET_TOKENS = {
+  light: {
+    logo: './full_orot_black.png',
+  },
+  dark: {
+    logo: './full_orot_white.png',
+  },
+} as const;
+
+export type AssetTheme = keyof typeof ASSET_TOKENS;
+
 export function parsePublicMenu(raw?: string | null): PublicMenuItem[] {
   if (!raw) return DEFAULT_PUBLIC_NAV;
   try {

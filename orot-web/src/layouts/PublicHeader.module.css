@@ -38,14 +38,7 @@
 }
 
 .brandMark {
-  color: var(--orot-color-primary);
-  font-size: 10px;
-  line-height: 1;
   transform: translateY(-1px);
-}
-
-.brandName {
-  white-space: nowrap;
 }
 
 .mobileTrigger {
@@ -202,9 +195,11 @@
   .nav {
     display: none;
   }
+
   .inner {
     grid-template-columns: auto 1fr auto;
   }
+
   .mobileTrigger {
     display: inline-flex;
   }
@@ -214,6 +209,7 @@
   .studioBtn {
     display: none;
   }
+
   .searchOpen {
     width: 160px;
   }

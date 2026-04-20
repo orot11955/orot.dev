@@ -14,8 +14,6 @@ CLAUDE.md
 .claudeignore
 
 # Node
-/yarn.lock
-yarn.lock
 node_modules/
 */node_modules/
 /.pnp

@@ -10,11 +10,14 @@ import {
   MenuIcon,
   Search,
   X,
+  Image
 } from 'orot-ui';
 import { ClientOnly } from '@/components/ClientOnly';
 import { ThemeSwitcher } from '@/components/ThemeSwitcher';
+import { ASSET_TOKENS } from '@/layouts/public-nav'
 import type { PublicMenuItem } from '@/types';
 import styles from './PublicHeader.module.css';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface PublicHeaderProps {
   siteName: string;
@@ -26,12 +29,30 @@ function isActive(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
+type Theme = 'light' | 'dark' | string | undefined;
+
+interface Props {
+  theme?: Theme;
+}
+
+export default function LogoImage({ theme }: Props) {
+  const currentTheme = theme === 'dark' ? 'dark' : 'light';
+  return (
+    <img
+      src={ASSET_TOKENS[currentTheme].logo}
+      alt="logo"
+      style={{ height: "50px" }}
+    />
+  );
+}
+
 export function PublicHeader({ siteName, nav }: PublicHeaderProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [searchOpen, setSearchOpen] = useState(false);
   const [keyword, setKeyword] = useState('');
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { theme } = useTheme();
 
   const navigateToStudio = () => {
     window.location.assign('/studio/dashboard');
@@ -41,6 +62,8 @@ export function PublicHeader({ siteName, nav }: PublicHeaderProps) {
     setMobileOpen(false);
     setSearchOpen(false);
   }, [pathname]);
+
+
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -64,8 +87,7 @@ export function PublicHeader({ siteName, nav }: PublicHeaderProps) {
             <MenuIcon size={20} />
           </button>
           <Link href="/" className={styles.brand} aria-label={`${siteName} 홈`}>
-            <span className={styles.brandMark}>●</span>
-            <span className={styles.brandName}>{siteName}</span>
+            <LogoImage theme={theme} />
           </Link>
         </div>
 

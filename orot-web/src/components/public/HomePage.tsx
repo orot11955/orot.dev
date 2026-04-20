@@ -85,8 +85,8 @@ export function HomePage({
               글 보기
             </Button>
             <Button
-              variant="outlined"
               size="md"
+              style={{ background: "#fa4306", border: "1px solid #fa4306" }}
               onClick={() => router.push('/photos')}
             >
               갤러리

@@ -6,34 +6,13 @@ datasource db {
   provider = "mysql"
 }
 
-// ─── Enums ────────────────────────────────────────────────────────────────────
-
-enum Role {
-  ADMIN
-  EDITOR
-  VIEWER
-}
-
-enum PostStatus {
-  DRAFT
-  COMPLETED
-  REVIEW
-  SCHEDULED
-  PUBLISHED
-  UPDATED
-  ARCHIVED
-}
-
-// ─── Models ───────────────────────────────────────────────────────────────────
-
 model User {
-  id        Int      @id @default(autoincrement())
-  username  String   @unique @db.VarChar(50)
-  password  String   @db.VarChar(255)
-  role      Role     @default(VIEWER)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
+  id            Int            @id @default(autoincrement())
+  username      String         @unique @db.VarChar(50)
+  password      String         @db.VarChar(255)
+  role          Role           @default(VIEWER)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
   refreshTokens RefreshToken[]
 
   @@map("users")
@@ -45,8 +24,7 @@ model RefreshToken {
   userId    Int
   expiresAt DateTime
   createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@map("refresh_tokens")
@@ -68,15 +46,12 @@ model Post {
   publishedAt DateTime?
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
-
   seriesId    Int?
-  series      Series?    @relation(fields: [seriesId], references: [id], onDelete: SetNull)
   seriesOrder Int?
-
   categoryId  Int?
-  category    Category?  @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-
   comments    Comment[]
+  category    Category?  @relation(fields: [categoryId], references: [id])
+  series      Series?    @relation(fields: [seriesId], references: [id])
 
   @@index([status])
   @@index([slug])
@@ -93,8 +68,7 @@ model Category {
   sortOrder   Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-
-  posts Post[]
+  posts       Post[]
 
   @@map("categories")
 }
@@ -107,27 +81,24 @@ model Series {
   coverImage  String?  @db.VarChar(500)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-
-  posts Post[]
+  posts       Post[]
 
   @@map("series")
 }
 
 model Comment {
-  id         Int      @id @default(autoincrement())
-  postId     Int
-  parentId   Int?
-  authorName String   @db.VarChar(100)
-  authorEmail String  @db.VarChar(255)
-  content    String   @db.Text
-  isApproved Boolean  @default(false)
-  isFiltered Boolean  @default(false)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  post     Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
-  parent   Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
-  replies  Comment[] @relation("CommentReplies")
+  id          Int           @id @default(autoincrement())
+  postId      Int
+  parentId    Int?
+  authorName  String        @db.VarChar(100)
+  authorEmail String        @db.VarChar(255)
+  content     String        @db.Text
+  status      CommentStatus @default(PENDING)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  parent      Comment?      @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies     Comment[]     @relation("CommentReplies")
+  post        Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@index([postId])
   @@index([parentId])
@@ -135,19 +106,19 @@ model Comment {
 }
 
 model GalleryItem {
-  id          Int      @id @default(autoincrement())
-  title       String?  @db.VarChar(255)
-  description String?  @db.VarChar(500)
-  imageUrl    String   @db.VarChar(500)
-  thumbnailUrl String? @db.VarChar(500)
-  altText     String?  @db.VarChar(255)
-  width       Int?
-  height      Int?
-  takenAt     DateTime?
-  isPublished Boolean  @default(false)
-  sortOrder   Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           Int       @id @default(autoincrement())
+  title        String?   @db.VarChar(255)
+  description  String?   @db.VarChar(500)
+  imageUrl     String    @db.VarChar(500)
+  thumbnailUrl String?   @db.VarChar(500)
+  altText      String?   @db.VarChar(255)
+  width        Int?
+  height       Int?
+  takenAt      DateTime?
+  isPublished  Boolean   @default(false)
+  sortOrder    Int       @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   @@index([isPublished])
   @@map("gallery_items")
@@ -173,4 +144,26 @@ model VisitorStat {
   @@index([path])
   @@index([visitedAt])
   @@map("visitor_stats")
+}
+
+enum Role {
+  ADMIN
+  EDITOR
+  VIEWER
+}
+
+enum PostStatus {
+  DRAFT
+  COMPLETED
+  REVIEW
+  SCHEDULED
+  PUBLISHED
+  UPDATED
+  ARCHIVED
+}
+
+enum CommentStatus {
+  APPROVED
+  PENDING
+  FILTERED
 }

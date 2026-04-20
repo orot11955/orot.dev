@@ -20,15 +20,15 @@ import type { Comment, CommentQuery } from '@/types';
 import { getErrorMessage } from '@/utils/content';
 import styles from './CommentsManagement.module.css';
 
-type StatusValue = 'all' | 'approved' | 'pending' | 'filtered';
+type StatusValue = 'ALL' | 'APPROVED' | 'PENDING' | 'FILTERED';
 
 type CommentRow = { [K in keyof Comment]: Comment[K] };
 
 const STATUS_OPTIONS: Array<{ value: StatusValue; label: string }> = [
-  { value: 'filtered', label: '필터링 대기' },
-  { value: 'approved', label: '공개됨' },
-  { value: 'pending', label: '미승인' },
-  { value: 'all', label: '전체' },
+  { value: 'PENDING', label: '필터링 대기' },
+  { value: 'APPROVED', label: '공개됨' },
+  { value: 'FILTERED', label: '미승인' },
+  { value: 'ALL', label: '전체' },
 ];
 
 const DEFAULT_LIMIT = 10;
@@ -45,20 +45,23 @@ function resolveStatusBadge(comment: Comment): {
   label: string;
   badge: 'success' | 'processing' | 'error' | 'default' | 'warning';
 } {
-  if (comment.isFiltered && !comment.isApproved) {
-    return { label: '필터링', badge: 'warning' };
+  if (comment.status === 'PENDING') {
+    return { label: '필터링 대기', badge: 'warning' as const };
   }
-  if (!comment.isApproved) {
-    return { label: '미승인', badge: 'default' };
+  if (comment.status === 'FILTERED') {
+    return { label: '미승인', badge: 'default' as const };
   }
-  return { label: '공개됨', badge: 'success' };
+  if (comment.status === 'APPROVED') {
+    return { label: '공개됨', badge: 'success' as const };
+  }
+  return { label: '알 수 없음', badge: 'default' as const };
 }
 
 export function CommentsManagementPage() {
   const [comments, setComments] = useState<Comment[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
-  const [status, setStatus] = useState<StatusValue>('filtered');
+  const [status, setStatus] = useState<StatusValue>('PENDING');
   const [pendingSearch, setPendingSearch] = useState('');
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
@@ -82,7 +85,7 @@ export function CommentsManagementPage() {
         page,
         limit: DEFAULT_LIMIT,
       };
-      if (status !== 'all') query.status = status;
+      if (status !== 'ALL') query.status = status;
 
       const result = await studioCommentsService.getAll(query);
       if (token !== reloadTokenRef.current) return;
@@ -90,16 +93,16 @@ export function CommentsManagementPage() {
       const normalizedQuery = search.trim().toLowerCase();
       const filtered = normalizedQuery
         ? result.data.filter((comment) => {
-            const haystack = [
-              comment.content,
-              comment.authorName,
-              comment.authorEmail,
-              comment.post?.title ?? '',
-            ]
-              .join(' ')
-              .toLowerCase();
-            return haystack.includes(normalizedQuery);
-          })
+          const haystack = [
+            comment.content,
+            comment.authorName,
+            comment.authorEmail,
+            comment.post?.title ?? '',
+          ]
+            .join(' ')
+            .toLowerCase();
+          return haystack.includes(normalizedQuery);
+        })
         : result.data;
 
       setComments(filtered);
@@ -115,8 +118,8 @@ export function CommentsManagementPage() {
   const loadStats = useCallback(async () => {
     try {
       const [filteredRes, approvedRes] = await Promise.all([
-        studioCommentsService.getAll({ status: 'filtered', page: 1, limit: 1 }),
-        studioCommentsService.getAll({ status: 'approved', page: 1, limit: 1 }),
+        studioCommentsService.getAll({ status: 'FILTERED', page: 1, limit: 1 }),
+        studioCommentsService.getAll({ status: 'APPROVED', page: 1, limit: 1 }),
       ]);
       setFilteredCount(filteredRes.total);
       setApprovedCount(approvedRes.total);
@@ -235,7 +238,7 @@ export function CommentsManagementPage() {
         width: 200,
         render: (_value, comment) => {
           const busy = mutatingId === comment.id;
-          const canApprove = !comment.isApproved || comment.isFiltered;
+          const canApprove = comment.status !== 'APPROVED'
 
           return (
             <div className={styles.actions}>

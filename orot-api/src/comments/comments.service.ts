@@ -12,8 +12,7 @@ type PublicComment = {
   authorName: string;
   authorEmail: string;
   content: string;
-  isApproved: boolean;
-  isFiltered: boolean;
+  status: 'APPROVED' | 'PENDING' | 'FILTERED';
   createdAt: Date;
   updatedAt: Date;
 };
@@ -21,7 +20,7 @@ type PublicCommentTree = PublicComment & { replies: PublicCommentTree[] };
 
 @Injectable()
 export class CommentsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   private async getFilterKeywords(): Promise<string[]> {
     const setting = await this.prisma.siteSetting.findUnique({
@@ -53,15 +52,12 @@ export class CommentsService {
       }
     }
 
-    // Check against filter keywords
     const keywords = await this.getFilterKeywords();
     const lowerContent = dto.content.toLowerCase();
     const isFiltered = keywords.some((kw) =>
       lowerContent.includes(kw.toLowerCase()),
     );
-
-    // Auto-approve non-filtered comments
-    const isApproved = !isFiltered;
+    const status = isFiltered ? 'PENDING' : 'APPROVED';
 
     return this.prisma.comment.create({
       data: {
@@ -70,8 +66,7 @@ export class CommentsService {
         authorName: dto.authorName,
         authorEmail: dto.authorEmail,
         content: dto.content,
-        isFiltered,
-        isApproved,
+        status,
       },
     });
   }
@@ -83,7 +78,7 @@ export class CommentsService {
       throw new NotFoundException('Post not found');
 
     const comments = await this.prisma.comment.findMany({
-      where: { postId, isApproved: true },
+      where: { postId, status: 'APPROVED' },
       orderBy: { createdAt: 'asc' },
     });
 
@@ -91,17 +86,15 @@ export class CommentsService {
   }
 
   async findAll(query: QueryCommentDto) {
-    const { page = 1, limit = 20, postId, isApproved, isFiltered } = query;
+    const { page = 1, limit = 20, postId, status } = query;
     const skip = (page - 1) * limit;
 
     const where: {
       postId?: number;
-      isApproved?: boolean;
-      isFiltered?: boolean;
+      status?: 'APPROVED' | 'PENDING' | 'FILTERED';
     } = {};
     if (postId !== undefined) where.postId = postId;
-    if (isApproved !== undefined) where.isApproved = isApproved;
-    if (isFiltered !== undefined) where.isFiltered = isFiltered;
+    if (status !== undefined) where.status = status;
 
     const [total, items] = await Promise.all([
       this.prisma.comment.count({ where }),
@@ -134,7 +127,7 @@ export class CommentsService {
 
     return this.prisma.comment.update({
       where: { id },
-      data: { isApproved: true, isFiltered: false },
+      data: { status: 'APPROVED' },
     });
   }
 

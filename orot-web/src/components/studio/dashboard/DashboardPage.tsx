@@ -63,8 +63,9 @@ export function DashboardPage() {
           studioAnalyticsService.getStats(),
           studioPostsService.getAll({ status: 'REVIEW', limit: 5, sort: 'latest' }),
           studioPostsService.getAll({ status: 'SCHEDULED', limit: 5, sort: 'latest' }),
-          studioCommentsService.getAll({ status: 'pending', limit: 5 }),
+          studioCommentsService.getAll({ status: 'PENDING', limit: 5 }),
         ]);
+
 
         if (!active) return;
 
@@ -75,6 +76,7 @@ export function DashboardPage() {
           pendingComments: pending.data,
           pendingTotal: pending.total,
         });
+
       } catch (err) {
         if (!active) return;
         setError(getErrorMessage(err));
@@ -128,20 +130,23 @@ export function DashboardPage() {
           </Typography.Paragraph>
         </div>
         <div className={styles.pageBadges}>
-          <Badge
-            count={reviewCount}
-            showZero
-            color={reviewCount > 0 ? 'var(--public-accent)' : undefined}
-          >
-            <span className={styles.pageBadgeLabel}>검토 대기 글</span>
-          </Badge>
-          <Badge
-            count={pendingTotal}
-            showZero
-            color={pendingTotal > 0 ? 'var(--orot-color-warning)' : undefined}
-          >
-            <span className={styles.pageBadgeLabel}>승인 대기 댓글</span>
-          </Badge>
+          {reviewCount > 0 ?
+            (
+              <Badge
+                count={reviewCount}
+              >
+                <span className={styles.pageBadgeLabel}>검토 대기 글</span>
+              </Badge>
+            ) : (<span className={styles.pageBadgeLabel}></span>)}
+          {pendingTotal > 0 ?
+            (
+              <Badge
+                count={pendingTotal}
+              >
+                <span className={styles.pageBadgeLabel}>승인 대기 댓글</span>
+              </Badge>
+            )
+            : (<span className={styles.pageBadgeLabel}></span>)}
         </div>
       </header>
 

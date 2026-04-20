@@ -12,19 +12,7 @@ const commentRoutes = createAreaRoutes('comments');
 
 function toCommentParams(query: CommentQuery) {
   const { status, ...rest } = query;
-
-  if (status === 'approved') {
-    return { ...rest, isApproved: true };
-  }
-
-  if (status === 'pending') {
-    return { ...rest, isApproved: false, isFiltered: false };
-  }
-
-  if (status === 'filtered') {
-    return { ...rest, isFiltered: true };
-  }
-
+  if (status) return { ...rest, status };
   return rest;
 }
 

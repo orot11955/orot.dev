@@ -201,8 +201,7 @@ export interface Comment {
   authorName: string;
   authorEmail: string;
   content: string;
-  isApproved: boolean;
-  isFiltered: boolean;
+  status: 'APPROVED' | 'PENDING' | 'FILTERED';
   createdAt: string;
   updatedAt: string;
   replies?: Comment[];
@@ -227,7 +226,7 @@ export interface CreateCommentPayload {
 export interface CommentQuery {
   page?: number;
   limit?: number;
-  status?: 'approved' | 'pending' | 'filtered';
+  status?: 'APPROVED' | 'PENDING' | 'FILTERED';
   postId?: number;
 }
 

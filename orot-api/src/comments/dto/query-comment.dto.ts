@@ -1,12 +1,7 @@
-import { IsOptional, IsInt, IsBoolean, Min } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
-import { Type, Transform } from 'class-transformer';
-
-function transformBoolean({ value }: { value: unknown }) {
-  if (value === 'true' || value === true) return true;
-  if (value === 'false' || value === false) return false;
-  return value;
-}
+import { IsOptional, IsInt, Min, IsEnum } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+import { CommentStatus } from '@prisma/client';
 
 export class QueryCommentDto {
   @ApiProperty({ required: false })
@@ -15,17 +10,10 @@ export class QueryCommentDto {
   @IsInt()
   postId?: number;
 
-  @ApiProperty({ required: false })
+  @ApiPropertyOptional({ enum: CommentStatus })
   @IsOptional()
-  @Transform(transformBoolean)
-  @IsBoolean()
-  isApproved?: boolean;
-
-  @ApiProperty({ required: false })
-  @IsOptional()
-  @Transform(transformBoolean)
-  @IsBoolean()
-  isFiltered?: boolean;
+  @IsEnum(CommentStatus)
+  status?: CommentStatus;
 
   @ApiProperty({ required: false, default: 1 })
   @IsOptional()

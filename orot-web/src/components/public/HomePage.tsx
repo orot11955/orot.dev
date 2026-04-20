@@ -51,11 +51,13 @@ export function HomePage({
   const heroAlt = configuredHeroUrl
     ? `${siteName} 메인 이미지`
     : heroPhoto?.altText || `${siteName} 대표 이미지`;
+  const heroY = settings?.home_hero_image_position_y || '50%';
 
   const ongoingSeries = series.slice(0, 4);
   const topTags = tags.slice(0, 18);
   const external = parseSocialLinks(settings?.social_links);
 
+  console.log(settings?.home_hero_image_position_y);
   return (
     <div className={styles.page}>
       {/* ─── Hero ─── */}
@@ -69,6 +71,7 @@ export function HomePage({
               priority
               unoptimized
               sizes="100vw"
+              objectPosition={`0 ${heroY}`}
               className={styles.heroImage}
             />
           ) : (

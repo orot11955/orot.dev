@@ -64,9 +64,7 @@
   min-height: inherit;
   margin: 0 auto;
   padding:
-    var(--public-section-gap)
-    var(--public-shell-padding)
-    var(--orot-space-12);
+    var(--public-section-gap) var(--public-shell-padding) var(--orot-space-12);
   color: #fff;
 }
 
@@ -420,6 +418,7 @@
   .heroContent {
     padding-bottom: var(--orot-space-8);
   }
+
   .heroTitle {
     font-size: clamp(2rem, 9vw, 3rem);
   }

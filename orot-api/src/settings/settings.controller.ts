@@ -68,7 +68,7 @@ const settingsAssetMulterOptions = {
 @ApiTags('Public / Settings')
 @Controller('public/settings')
 export class PublicSettingsController {
-  constructor(private readonly settingsService: SettingsService) {}
+  constructor(private readonly settingsService: SettingsService) { }
 
   @Get()
   @ApiOperation({ summary: 'Get public site settings (non-sensitive)' })
@@ -81,6 +81,7 @@ export class PublicSettingsController {
       site_og_image: all['site_og_image'],
       site_logo: all['site_logo'],
       home_hero_image: all['home_hero_image'],
+      home_hero_image_position_y: all['home_hero_image_position_y'],
       about_content: all['about_content'],
       about_stack: all['about_stack'],
       about_resume: all['about_resume'],
@@ -105,7 +106,7 @@ export class PublicSettingsController {
 @Roles('ADMIN')
 @Controller('studio/settings')
 export class StudioSettingsController {
-  constructor(private readonly settingsService: SettingsService) {}
+  constructor(private readonly settingsService: SettingsService) { }
 
   @Get()
   @ApiOperation({ summary: 'Get all settings' })

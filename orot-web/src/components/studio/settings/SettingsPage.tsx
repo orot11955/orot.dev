@@ -1,10 +1,12 @@
 'use client';
 
+import Image from 'next/image';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Button,
   Empty,
+  Flex,
   Input,
   Popconfirm,
   Select,
@@ -232,6 +234,9 @@ function SiteInfoSection({ settings, onSave }: SectionProps) {
   const [heroLoading, setHeroLoading] = useState(true);
   const [heroLoadError, setHeroLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [homeHeroImagePositionY, setHomeHeroImagePositionY] = useState(
+    settings.home_hero_image_position_y ?? '50%',
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -269,6 +274,7 @@ function SiteInfoSection({ settings, onSave }: SectionProps) {
         site_logo: siteLogo.trim(),
         site_og_image: siteOgImage.trim(),
         home_hero_image: homeHeroImage.trim(),
+        home_hero_image_position_y: homeHeroImagePositionY,
       });
     } catch {
       // handled upstream
@@ -390,6 +396,8 @@ function SiteInfoSection({ settings, onSave }: SectionProps) {
         <MediaPreviewCard
           label="메인 화면 미리보기"
           imageUrl={homeHeroImage}
+          imagePositionY={homeHeroImagePositionY}
+          onChangeImagePositionY={setHomeHeroImagePositionY}
           placeholder="자동 선택 사용 시 공개 사진 또는 OG 이미지가 대신 사용됩니다."
         />
       </div>
@@ -613,32 +621,60 @@ function MediaPreviewCard({
   imageUrl,
   placeholder,
   variant = 'wide',
+  imagePositionY = '50%',
+  onChangeImagePositionY,
 }: {
   label: string;
   imageUrl?: string;
   placeholder: string;
   variant?: 'wide' | 'circle';
+  imagePositionY?: string;
+  onChangeImagePositionY?: (value: string) => void;
 }) {
   const previewUrl = resolveAssetUrl(imageUrl?.trim());
   const mediaClassName =
     variant === 'circle'
       ? `${styles.previewMedia} ${styles.previewMediaCircle}`
       : styles.previewMedia;
+  const sliderValue = Number.parseInt(imagePositionY ?? '50', 10);
 
   return (
     <div className={styles.previewCard}>
       <div className={styles.previewMeta}>
-        <span className={styles.previewLabel}>{label}</span>
-        <span className={styles.fieldHelp}>
-          {previewUrl ? '현재 입력된 이미지 기준 미리보기입니다.' : placeholder}
-        </span>
+        <Flex justify='space-between'>
+          <Flex vertical gap="sm">
+            <span className={styles.previewLabel}>{label}</span>
+            <span className={styles.fieldHelp}>
+              {previewUrl ? '현재 입력된 이미지 기준 미리보기입니다.' : placeholder}
+            </span>
+          </Flex>
+          <label className={`${styles.field} ${styles.fieldWide}`}>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              step="1"
+              value={Number.isNaN(sliderValue) ? 50 : sliderValue}
+              onChange={(e) => onChangeImagePositionY?.(`${e.target.value}%`)}
+            />
+            <span className={styles.fieldHelp}>
+              현재 위치: {imagePositionY}
+            </span>
+          </label>
+        </Flex>
       </div>
       {previewUrl ? (
         <div
           className={mediaClassName}
           role="img"
           aria-label={label}
-          style={{ backgroundImage: `url("${previewUrl}")` }}
+          style={{
+            backgroundImage: `url("${previewUrl}")`,
+            backgroundPosition: `center ${imagePositionY}`,
+            backgroundSize: 'cover',
+            backgroundRepeat: 'no-repeat',
+            height: '330px'
+          }}
         />
       ) : (
         <div className={`${mediaClassName} ${styles.previewPlaceholder}`}>

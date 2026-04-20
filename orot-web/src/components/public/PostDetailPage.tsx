@@ -397,8 +397,14 @@ function Article({ post, cover, published, headings, tags, articleRef }: Article
         heading.removeAttribute('tabindex');
       });
 
-    headings.forEach(({ id, lineIndex }) => {
-      const heading = editorRoot.querySelector<HTMLElement>(`[data-line="${lineIndex}"]`);
+    const headingElements = Array.from(
+      editorRoot.querySelectorAll<HTMLElement>(
+        '.orot-md-line.orot-md-h1, .orot-md-line.orot-md-h2, .orot-md-line.orot-md-h3, .orot-md-line.orot-md-h4, .orot-md-line.orot-md-h5, .orot-md-line.orot-md-h6',
+      ),
+    );
+
+    headings.forEach(({ id }, index) => {
+      const heading = headingElements[index];
 
       if (!heading) {
         return;
@@ -408,7 +414,7 @@ function Article({ post, cover, published, headings, tags, articleRef }: Article
       heading.dataset.headingId = id;
       heading.tabIndex = -1;
     });
-  }, [headings]);
+  }, [headings, post.content]);
 
   return (
     <article className={styles.article} ref={articleRef}>

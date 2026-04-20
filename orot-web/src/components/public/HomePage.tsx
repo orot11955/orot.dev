@@ -57,7 +57,6 @@ export function HomePage({
   const topTags = tags.slice(0, 18);
   const external = parseSocialLinks(settings?.social_links);
 
-  console.log(settings?.home_hero_image_position_y);
   return (
     <div className={styles.page}>
       {/* ─── Hero ─── */}

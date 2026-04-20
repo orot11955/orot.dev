@@ -331,7 +331,7 @@ export function DashboardPage() {
                     <span className={styles.commentAuthor}>
                       {comment.authorName}
                     </span>
-                    {comment.isFiltered && (
+                    {comment.status === 'PENDING' && (
                       <Badge status="error" text="필터링" />
                     )}
                     <span className={styles.commentDate}>

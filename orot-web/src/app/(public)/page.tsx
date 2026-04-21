@@ -1,18 +1,24 @@
 import type { Metadata } from 'next';
 import { serverGet, toPaginatedResponse } from '@/utils/server-api';
+import { createPublicMetadata } from '@/utils/metadata';
+import { getPublicSettings } from '@/utils/public-settings';
 import { HomePage } from '@/components/public/home/HomePage';
 import type {
   ApiListPayload,
   GalleryItem,
   PostListItem,
-  PublicSettings,
   Series,
 } from '@/types';
 
-export const metadata: Metadata = {
-  title: 'orot.dev',
-  description: '개발, 사진, 그리고 기록',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getPublicSettings();
+
+  return createPublicMetadata({
+    path: '/',
+    settings,
+    keywords: ['개발', '사진', '기록', '블로그'],
+  });
+}
 
 export default async function HomeRoute() {
   const liveOptions = { cache: 'no-store' as const, revalidate: false as const };
@@ -28,7 +34,7 @@ export default async function HomeRoute() {
         { limit: 8 },
         liveOptions,
       ),
-      serverGet<PublicSettings>('/public/settings', undefined, liveOptions),
+      getPublicSettings(),
       serverGet<Series[]>('/public/series', undefined, liveOptions),
       serverGet<string[]>('/public/posts/tags', undefined, liveOptions),
     ]);

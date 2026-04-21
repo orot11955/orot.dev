@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { PhotosPage } from '@/components/public/photos/PhotosPage';
+import { createPublicMetadata } from '@/utils/metadata';
+import { getPublicSettings } from '@/utils/public-settings';
 import { serverGet, toPaginatedResponse } from '@/utils/server-api';
 import type {
   ApiListPayload,
@@ -9,10 +11,17 @@ import type {
   GallerySort,
 } from '@/types';
 
-export const metadata: Metadata = {
-  title: '사진 | orot.dev',
-  description: '빛과 거리감이 남는 장면들을 모아 둔 퍼블릭 사진 갤러리',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getPublicSettings();
+
+  return createPublicMetadata({
+    title: '사진',
+    description: '빛과 거리감이 남는 장면들을 모아 둔 퍼블릭 사진 갤러리',
+    path: '/photos',
+    settings,
+    keywords: ['사진', '갤러리', '포트폴리오'],
+  });
+}
 
 const PAGE_SIZE = 24;
 const GALLERY_SORTS: GallerySort[] = [

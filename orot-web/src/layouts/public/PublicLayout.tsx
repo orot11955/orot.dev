@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
-import { serverGet } from '@/utils/server-api';
-import type { PublicSettings } from '@/types';
+import { getPublicSettings } from '@/utils/public-settings';
 import { PublicBackTopButton } from './PublicBackTopButton';
 import { PublicHeader } from './PublicHeader';
 import { PublicFooter } from './PublicFooter';
@@ -13,10 +12,7 @@ import {
 import styles from './PublicLayout.module.css';
 
 export async function PublicLayout({ children }: { children: ReactNode }) {
-  const settings = await serverGet<PublicSettings>('/public/settings', undefined, {
-    cache: 'no-store',
-    revalidate: false,
-  });
+  const settings = await getPublicSettings();
 
   const menu = parsePublicMenu(settings?.public_menu).filter(
     (item) => item.enabled !== false,

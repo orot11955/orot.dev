@@ -1,0 +1,177 @@
+import type { Metadata } from 'next';
+import type { PublicSettings } from '@/types';
+import { resolveAssetUrl } from './content';
+
+const DEFAULT_SITE_NAME = 'orot.dev';
+const DEFAULT_SITE_DESCRIPTION = '개발, 사진, 그리고 기록';
+const DEFAULT_OG_IMAGE = '/full_orot_black.png';
+
+interface PublicMetadataOptions {
+  title?: string;
+  description?: string;
+  path?: string;
+  settings?: PublicSettings | null;
+  keywords?: string[];
+  image?: string | null;
+  type?: 'website' | 'article';
+  publishedTime?: string;
+  modifiedTime?: string;
+  tags?: string[];
+}
+
+interface RestrictedMetadataOptions {
+  section: string;
+  title?: string;
+  description?: string;
+}
+
+function normalizeText(value?: string | null): string | undefined {
+  const normalized = value?.trim();
+  return normalized ? normalized : undefined;
+}
+
+function normalizeList(values?: string[]): string[] | undefined {
+  const normalized = values
+    ?.map((value) => value.trim())
+    .filter(Boolean);
+
+  return normalized && normalized.length > 0 ? normalized : undefined;
+}
+
+function resolveRobots(settings?: PublicSettings | null): Metadata['robots'] | undefined {
+  const raw = normalizeText(settings?.seo_robots)?.toLowerCase();
+  if (!raw) {
+    return undefined;
+  }
+
+  const directives = new Set(
+    raw
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean),
+  );
+
+  const index = !directives.has('noindex');
+  const follow = !directives.has('nofollow');
+
+  return {
+    index,
+    follow,
+    googleBot: {
+      index,
+      follow,
+    },
+  };
+}
+
+function resolveMetadataImage(
+  settings?: PublicSettings | null,
+  image?: string | null,
+): string | undefined {
+  const candidate = normalizeText(image);
+  if (candidate) {
+    return resolveAssetUrl(candidate) || candidate;
+  }
+
+  const configured = normalizeText(settings?.site_og_image);
+  if (configured) {
+    return resolveAssetUrl(configured) || configured;
+  }
+
+  return DEFAULT_OG_IMAGE;
+}
+
+export function resolveSiteName(settings?: PublicSettings | null): string {
+  return normalizeText(settings?.site_name) ?? DEFAULT_SITE_NAME;
+}
+
+export function resolveSiteDescription(settings?: PublicSettings | null): string {
+  return normalizeText(settings?.site_description) ?? DEFAULT_SITE_DESCRIPTION;
+}
+
+export function createPublicMetadata({
+  title,
+  description,
+  path,
+  settings,
+  keywords,
+  image,
+  type = 'website',
+  publishedTime,
+  modifiedTime,
+  tags,
+}: PublicMetadataOptions): Metadata {
+  const siteName = resolveSiteName(settings);
+  const pageTitle = normalizeText(title);
+  const pageDescription = normalizeText(description) ?? resolveSiteDescription(settings);
+  const imageUrl = resolveMetadataImage(settings, image);
+  const metadataTitle = pageTitle ? `${pageTitle} | ${siteName}` : siteName;
+  const socialTitle = pageTitle ?? siteName;
+  const normalizedKeywords = normalizeList(keywords);
+  const normalizedTags = normalizeList(tags);
+
+  const baseMetadata: Metadata = {
+    title: metadataTitle,
+    description: pageDescription,
+    keywords: normalizedKeywords,
+    alternates: path ? { canonical: path } : undefined,
+    robots: resolveRobots(settings),
+    twitter: {
+      card: imageUrl ? 'summary_large_image' : 'summary',
+      title: socialTitle,
+      description: pageDescription,
+      images: imageUrl ? [imageUrl] : undefined,
+    },
+  };
+
+  if (type === 'article') {
+    return {
+      ...baseMetadata,
+      openGraph: {
+        type: 'article',
+        siteName,
+        title: socialTitle,
+        description: pageDescription,
+        url: path,
+        publishedTime,
+        modifiedTime,
+        tags: normalizedTags,
+        images: imageUrl ? [{ url: imageUrl, alt: socialTitle }] : undefined,
+      },
+    };
+  }
+
+  return {
+    ...baseMetadata,
+    openGraph: {
+      type: 'website',
+      siteName,
+      title: socialTitle,
+      description: pageDescription,
+      url: path,
+      images: imageUrl ? [{ url: imageUrl, alt: socialTitle }] : undefined,
+    },
+  };
+}
+
+export function createRestrictedMetadata({
+  section,
+  title,
+  description,
+}: RestrictedMetadataOptions): Metadata {
+  const pageTitle = normalizeText(title);
+  const suffix = `${section} | orot.dev`;
+
+  return {
+    title: pageTitle ? `${pageTitle} | ${suffix}` : suffix,
+    description: normalizeText(description),
+    robots: {
+      index: false,
+      follow: false,
+      googleBot: {
+        index: false,
+        follow: false,
+      },
+    },
+  };
+}

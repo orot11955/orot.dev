@@ -1,9 +1,12 @@
 import type { Metadata } from 'next';
+import { cache } from 'react';
 import { PostDetailClientPage } from '@/components/public/posts/PostDetailClientPage';
 import { serverGet } from '@/utils/server-api';
-import { resolveAssetUrl, splitTags } from '@/utils/content';
+import { splitTags } from '@/utils/content';
+import { createPublicMetadata } from '@/utils/metadata';
+import { getPublicSettings } from '@/utils/public-settings';
 import { normalizeSlugParam } from '@/utils/slug';
-import type { PostDetail, PublicSettings } from '@/types';
+import type { PostDetail } from '@/types';
 
 interface PostDetailRouteProps {
   params: Promise<{
@@ -11,75 +14,58 @@ interface PostDetailRouteProps {
   }>;
 }
 
+const getPublicPostDetail = cache(async (slug: string): Promise<PostDetail | null> =>
+  serverGet<PostDetail>(`/public/posts/${slug}`, undefined, {
+    cache: 'no-store',
+    revalidate: false,
+  }),
+);
+
 export async function generateMetadata(
   { params }: PostDetailRouteProps,
 ): Promise<Metadata> {
   const { slug: rawSlug } = await params;
   const slug = normalizeSlugParam(rawSlug);
   const [post, settings] = await Promise.all([
-    serverGet<PostDetail>(`/public/posts/${slug}`, undefined, {
-      cache: 'no-store',
-      revalidate: false,
-    }),
-    serverGet<PublicSettings>('/public/settings', undefined, {
-      cache: 'no-store',
-      revalidate: false,
-    }),
+    getPublicPostDetail(slug),
+    getPublicSettings(),
   ]);
 
   if (!post) {
-    return { title: '글을 찾을 수 없음 | orot.dev' };
+    return createPublicMetadata({
+      title: '글을 찾을 수 없음',
+      description: '요청한 글을 찾을 수 없습니다.',
+      settings,
+    });
   }
 
-  const siteName = settings?.site_name || 'orot.dev';
   const title = post.metaTitle?.trim() || post.title;
   const description =
     post.metaDesc?.trim() ||
     post.excerpt?.trim() ||
-    settings?.site_description ||
-    '';
-  const imageUrl =
-    resolveAssetUrl(post.coverImage) ||
-    resolveAssetUrl(settings?.site_og_image) ||
     undefined;
   const tags = splitTags(post.tags);
   const publishedTime = post.publishedAt ?? post.createdAt;
   const modifiedTime = post.updatedAt;
 
-  return {
-    title: `${title} | ${siteName}`,
+  return createPublicMetadata({
+    title,
     description,
-    keywords: tags.length > 0 ? tags : undefined,
-    alternates: {
-      canonical: `/posts/${post.slug}`,
-    },
-    openGraph: {
-      type: 'article',
-      title,
-      description,
-      url: `/posts/${post.slug}`,
-      siteName,
-      publishedTime,
-      modifiedTime,
-      tags: tags.length > 0 ? tags : undefined,
-      images: imageUrl ? [{ url: imageUrl, alt: title }] : undefined,
-    },
-    twitter: {
-      card: imageUrl ? 'summary_large_image' : 'summary',
-      title,
-      description,
-      images: imageUrl ? [imageUrl] : undefined,
-    },
-  };
+    path: `/posts/${post.slug}`,
+    settings,
+    keywords: tags,
+    image: post.coverImage,
+    type: 'article',
+    publishedTime,
+    modifiedTime,
+    tags,
+  });
 }
 
 export default async function PostDetailRoute({ params }: PostDetailRouteProps) {
   const { slug: rawSlug } = await params;
   const slug = normalizeSlugParam(rawSlug);
-  const post = await serverGet<PostDetail>(`/public/posts/${slug}`, undefined, {
-    cache: 'no-store',
-    revalidate: false,
-  });
+  const post = await getPublicPostDetail(slug);
 
   return <PostDetailClientPage slug={slug} initialPost={post} />;
 }

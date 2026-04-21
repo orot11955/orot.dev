@@ -89,11 +89,9 @@ CREATE TABLE `comments` (
     `authorName` VARCHAR(100) NOT NULL,
     `authorEmail` VARCHAR(255) NOT NULL,
     `content` TEXT NOT NULL,
-    `isApproved` BOOLEAN NOT NULL DEFAULT false,
-    `isFiltered` BOOLEAN NOT NULL DEFAULT false,
+    `status` ENUM('APPROVED', 'PENDING', 'FILTERED') NOT NULL DEFAULT 'PENDING',
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
-    `status` ENUM('APPROVED', 'PENDING', 'FILTERED') NOT NULL DEFAULT 'APPROVED',
 
     INDEX `comments_postId_idx`(`postId`),
     INDEX `comments_parentId_idx`(`parentId`),

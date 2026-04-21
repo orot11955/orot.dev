@@ -78,6 +78,7 @@ yarn docker:up
 - 이미지 재빌드(`docker compose build --pull`)
 - DB 기동 및 health check 대기
 - Prisma migration 적용(`prisma migrate deploy`)
+- 기존 `db push` 기반 운영 DB라 `_prisma_migrations`가 없으면, 현재 DB가 `schema.prisma`와 일치할 때에만 1회 baseline 자동 처리
 - 선택형 seed 실행(`DB_SEED_ON_DEPLOY=true`일 때만)
 - API/Web/Nginx 기동 후 health check 대기
 
@@ -113,6 +114,7 @@ Compose로 올라가는 서비스:
 - `SITE_URL`, `WEB_ORIGIN`, `HTTP_PORT`: 대표 도메인, API CORS origin, 외부 노출 포트
 - `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`, `MARIADB_ROOT_PASSWORD`: MariaDB 및 API 연결 정보
 - `DB_SEED_ON_DEPLOY`: 배포 시 `prisma db seed` 실행 여부
+- `DB_AUTO_BASELINE_LEGACY`: 기존 Prisma 이력 없는 운영 DB를 첫 배포 때 자동 baseline 할지 여부
 - `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`: 인증 토큰 시크릿
 - `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_SITE_URL`: Next.js 클라이언트에 노출되는 공개 URL
 - `HTTP_LOGGING`, `LOG_LEVEL`, `WEB_LOG_LEVEL`, `LOG_PRETTY`, `SLOW_QUERY_MS`: API/Web 서버 로그 제어
@@ -128,5 +130,6 @@ Compose로 올라가는 서비스:
 - 루트 `package.json`은 공통 실행 스크립트 진입점 역할을 담당합니다.
 - Docker 이미지는 저장소 루트를 빌드 컨텍스트로 사용합니다.
 - API 컨테이너는 더 이상 기동 시점에 `prisma db push`를 수행하지 않습니다.
+- 기존 운영 DB가 `db push` 시절에 만들어졌다면, 첫 `docker:up` 시 baseline 자동화가 한 번 동작할 수 있습니다.
 - DB 변경이 있을 때는 `orot-api/prisma/schema.prisma`와 함께 migration 파일도 커밋해야 배포에 반영됩니다.
 - 기존 앱별 Git 히스토리는 `.repo-history/`에 별도로 보관되어 있습니다.

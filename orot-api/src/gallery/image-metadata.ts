@@ -207,18 +207,25 @@ export function extractTakenAtFromExif(
   exif?: Buffer | Uint8Array | null,
 ): Date | undefined {
   if (!exif || exif.byteLength === 0) {
+    console.log('[exif] empty input');
     return undefined;
   }
 
-  const bytes: Uint8Array = exif;
+  const bytes =
+    exif instanceof Uint8Array ? exif : new Uint8Array(exif);
+
   const tiffStart = matchesHeader(bytes, 0, EXIF_HEADER) ? 6 : 0;
+  console.log('[exif] byteLength=', bytes.byteLength, 'tiffStart=', tiffStart);
 
   if (bytes.byteLength < tiffStart + 8) {
+    console.log('[exif] too short');
     return undefined;
   }
 
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   const byteOrderMarker = readUint16(view, tiffStart, false);
+
+  console.log('[exif] byteOrderMarker=', byteOrderMarker);
 
   if (byteOrderMarker === undefined) {
     return undefined;
@@ -231,16 +238,22 @@ export function extractTakenAtFromExif(
         ? false
         : undefined;
 
+  console.log('[exif] littleEndian=', littleEndian);
+
   if (littleEndian === undefined) {
     return undefined;
   }
 
   const magic = readUint16(view, tiffStart + 2, littleEndian);
+  console.log('[exif] magic=', magic);
+
   if (magic !== TIFF_MAGIC) {
     return undefined;
   }
 
   const ifd0Offset = readUint32(view, tiffStart + 4, littleEndian);
+  console.log('[exif] ifd0Offset=', ifd0Offset);
+
   if (ifd0Offset === undefined) {
     return undefined;
   }
@@ -253,16 +266,18 @@ export function extractTakenAtFromExif(
     EXIF_POINTER_TAG,
   );
 
+  console.log('[exif] exifIfdOffset=', exifIfdOffset);
+
   const rawTakenAt =
     (exifIfdOffset !== undefined
       ? readAsciiTagFromIfd(
-          bytes,
-          view,
-          tiffStart,
-          exifIfdOffset,
-          littleEndian,
-          [EXIF_DATE_TIME_ORIGINAL_TAG, EXIF_DATE_TIME_DIGITIZED_TAG],
-        )
+        bytes,
+        view,
+        tiffStart,
+        exifIfdOffset,
+        littleEndian,
+        [EXIF_DATE_TIME_ORIGINAL_TAG, EXIF_DATE_TIME_DIGITIZED_TAG],
+      )
       : undefined) ??
     readAsciiTagFromIfd(
       bytes,
@@ -272,6 +287,8 @@ export function extractTakenAtFromExif(
       littleEndian,
       [IFD0_DATE_TIME_TAG],
     );
+
+  console.log('[exif] rawTakenAt=', rawTakenAt);
 
   return parseExifDateString(rawTakenAt);
 }

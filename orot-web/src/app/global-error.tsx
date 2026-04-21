@@ -26,9 +26,13 @@ export default function GlobalErrorPage({
       <body style={{ background: 'var(--orot-color-bg, var(--background))' }}>
         <ThemeProvider>
           <PageErrorState
-            title="앱을 표시하는 중 오류가 발생했습니다."
+            status="App Error"
+            eyebrow="Global Recovery"
+            title="앱을 표시하는 중 문제가 발생했습니다."
+            description="화면을 구성하는 중 예상치 못한 오류가 발생했습니다. 잠시 후 다시 시도해주세요."
             error={error}
             onRetry={reset}
+            retryLabel="앱 다시 시도"
           />
         </ThemeProvider>
       </body>

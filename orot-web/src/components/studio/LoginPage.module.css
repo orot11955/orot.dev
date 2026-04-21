@@ -89,6 +89,10 @@
   font-size: var(--orot-font-size-sm);
 }
 
+.submit {
+  margin-top: var(--orot-space-6);
+}
+
 .page :global(.orot-input-affix) {
   background: var(--orot-color-bg);
 }

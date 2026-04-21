@@ -104,16 +104,18 @@ export function LoginPage() {
             </div>
           )}
 
-          <Button
-            htmlType="submit"
-            variant="solid"
-            size="lg"
-            block
-            loading={submitting}
-            icon={<LogIn size={14} />}
-          >
-            로그인
-          </Button>
+          <div className={styles.submit}>
+            <Button
+              htmlType="submit"
+              variant="solid"
+              size="lg"
+              block
+              loading={submitting}
+              icon={<LogIn size={14} />}
+            >
+              로그인
+            </Button>
+          </div>
         </form>
       </div>
     </div>

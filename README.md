@@ -54,10 +54,14 @@ yarn build
 yarn build:api
 yarn build:web
 yarn lint
+yarn db:migrate:deploy
 yarn db:generate
 yarn db:push
 yarn db:seed
 ```
+
+`yarn db:push`는 로컬에서 빠르게 스키마를 맞춰보는 용도로만 두고, 배포 경로에서는 사용하지 않습니다.  
+운영/배포 기준 DB 반영은 항상 Prisma migration 파일을 커밋한 뒤 `prisma migrate deploy`로 진행합니다.
 
 ## 배포
 
@@ -65,15 +69,27 @@ yarn db:seed
 
 ```bash
 yarn docker:check
-yarn docker:build
 yarn docker:up
 ```
+
+`yarn docker:up`과 `yarn docker:deploy`는 같은 동작을 하며, 아래 순서로 배포를 진행합니다.
+
+- Compose 설정 검증
+- 이미지 재빌드(`docker compose build --pull`)
+- DB 기동 및 health check 대기
+- Prisma migration 적용(`prisma migrate deploy`)
+- 선택형 seed 실행(`DB_SEED_ON_DEPLOY=true`일 때만)
+- API/Web/Nginx 기동 후 health check 대기
+
+패키지 버전이나 lockfile이 바뀐 경우에도 새 이미지를 다시 빌드한 뒤 올리므로, 의존성 변경이 배포에 반영됩니다.
+DB 스키마 변경은 `orot-api/prisma/migrations`에 migration 파일이 함께 포함되어 있어야 정상 반영됩니다.
 
 중지 및 로그 확인:
 
 ```bash
 yarn docker:down
 yarn docker:logs
+yarn docker:migrate
 ```
 
 Compose로 올라가는 서비스:
@@ -96,6 +112,7 @@ Compose로 올라가는 서비스:
 
 - `SITE_URL`, `WEB_ORIGIN`, `HTTP_PORT`: 대표 도메인, API CORS origin, 외부 노출 포트
 - `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`, `MARIADB_ROOT_PASSWORD`: MariaDB 및 API 연결 정보
+- `DB_SEED_ON_DEPLOY`: 배포 시 `prisma db seed` 실행 여부
 - `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`: 인증 토큰 시크릿
 - `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_SITE_URL`: Next.js 클라이언트에 노출되는 공개 URL
 - `HTTP_LOGGING`, `LOG_LEVEL`, `WEB_LOG_LEVEL`, `LOG_PRETTY`, `SLOW_QUERY_MS`: API/Web 서버 로그 제어
@@ -110,4 +127,6 @@ Compose로 올라가는 서비스:
 
 - 루트 `package.json`은 공통 실행 스크립트 진입점 역할을 담당합니다.
 - Docker 이미지는 저장소 루트를 빌드 컨텍스트로 사용합니다.
+- API 컨테이너는 더 이상 기동 시점에 `prisma db push`를 수행하지 않습니다.
+- DB 변경이 있을 때는 `orot-api/prisma/schema.prisma`와 함께 migration 파일도 커밋해야 배포에 반영됩니다.
 - 기존 앱별 Git 히스토리는 `.repo-history/`에 별도로 보관되어 있습니다.

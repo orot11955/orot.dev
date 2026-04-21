@@ -14,10 +14,6 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import type { Request } from 'express';
-import { diskStorage } from 'multer';
-import type { FileFilterCallback } from 'multer';
-import { extname, join } from 'path';
 import {
   ApiTags,
   ApiBearerAuth,
@@ -31,31 +27,19 @@ import { QueryGalleryDto } from './dto/query-gallery.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
+import {
+  createImageUploadOptions,
+  resolveUploadsDiskPath,
+  safeRemoveFile,
+  safeRemoveUploadedAsset,
+  toUploadsPublicUrl,
+} from '../common/uploads';
 import { createGalleryThumbnail } from './image-processing';
 
-const ALLOWED_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-
-const multerOptions = {
-  storage: diskStorage({
-    destination: join(process.cwd(), 'uploads', 'gallery'),
-    filename: (_req, file, cb) => {
-      const unique = `${Date.now()}-${Math.round(Math.random() * 1e6)}`;
-      cb(null, `${unique}${extname(file.originalname)}`);
-    },
-  }),
-  fileFilter: (
-    _req: Request,
-    file: Express.Multer.File,
-    cb: FileFilterCallback,
-  ) => {
-    if (ALLOWED_MIME.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error('Only image files are allowed'));
-    }
-  },
-  limits: { fileSize: 20 * 1024 * 1024 }, // 20MB
-};
+const multerOptions = createImageUploadOptions({
+  directory: ['gallery'],
+  maxFileSizeBytes: 20 * 1024 * 1024,
+});
 
 // ─── Public Routes ───────────────────────────────────────────────────────────
 
@@ -96,21 +80,30 @@ export class StudioGalleryController {
     @Body() dto: CreateGalleryItemDto,
   ) {
     if (!file) throw new BadRequestException('Image file is required');
-    const imageUrl = `/uploads/gallery/${file.filename}`;
-    const filePath = join(process.cwd(), 'uploads', 'gallery', file.filename);
+    const imageUrl = toUploadsPublicUrl('gallery', file.filename);
+    const filePath = resolveUploadsDiskPath('gallery', file.filename);
     const thumbnail = await createGalleryThumbnail(filePath, file.filename);
     const takenAt = dto.takenAt?.trim() || thumbnail.takenAt?.toISOString();
 
-    return this.galleryService.create(
-      {
-        ...dto,
-        takenAt,
-      },
-      imageUrl,
-      thumbnail.thumbnailUrl,
-      thumbnail.width,
-      thumbnail.height,
-    );
+    try {
+      return await this.galleryService.create(
+        {
+          ...dto,
+          takenAt,
+        },
+        imageUrl,
+        thumbnail.thumbnailUrl,
+        thumbnail.width,
+        thumbnail.height,
+      );
+    } catch (error) {
+      safeRemoveFile(file.path);
+      safeRemoveUploadedAsset(
+        thumbnail.thumbnailUrl,
+        '/uploads/gallery/thumbs/',
+      );
+      throw error;
+    }
   }
 
   @Get()
@@ -142,7 +135,13 @@ export class StudioGalleryController {
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete gallery item' })
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.galleryService.remove(id);
+  async remove(@Param('id', ParseIntPipe) id: number) {
+    const item = await this.galleryService.findOne(id);
+    const removed = await this.galleryService.remove(id);
+
+    safeRemoveUploadedAsset(item.imageUrl, '/uploads/gallery/');
+    safeRemoveUploadedAsset(item.thumbnailUrl, '/uploads/gallery/thumbs/');
+
+    return removed;
   }
 }

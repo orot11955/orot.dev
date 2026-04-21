@@ -23,14 +23,17 @@ import {
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
-import { mkdirSync, unlinkSync } from 'fs';
-import { diskStorage } from 'multer';
-import type { FileFilterCallback } from 'multer';
-import { extname, join } from 'path';
 import type { Request, Response } from 'express';
 import { Roles } from '../common/decorators/roles.decorator';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
+import {
+  createImageUploadOptions,
+  removeManagedUpload,
+  replaceManagedUpload,
+  safeRemoveUploadedAsset,
+  toUploadsPublicUrl,
+} from '../common/uploads';
 import { CreatePostDto } from './dto/create-post.dto';
 import { QueryPostDto } from './dto/query-post.dto';
 import { TransitionPostDto } from './dto/transition-post.dto';
@@ -40,12 +43,6 @@ import { PostsService } from './posts.service';
 const VIEWED_POSTS_COOKIE = 'viewed_posts';
 const VIEWED_POSTS_COOKIE_MAX_AGE = 24 * 60 * 60 * 1000;
 const MAX_VIEWED_POST_IDS = 100;
-const ALLOWED_IMAGE_MIME = [
-  'image/jpeg',
-  'image/png',
-  'image/webp',
-  'image/gif',
-];
 
 function normalizeSlugParam(slug: string): string {
   const trimmed = slug.trim();
@@ -61,31 +58,10 @@ function normalizeSlugParam(slug: string): string {
   }
 }
 
-const postCoverMulterOptions = {
-  storage: diskStorage({
-    destination: (_req, _file, cb) => {
-      const uploadDir = join(process.cwd(), 'uploads', 'posts');
-      mkdirSync(uploadDir, { recursive: true });
-      cb(null, uploadDir);
-    },
-    filename: (_req, file, cb) => {
-      const unique = `${Date.now()}-${Math.round(Math.random() * 1e6)}`;
-      cb(null, `${unique}${extname(file.originalname)}`);
-    },
-  }),
-  fileFilter: (
-    _req: Request,
-    file: Express.Multer.File,
-    cb: FileFilterCallback,
-  ) => {
-    if (ALLOWED_IMAGE_MIME.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error('Only image files are allowed'));
-    }
-  },
-  limits: { fileSize: 10 * 1024 * 1024 },
-};
+const postCoverMulterOptions = createImageUploadOptions({
+  directory: ['posts'],
+  maxFileSizeBytes: 10 * 1024 * 1024,
+});
 
 @ApiTags('Public / Posts')
 @Controller('public/posts')
@@ -224,56 +200,29 @@ export class EditorPostsController {
     }
 
     const currentPost = await this.postsService.findOneForArea(id, 'editor');
+    const nextCoverImage = toUploadsPublicUrl('posts', file.filename);
 
-    try {
-      const updated = await this.postsService.update(
-        id,
-        { coverImage: `/uploads/posts/${file.filename}` },
-        'editor',
-      );
-
-      if (currentPost.coverImage?.startsWith('/uploads/posts/')) {
-        try {
-          unlinkSync(
-            join(process.cwd(), currentPost.coverImage.replace(/^\//, '')),
-          );
-        } catch {
-          // noop
-        }
-      }
-
-      return updated;
-    } catch (error) {
-      try {
-        unlinkSync(file.path);
-      } catch {
-        // noop
-      }
-      throw error;
-    }
+    return replaceManagedUpload({
+      tempFilePath: file.path,
+      nextPublicPath: nextCoverImage,
+      currentPublicPath: currentPost.coverImage,
+      expectedCurrentPrefix: '/uploads/posts/',
+      update: (coverImage) =>
+        this.postsService.update(id, { coverImage }, 'editor'),
+    });
   }
 
   @Delete(':id/cover-image')
   @ApiOperation({ summary: 'Remove editor post cover image' })
   async removeCoverImage(@Param('id', ParseIntPipe) id: number) {
     const currentPost = await this.postsService.findOneForArea(id, 'editor');
-    const updated = await this.postsService.update(
-      id,
-      { coverImage: null },
-      'editor',
-    );
 
-    if (currentPost.coverImage?.startsWith('/uploads/posts/')) {
-      try {
-        unlinkSync(
-          join(process.cwd(), currentPost.coverImage.replace(/^\//, '')),
-        );
-      } catch {
-        // noop
-      }
-    }
-
-    return updated;
+    return removeManagedUpload({
+      currentPublicPath: currentPost.coverImage,
+      expectedCurrentPrefix: '/uploads/posts/',
+      update: () =>
+        this.postsService.update(id, { coverImage: null }, 'editor'),
+    });
   }
 }
 
@@ -323,7 +272,12 @@ export class StudioPostsController {
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete post' })
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.postsService.remove(id);
+  async remove(@Param('id', ParseIntPipe) id: number) {
+    const currentPost = await this.postsService.findOneForArea(id, 'studio');
+    const removed = await this.postsService.remove(id);
+
+    safeRemoveUploadedAsset(currentPost.coverImage, '/uploads/posts/');
+
+    return removed;
   }
 }

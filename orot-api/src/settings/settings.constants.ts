@@ -1,0 +1,79 @@
+export const SETTING_KEYS = {
+  SITE_NAME: 'site_name',
+  SITE_DESCRIPTION: 'site_description',
+  SITE_OG_IMAGE: 'site_og_image',
+  SITE_LOGO: 'site_logo',
+  HOME_HERO_IMAGE: 'home_hero_image',
+  HOME_HERO_IMAGE_POSITION_Y: 'home_hero_image_position_y',
+  ABOUT_CONTENT: 'about_content',
+  ABOUT_STACK: 'about_stack',
+  ABOUT_RESUME: 'about_resume',
+  ABOUT_LINKS: 'about_links',
+  ABOUT_NAMETAG_IMAGE: 'about_nametag_image',
+  FILTER_KEYWORDS: 'filter_keywords',
+  PUBLIC_MENU: 'public_menu',
+  DEFAULT_THEME: 'default_theme',
+  ALLOW_THEME_SWITCH: 'allow_theme_switch',
+  SOCIAL_LINKS: 'social_links',
+  SEO_ROBOTS: 'seo_robots',
+  ENABLE_SITEMAP: 'enable_sitemap',
+  ENABLE_RSS: 'enable_rss',
+} as const;
+
+export type SettingKey = (typeof SETTING_KEYS)[keyof typeof SETTING_KEYS];
+
+const DEFAULT_PUBLIC_MENU = JSON.stringify([
+  { key: 'home', label: 'Home', href: '/', enabled: true },
+  { key: 'posts', label: '글', href: '/posts', enabled: true },
+  { key: 'photos', label: '사진', href: '/photos', enabled: true },
+  { key: 'about', label: 'About', href: '/about', enabled: true },
+]);
+
+const DEFAULT_SOCIAL_LINKS = JSON.stringify([]);
+
+export const DEFAULT_SETTINGS: Record<SettingKey, string> = {
+  [SETTING_KEYS.SITE_NAME]: 'OROT.DEV',
+  [SETTING_KEYS.SITE_DESCRIPTION]: '개인 블로그 및 사진 갤러리',
+  [SETTING_KEYS.SITE_OG_IMAGE]: '',
+  [SETTING_KEYS.SITE_LOGO]: '',
+  [SETTING_KEYS.HOME_HERO_IMAGE]: '',
+  [SETTING_KEYS.HOME_HERO_IMAGE_POSITION_Y]: '50%',
+  [SETTING_KEYS.ABOUT_CONTENT]: '안녕하세요. OROT.DEV입니다.',
+  [SETTING_KEYS.ABOUT_STACK]: '',
+  [SETTING_KEYS.ABOUT_RESUME]: '',
+  [SETTING_KEYS.ABOUT_LINKS]: '',
+  [SETTING_KEYS.ABOUT_NAMETAG_IMAGE]: '',
+  [SETTING_KEYS.FILTER_KEYWORDS]: '스팸,spam,광고,advertisement',
+  [SETTING_KEYS.PUBLIC_MENU]: DEFAULT_PUBLIC_MENU,
+  [SETTING_KEYS.DEFAULT_THEME]: 'light',
+  [SETTING_KEYS.ALLOW_THEME_SWITCH]: 'true',
+  [SETTING_KEYS.SOCIAL_LINKS]: DEFAULT_SOCIAL_LINKS,
+  [SETTING_KEYS.SEO_ROBOTS]: 'index,follow',
+  [SETTING_KEYS.ENABLE_SITEMAP]: 'true',
+  [SETTING_KEYS.ENABLE_RSS]: 'true',
+};
+
+export const PUBLIC_SETTING_KEYS: readonly SettingKey[] = [
+  SETTING_KEYS.SITE_NAME,
+  SETTING_KEYS.SITE_DESCRIPTION,
+  SETTING_KEYS.SITE_OG_IMAGE,
+  SETTING_KEYS.SITE_LOGO,
+  SETTING_KEYS.HOME_HERO_IMAGE,
+  SETTING_KEYS.HOME_HERO_IMAGE_POSITION_Y,
+  SETTING_KEYS.ABOUT_CONTENT,
+  SETTING_KEYS.ABOUT_STACK,
+  SETTING_KEYS.ABOUT_RESUME,
+  SETTING_KEYS.ABOUT_LINKS,
+  SETTING_KEYS.ABOUT_NAMETAG_IMAGE,
+  SETTING_KEYS.PUBLIC_MENU,
+  SETTING_KEYS.DEFAULT_THEME,
+  SETTING_KEYS.ALLOW_THEME_SWITCH,
+  SETTING_KEYS.SOCIAL_LINKS,
+  SETTING_KEYS.SEO_ROBOTS,
+  SETTING_KEYS.ENABLE_SITEMAP,
+  SETTING_KEYS.ENABLE_RSS,
+] as const;
+
+export const MANAGED_SETTINGS_ASSET_KEYS: ReadonlySet<SettingKey> = new Set([
+  SETTING_KEYS.ABOUT_NAMETAG_IMAGE,
+]);

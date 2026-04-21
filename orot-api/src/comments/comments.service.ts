@@ -1,5 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { CommentStatus, PostStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { SETTING_KEYS } from '../settings/settings.constants';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { QueryCommentDto } from './dto/query-comment.dto';
 
@@ -12,7 +14,7 @@ type PublicComment = {
   authorName: string;
   authorEmail: string;
   content: string;
-  status: 'APPROVED' | 'PENDING' | 'FILTERED';
+  status: CommentStatus;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -20,11 +22,11 @@ type PublicCommentTree = PublicComment & { replies: PublicCommentTree[] };
 
 @Injectable()
 export class CommentsService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   private async getFilterKeywords(): Promise<string[]> {
     const setting = await this.prisma.siteSetting.findUnique({
-      where: { key: 'filter_keywords' },
+      where: { key: SETTING_KEYS.FILTER_KEYWORDS },
     });
 
     if (!setting) return DEFAULT_FILTER_KEYWORDS;
@@ -39,7 +41,7 @@ export class CommentsService {
     // Public comments are only available for published posts.
     const post = await this.prisma.post.findUnique({ where: { id: postId } });
     if (!post) throw new NotFoundException('Post not found');
-    if (post.status !== 'PUBLISHED')
+    if (post.status !== PostStatus.PUBLISHED)
       throw new NotFoundException('Post not found');
 
     if (dto.parentId) {
@@ -57,7 +59,7 @@ export class CommentsService {
     const isFiltered = keywords.some((kw) =>
       lowerContent.includes(kw.toLowerCase()),
     );
-    const status = isFiltered ? 'PENDING' : 'APPROVED';
+    const status = isFiltered ? CommentStatus.PENDING : CommentStatus.APPROVED;
 
     return this.prisma.comment.create({
       data: {
@@ -74,11 +76,11 @@ export class CommentsService {
   async findByPost(postId: number) {
     const post = await this.prisma.post.findUnique({ where: { id: postId } });
     if (!post) throw new NotFoundException('Post not found');
-    if (post.status !== 'PUBLISHED')
+    if (post.status !== PostStatus.PUBLISHED)
       throw new NotFoundException('Post not found');
 
     const comments = await this.prisma.comment.findMany({
-      where: { postId, status: 'APPROVED' },
+      where: { postId, status: CommentStatus.APPROVED },
       orderBy: { createdAt: 'asc' },
     });
 
@@ -91,7 +93,7 @@ export class CommentsService {
 
     const where: {
       postId?: number;
-      status?: 'APPROVED' | 'PENDING' | 'FILTERED';
+      status?: CommentStatus;
     } = {};
     if (postId !== undefined) where.postId = postId;
     if (status !== undefined) where.status = status;
@@ -127,7 +129,7 @@ export class CommentsService {
 
     return this.prisma.comment.update({
       where: { id },
-      data: { status: 'APPROVED' },
+      data: { status: CommentStatus.APPROVED },
     });
   }
 

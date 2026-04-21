@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PostStatus } from '@prisma/client';
+import { ensureUniqueSlug, resolveBaseSlug } from '../common/slug';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { QueryPostDto } from './dto/query-post.dto';
@@ -58,18 +59,6 @@ const AREA_TRANSITIONS: Record<
 };
 
 const DEFAULT_POST_SLUG = 'post';
-
-function slugify(text: string): string {
-  return text
-    .normalize('NFKD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .trim()
-    .replace(/[^\p{Letter}\p{Number}\s_-]+/gu, '')
-    .replace(/[\s_]+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-+|-+$/g, '');
-}
 
 @Injectable()
 export class PostsService {
@@ -367,7 +356,7 @@ export class PostsService {
   }
 
   async remove(id: number) {
-    await this.prisma.post.findUnique({ where: { id } });
+    await this.findOneForArea(id, 'studio');
     await this.prisma.post.delete({ where: { id } });
     return { message: 'Post deleted' };
   }
@@ -375,30 +364,23 @@ export class PostsService {
   private resolveBaseSlug(
     ...candidates: Array<string | null | undefined>
   ): string {
-    for (const candidate of candidates) {
-      const normalized = slugify(candidate ?? '');
-      if (normalized) {
-        return normalized;
-      }
-    }
-
-    return DEFAULT_POST_SLUG;
+    return resolveBaseSlug(DEFAULT_POST_SLUG, ...candidates);
   }
 
   private async ensureUniqueSlug(
     base: string,
     excludeId?: number,
   ): Promise<string> {
-    const normalizedBase = base.trim() || DEFAULT_POST_SLUG;
-    let slug = normalizedBase;
-    let count = 0;
-
-    while (true) {
-      const existing = await this.prisma.post.findUnique({ where: { slug } });
-      if (!existing || existing.id === excludeId) return slug;
-      count += 1;
-      slug = `${normalizedBase}-${count}`;
-    }
+    return ensureUniqueSlug({
+      base,
+      defaultSlug: DEFAULT_POST_SLUG,
+      excludeId,
+      findBySlug: (slug) =>
+        this.prisma.post.findUnique({
+          where: { slug },
+          select: { id: true },
+        }),
+    });
   }
 
   private async assertCategoryExists(id: number) {

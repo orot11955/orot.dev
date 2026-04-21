@@ -1,9 +1,14 @@
 .page {
   width: 100%;
-  padding: clamp(var(--orot-space-8), 7vw, var(--orot-space-16)) 0;
+  min-height: clamp(420px, 62vh, 720px);
+  padding: clamp(var(--orot-space-6), 5vw, var(--orot-space-12)) 0;
+  display: flex;
+  align-items: center;
 }
 
 .shell {
+  display: flex;
+  justify-content: center;
   width: 100%;
   max-width: var(--public-shell-max-width);
   margin: 0 auto;
@@ -11,13 +16,103 @@
 }
 
 .panel {
+  width: min(100%, 720px);
+  /* border: 1px solid var(--public-panel-border); */
+  border-radius: var(--orot-radius-xl);
+  /* background: var(--public-panel-bg); */
+  box-shadow: 0 18px 40px -34px rgb(0 0 0 / 0.45);
+}
+
+.content {
   display: flex;
-  max-width: min(100%, 720px);
   flex-direction: column;
-  gap: var(--orot-space-4);
+  gap: var(--orot-space-6);
+  padding: clamp(var(--orot-space-7), 5vw, var(--orot-space-10));
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--orot-space-2);
+  align-items: center;
+}
+
+.status,
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: var(--orot-font-size-xs);
+  font-weight: var(--orot-font-weight-bold);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.status {
+  background: color-mix(in srgb, var(--orot-color-text) 8%, transparent);
+  color: var(--orot-color-text-secondary);
+}
+
+.eyebrow {
+  border: 1px solid var(--public-panel-border);
+  background: transparent;
+  color: var(--orot-color-text-muted);
+}
+
+.copy {
+  display: flex;
+  flex-direction: column;
+  gap: var(--orot-space-3);
+  max-width: 58ch;
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(2rem, 5vw, 3.25rem);
+  font-weight: var(--orot-font-weight-extrabold);
+  letter-spacing: -0.045em;
+  line-height: 1.05;
+  color: var(--orot-color-text);
+}
+
+.description {
+  margin: 0;
+  color: var(--orot-color-text-secondary);
+  font-size: clamp(1rem, 1.6vw, 1.125rem);
+  line-height: var(--orot-line-height-relaxed);
 }
 
 .actions {
   display: flex;
-  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: var(--orot-space-3);
+  align-items: center;
+}
+
+.diagnostics {
+  width: 100%;
+  max-width: 100%;
+  padding-top: var(--orot-space-1);
+  border-top: 1px solid var(--public-panel-border);
+}
+
+@media (max-width: 640px) {
+  .page {
+    min-height: clamp(380px, 58vh, 640px);
+  }
+
+  .content {
+    gap: var(--orot-space-5);
+    padding: var(--orot-space-6);
+  }
+
+  .panel {
+    width: 100%;
+  }
+
+  .actions {
+    gap: var(--orot-space-2);
+  }
 }

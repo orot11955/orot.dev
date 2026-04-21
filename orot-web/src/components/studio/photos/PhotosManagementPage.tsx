@@ -254,15 +254,15 @@ export function PhotosManagementPage() {
         }}
         side={
           <>
-          <div className={styles.headerCount}>
-            <span className={styles.headerCountValue}>
-              {total.toLocaleString('ko-KR')}
-            </span>
-            <span>{`이 페이지 공개 ${publishedCount}`}</span>
-          </div>
-          <Button size="md" variant="solid" onClick={openUpload}>
-            사진 업로드
-          </Button>
+            <div className={styles.headerCount}>
+              <span className={styles.headerCountValue}>
+                {total.toLocaleString('ko-KR')}
+              </span>
+              <span>{`이 페이지 공개 ${publishedCount}`}</span>
+            </div>
+            <Button size="md" variant="solid" onClick={openUpload}>
+              사진 업로드
+            </Button>
           </>
         }
       />
@@ -293,51 +293,51 @@ export function PhotosManagementPage() {
         hasData={items.length > 0}
         emptyDescription="조건에 맞는 사진이 없습니다."
       >
-          <>
-            <div className={styles.grid}>
-              {items.map((item) => {
-                const thumb = resolveAssetUrl(item.thumbnailUrl ?? item.imageUrl);
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    className={styles.tile}
-                    onClick={() => openDetail(item)}
+        <>
+          <div className={styles.grid}>
+            {items.map((item) => {
+              const thumb = resolveAssetUrl(item.thumbnailUrl ?? item.imageUrl);
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  className={styles.tile}
+                  onClick={() => openDetail(item)}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={thumb}
+                    alt={item.altText ?? item.title ?? ''}
+                    className={styles.tileImage}
+                    loading="lazy"
+                  />
+                  <span
+                    className={`${styles.tileBadge}${item.isPublished ? '' : ` ${styles.tileBadgeDraft}`}`}
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={thumb}
-                      alt={item.altText ?? item.title ?? ''}
-                      className={styles.tileImage}
-                      loading="lazy"
-                    />
-                    <span
-                      className={`${styles.tileBadge}${item.isPublished ? '' : ` ${styles.tileBadgeDraft}`}`}
-                    >
-                      {item.isPublished ? '공개' : '비공개'}
+                    {item.isPublished ? '공개' : '비공개'}
+                  </span>
+                  <div className={styles.tileOverlay}>
+                    <span className={styles.tileTitle}>
+                      {item.title ?? '제목 없음'}
                     </span>
-                    <div className={styles.tileOverlay}>
-                      <span className={styles.tileTitle}>
-                        {item.title ?? '제목 없음'}
-                      </span>
-                      <span className={styles.tileMeta}>
-                        {formatDate(item.takenAt ?? item.createdAt)}
-                      </span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-            <div className={styles.paginationRow}>
-              <Pagination
-                current={page}
-                pageSize={PAGE_SIZE}
-                total={total}
-                hideOnSinglePage
-                onChange={(nextPage) => setPage(nextPage)}
-              />
-            </div>
-          </>
+                    <span className={styles.tileMeta}>
+                      {formatDate(item.takenAt ?? item.createdAt)}
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          <div className={styles.paginationRow}>
+            <Pagination
+              current={page}
+              pageSize={PAGE_SIZE}
+              total={total}
+              hideOnSinglePage
+              onChange={(nextPage) => setPage(nextPage)}
+            />
+          </div>
+        </>
       </ManagementContentState>
 
       <PhotoDetailModal

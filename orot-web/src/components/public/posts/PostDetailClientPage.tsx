@@ -165,9 +165,12 @@ export function PostDetailClientPage({
 
   return (
     <PageErrorState
+      status="404"
+      eyebrow={canAttemptPreview ? 'Preview' : 'Post'}
       title="글을 찾을 수 없습니다."
       description={error ?? '요청하신 글이 없거나 아직 공개되지 않았습니다.'}
       onRetry={canAttemptPreview ? handleRetry : undefined}
+      retryLabel={canAttemptPreview ? '미리보기 다시 확인' : '다시 시도'}
     />
   );
 }

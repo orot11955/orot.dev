@@ -4,23 +4,12 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PostStatus } from '@prisma/client';
+import { ensureUniqueSlug, resolveBaseSlug } from '../common/slug';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 
 const DEFAULT_CATEGORY_SLUG = 'category';
-
-function slugify(text: string): string {
-  return text
-    .normalize('NFKD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .trim()
-    .replace(/[^\p{Letter}\p{Number}\s_-]+/gu, '')
-    .replace(/[\s_]+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-+|-+$/g, '');
-}
 
 @Injectable()
 export class CategoriesService {
@@ -102,29 +91,23 @@ export class CategoriesService {
   private resolveBaseSlug(
     ...candidates: Array<string | null | undefined>
   ): string {
-    for (const candidate of candidates) {
-      const normalized = slugify(candidate ?? '');
-      if (normalized) return normalized;
-    }
-    return DEFAULT_CATEGORY_SLUG;
+    return resolveBaseSlug(DEFAULT_CATEGORY_SLUG, ...candidates);
   }
 
   private async ensureUniqueSlug(
     base: string,
     excludeId?: number,
   ): Promise<string> {
-    const normalizedBase = base.trim() || DEFAULT_CATEGORY_SLUG;
-    let slug = normalizedBase;
-    let count = 0;
-
-    while (true) {
-      const existing = await this.prisma.category.findUnique({
-        where: { slug },
-      });
-      if (!existing || existing.id === excludeId) return slug;
-      count += 1;
-      slug = `${normalizedBase}-${count}`;
-    }
+    return ensureUniqueSlug({
+      base,
+      defaultSlug: DEFAULT_CATEGORY_SLUG,
+      excludeId,
+      findBySlug: (slug) =>
+        this.prisma.category.findUnique({
+          where: { slug },
+          select: { id: true },
+        }),
+    });
   }
 
   async assertExists(id: number) {

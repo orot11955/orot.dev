@@ -1,4 +1,5 @@
 import { NotFoundException } from '@nestjs/common';
+import { CommentStatus, PostStatus } from '@prisma/client';
 import { CommentsService } from './comments.service';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -29,7 +30,10 @@ describe('CommentsService', () => {
   });
 
   it('blocks comments on unpublished posts', async () => {
-    prisma.post.findUnique.mockResolvedValue({ id: 3, status: 'DRAFT' });
+    prisma.post.findUnique.mockResolvedValue({
+      id: 3,
+      status: PostStatus.DRAFT,
+    });
 
     await expect(
       service.create(3, {
@@ -40,8 +44,11 @@ describe('CommentsService', () => {
     ).rejects.toBeInstanceOf(NotFoundException);
   });
 
-  it('marks keyword-matched comments as filtered and pending approval', async () => {
-    prisma.post.findUnique.mockResolvedValue({ id: 5, status: 'PUBLISHED' });
+  it('marks keyword-matched comments as pending approval', async () => {
+    prisma.post.findUnique.mockResolvedValue({
+      id: 5,
+      status: PostStatus.PUBLISHED,
+    });
     prisma.siteSetting.findUnique.mockResolvedValue({
       key: 'filter_keywords',
       value: 'spam,광고',
@@ -58,25 +65,30 @@ describe('CommentsService', () => {
 
     expect(result).toMatchObject({
       postId: 5,
-      isFiltered: true,
-      isApproved: false,
+      status: CommentStatus.PENDING,
     });
   });
 
   it('loads all approved comments for a post in ascending order', async () => {
-    prisma.post.findUnique.mockResolvedValue({ id: 7, status: 'PUBLISHED' });
+    prisma.post.findUnique.mockResolvedValue({
+      id: 7,
+      status: PostStatus.PUBLISHED,
+    });
     prisma.comment.findMany.mockResolvedValue([]);
 
     await service.findByPost(7);
 
     expect(prisma.comment.findMany).toHaveBeenCalledWith({
-      where: { postId: 7, isApproved: true },
+      where: { postId: 7, status: CommentStatus.APPROVED },
       orderBy: { createdAt: 'asc' },
     });
   });
 
   it('returns approved comments as a nested tree', async () => {
-    prisma.post.findUnique.mockResolvedValue({ id: 9, status: 'PUBLISHED' });
+    prisma.post.findUnique.mockResolvedValue({
+      id: 9,
+      status: PostStatus.PUBLISHED,
+    });
     prisma.comment.findMany.mockResolvedValue([
       {
         id: 1,
@@ -85,8 +97,7 @@ describe('CommentsService', () => {
         authorName: 'root',
         authorEmail: 'root@example.com',
         content: 'root',
-        isApproved: true,
-        isFiltered: false,
+        status: CommentStatus.APPROVED,
         createdAt: new Date('2026-04-19T00:00:00.000Z'),
         updatedAt: new Date('2026-04-19T00:00:00.000Z'),
       },
@@ -97,8 +108,7 @@ describe('CommentsService', () => {
         authorName: 'reply',
         authorEmail: 'reply@example.com',
         content: 'reply',
-        isApproved: true,
-        isFiltered: false,
+        status: CommentStatus.APPROVED,
         createdAt: new Date('2026-04-19T00:01:00.000Z'),
         updatedAt: new Date('2026-04-19T00:01:00.000Z'),
       },
@@ -109,8 +119,7 @@ describe('CommentsService', () => {
         authorName: 'reply-2',
         authorEmail: 'reply-2@example.com',
         content: 'reply-2',
-        isApproved: true,
-        isFiltered: false,
+        status: CommentStatus.APPROVED,
         createdAt: new Date('2026-04-19T00:02:00.000Z'),
         updatedAt: new Date('2026-04-19T00:02:00.000Z'),
       },

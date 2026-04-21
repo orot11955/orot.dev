@@ -18,11 +18,14 @@
     "start:web": "yarn --cwd orot-web start",
     "start:api": "yarn --cwd orot-api start:prod",
     "db:generate": "yarn --cwd orot-api db:generate",
+    "db:migrate:deploy": "yarn --cwd orot-api db:migrate:deploy",
     "db:push": "yarn --cwd orot-api db:push",
     "db:seed": "yarn --cwd orot-api db:seed",
     "docker:check": "docker compose config",
-    "docker:build": "docker compose build",
-    "docker:up": "docker compose up -d --build",
+    "docker:build": "docker compose build --pull",
+    "docker:migrate": "./scripts/docker-migrate.sh",
+    "docker:up": "./scripts/docker-deploy.sh",
+    "docker:deploy": "./scripts/docker-deploy.sh",
     "docker:down": "docker compose down",
     "docker:logs": "docker compose logs -f"
   }

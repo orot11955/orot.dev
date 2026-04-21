@@ -21,11 +21,11 @@
     "db:migrate:deploy": "yarn --cwd orot-api db:migrate:deploy",
     "db:push": "yarn --cwd orot-api db:push",
     "db:seed": "yarn --cwd orot-api db:seed",
-    "docker:check": "docker compose config",
-    "docker:build": "docker compose build --pull",
-    "docker:migrate": "./scripts/docker-migrate.sh",
-    "docker:up": "./scripts/docker-deploy.sh",
-    "docker:deploy": "./scripts/docker-deploy.sh",
+    "docker:check": "./scripts/docker-stack.sh check",
+    "docker:build": "./scripts/docker-stack.sh build",
+    "docker:migrate": "./scripts/docker-stack.sh migrate",
+    "docker:up": "./scripts/docker-stack.sh deploy",
+    "docker:deploy": "./scripts/docker-stack.sh deploy",
     "docker:down": "docker compose down",
     "docker:logs": "docker compose logs -f"
   }

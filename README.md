@@ -72,15 +72,23 @@ yarn docker:check
 yarn docker:up
 ```
 
+Docker 배포 진입점은 이제 `scripts/docker-stack.sh` 하나로 통일되어 있고,
+`yarn docker:check`, `yarn docker:build`, `yarn docker:migrate`, `yarn docker:up`
+모두 이 스크립트를 사용합니다.
+
 `yarn docker:up`과 `yarn docker:deploy`는 같은 동작을 하며, 아래 순서로 배포를 진행합니다.
 
 - Compose 설정 검증
-- 이미지 재빌드(`docker compose build --pull`)
+- 앱 이미지 재빌드(`docker compose build --pull orot-api orot-web`)
 - DB 기동 및 health check 대기
 - Prisma migration 적용(`prisma migrate deploy`)
 - 기존 `db push` 기반 운영 DB라 `_prisma_migrations`가 없으면, 현재 DB가 `schema.prisma`와 일치할 때에만 1회 baseline 자동 처리
 - 선택형 seed 실행(`DB_SEED_ON_DEPLOY=true`일 때만)
 - API/Web/Nginx 기동 후 health check 대기
+- 실패 시 `docker compose ps`와 최근 서비스 로그를 자동 출력
+
+`up` 단계에서는 더 이상 이미지를 다시 원격 pull 하지 않고, 빌드 단계에서만 base image를 최신화합니다.
+그래서 방금 빌드한 로컬 이미지를 배포 직전에 다시 pull 하다가 생기던 불안정성을 줄였습니다.
 
 패키지 버전이나 lockfile이 바뀐 경우에도 새 이미지를 다시 빌드한 뒤 올리므로, 의존성 변경이 배포에 반영됩니다.
 DB 스키마 변경은 `orot-api/prisma/migrations`에 migration 파일이 함께 포함되어 있어야 정상 반영됩니다.
@@ -92,6 +100,12 @@ yarn docker:down
 yarn docker:logs
 yarn docker:migrate
 ```
+
+배포 전에 아래 파일이 준비되어 있어야 합니다.
+
+- 루트 `.env`
+- 루트 `.npmrc`
+- `nginx/nginx.conf`
 
 Compose로 올라가는 서비스:
 

@@ -1,4 +1,8 @@
-import { api, createFormData } from './api';
+import {
+  getResource,
+  patchResource,
+  uploadImageResource,
+} from './service-helpers';
 import { createAreaRoutes } from './api-routes';
 import type { PublicSettings, StudioSettings, UpdateSettingsPayload } from '@/types';
 
@@ -8,7 +12,7 @@ const settingsRoutes = createAreaRoutes('settings');
 
 export const publicSettingsService = {
   async get(): Promise<PublicSettings> {
-    return api.get<PublicSettings>(settingsRoutes.public());
+    return getResource<PublicSettings>(settingsRoutes.public());
   },
 };
 
@@ -16,20 +20,28 @@ export const publicSettingsService = {
 
 export const studioSettingsService = {
   async get(): Promise<StudioSettings> {
-    return api.get<StudioSettings>(settingsRoutes.studio());
+    return getResource<StudioSettings>(settingsRoutes.studio());
   },
 
   async update(payload: UpdateSettingsPayload): Promise<StudioSettings> {
-    return api.patch<StudioSettings>(settingsRoutes.studio(), {
-      settings: Object.entries(payload).map(([key, value]) => ({ key, value })),
-    });
+    return patchResource<
+      StudioSettings,
+      { settings: Array<{ key: string; value: string | null | undefined }> }
+    >(
+      settingsRoutes.studio(),
+      {
+        settings: Object.entries(payload).map(([key, value]) => ({ key, value })),
+      },
+    );
   },
 
   async uploadMedia(
     key: 'about_nametag_image',
     file: File,
   ): Promise<StudioSettings> {
-    const form = createFormData({ image: file });
-    return api.post<StudioSettings>(settingsRoutes.studio('media', key), form);
+    return uploadImageResource<StudioSettings>(
+      settingsRoutes.studio('media', key),
+      file,
+    );
   },
 };

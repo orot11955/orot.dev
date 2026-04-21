@@ -1,9 +1,10 @@
 import { mkdir } from 'fs/promises';
 import { createRequire } from 'module';
 import { join, parse } from 'path';
+import { extractTakenAtFromExif } from './image-metadata';
 
 type SharpLike = (input: string) => {
-  metadata(): Promise<{ width?: number; height?: number }>;
+  metadata(): Promise<{ width?: number; height?: number; exif?: Buffer }>;
   resize(options: { width: number; withoutEnlargement: boolean }): {
     webp(options: { quality: number }): {
       toFile(output: string): Promise<unknown>;
@@ -50,5 +51,6 @@ export async function createGalleryThumbnail(
     thumbnailUrl: `/uploads/gallery/thumbs/${thumbName}`,
     width: metadata.width,
     height: metadata.height,
+    takenAt: extractTakenAtFromExif(metadata.exif),
   };
 }

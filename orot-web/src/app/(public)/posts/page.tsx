@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { serverGet, toPaginatedResponse } from '@/utils/server-api';
-import { PostsPage } from '@/components/public/PostsPage';
+import { PostsPage } from '@/components/public/posts/PostsPage';
 import type {
   Series,
   Category,

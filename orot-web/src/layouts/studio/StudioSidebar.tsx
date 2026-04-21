@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Avatar, Button, LogOut, Menu } from 'orot-ui';
 import { useRouter } from 'next/navigation';
-import { STUDIO_NAV } from './studio-nav';
+import { STUDIO_NAV } from './studio-navigation';
 import type { User } from '@/types';
 import styles from './StudioLayout.module.css';
 

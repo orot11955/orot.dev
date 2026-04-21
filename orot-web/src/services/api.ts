@@ -1,11 +1,11 @@
 import type { AxiosRequestConfig } from 'axios';
 import apiClient from './api-client';
-import type { ApiEnvelope, ApiListPayload, PaginatedResponse } from '@/types';
+import type { ApiEnvelope } from '@/types';
 
 type RequestConfig = Omit<AxiosRequestConfig, 'url' | 'method' | 'data'>;
 
-type FormValue = string | number | boolean | Blob | Date;
-type FormEntryValue = FormValue | FormValue[] | null | undefined;
+export type FormValue = string | number | boolean | Blob | Date;
+export type FormEntryValue = FormValue | FormValue[] | null | undefined;
 
 function unwrapApiEnvelope<T>(payload: ApiEnvelope<T>): T {
   return payload.data;
@@ -42,18 +42,6 @@ export const api = {
   },
 };
 
-export function toPaginatedResponse<T>(
-  payload: ApiListPayload<T>,
-): PaginatedResponse<T> {
-  return {
-    data: payload.items,
-    total: payload.meta.total,
-    page: payload.meta.page,
-    limit: payload.meta.limit,
-    totalPages: payload.meta.totalPages,
-  };
-}
-
 function appendFormDataValue(formData: FormData, key: string, value: FormValue) {
   if (value instanceof Date) {
     formData.append(key, value.toISOString());
@@ -88,3 +76,5 @@ export function createFormData(
 
   return formData;
 }
+
+export { toPaginatedResponse } from '@/utils/pagination';

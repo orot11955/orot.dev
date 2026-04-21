@@ -1,5 +1,5 @@
 import { serverGet } from '@/utils/server-api';
-import { AboutPage } from '@/components/public/AboutPage';
+import { AboutPage } from '@/components/public/about/AboutPage';
 import type { PublicSettings } from '@/types';
 
 export default async function AboutRoute() {

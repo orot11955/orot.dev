@@ -1,8 +1,37 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateGalleryItemDto } from './dto/create-gallery-item.dto';
 import { UpdateGalleryItemDto } from './dto/update-gallery-item.dto';
-import { QueryGalleryDto } from './dto/query-gallery.dto';
+import { QueryGalleryDto, type GallerySort } from './dto/query-gallery.dto';
+
+function resolveGalleryOrderBy(
+  sort: GallerySort | undefined,
+): Prisma.GalleryItemOrderByWithRelationInput[] {
+  switch (sort) {
+    case 'takenAtDesc':
+      return [
+        { takenAt: { sort: 'desc', nulls: 'last' } },
+        { createdAt: 'desc' },
+        { id: 'desc' },
+      ];
+    case 'takenAtAsc':
+      return [
+        { takenAt: { sort: 'asc', nulls: 'last' } },
+        { createdAt: 'asc' },
+        { id: 'asc' },
+      ];
+    case 'createdAtDesc':
+      return [{ createdAt: 'desc' }, { id: 'desc' }];
+    case 'manual':
+    default:
+      return [
+        { sortOrder: 'asc' },
+        { createdAt: 'desc' },
+        { id: 'desc' },
+      ];
+  }
+}
 
 @Injectable()
 export class GalleryService {
@@ -32,7 +61,8 @@ export class GalleryService {
   }
 
   async findAll(query: QueryGalleryDto, isPublic = false) {
-    const { page = 1, limit = 24, isPublished, search } = query;
+    const { page = 1, limit = 24, isPublished, search, sort = 'manual' } =
+      query;
     const skip = (page - 1) * limit;
 
     const where: Record<string, unknown> = {};
@@ -56,7 +86,7 @@ export class GalleryService {
         where,
         skip,
         take: limit,
-        orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
+        orderBy: resolveGalleryOrderBy(sort),
       }),
     ]);
 
@@ -85,7 +115,9 @@ export class GalleryService {
     const { takenAt, ...rest } = dto;
     const data = {
       ...rest,
-      ...(takenAt ? { takenAt: new Date(takenAt) } : {}),
+      ...(takenAt !== undefined
+        ? { takenAt: takenAt ? new Date(takenAt) : null }
+        : {}),
     };
 
     return this.prisma.galleryItem.update({ where: { id }, data });

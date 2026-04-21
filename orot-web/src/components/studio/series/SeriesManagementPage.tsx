@@ -1,20 +1,17 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  Alert,
   Badge,
   Button,
-  Empty,
-  Input,
-  Modal,
-  Popconfirm,
-  Spin,
   Table,
-  Typography,
 } from 'orot-ui';
 import type { ColumnType } from 'orot-ui';
-import { useNotificationEffect } from '@/hooks';
+import {
+  useLatestAsyncState,
+  useManagementSearch,
+  useNotificationEffect,
+} from '@/hooks';
 import { studioPostsService, studioSeriesService } from '@/services';
 import type {
   CreateSeriesPayload,
@@ -22,36 +19,27 @@ import type {
   Series,
   SeriesPostSummary,
 } from '@/types';
+import {
+  ManagementActionGroup,
+  type ManagementActionItem,
+} from '@/components/studio/shared/actions/ManagementActionGroup';
+import { ManagementContentState } from '@/components/studio/shared/management/ManagementContentState';
+import { ManagementPageHeader } from '@/components/studio/shared/management/ManagementPageHeader';
+import { ManagementToolbar } from '@/components/studio/shared/management/ManagementToolbar';
 import { formatDate, getErrorMessage, resolveAssetUrl } from '@/utils/content';
+import { SeriesAssignmentModal } from './SeriesAssignmentModal';
+import { SeriesEditorModal } from './SeriesEditorModal';
+import {
+  createSeriesFormState,
+  type SeriesEditorState,
+  type SeriesFormState,
+  toSeriesFormState,
+} from './series-form';
 import styles from './SeriesManagement.module.css';
 
 type SeriesRow = Omit<Series, never>;
 
-type EditorState =
-  | { mode: 'create' }
-  | { mode: 'edit'; series: Series };
-
-interface FormState {
-  title: string;
-  slug: string;
-  description: string;
-}
-
 const MAX_POST_PAGE_SIZE = 100;
-
-const EMPTY_FORM: FormState = {
-  title: '',
-  slug: '',
-  description: '',
-};
-
-function toFormState(series: Series): FormState {
-  return {
-    title: series.title,
-    slug: series.slug,
-    description: series.description ?? '',
-  };
-}
 
 function filterSeries(list: Series[], keyword: string): Series[] {
   if (!keyword) return list;
@@ -94,13 +82,9 @@ async function getAllPublishedPosts(): Promise<PostListItem[]> {
 
 export function SeriesManagementPage() {
   const [seriesList, setSeriesList] = useState<Series[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [pendingSearch, setPendingSearch] = useState('');
-  const [search, setSearch] = useState('');
 
-  const [editor, setEditor] = useState<EditorState | null>(null);
-  const [formState, setFormState] = useState<FormState>(EMPTY_FORM);
+  const [editor, setEditor] = useState<SeriesEditorState | null>(null);
+  const [formState, setFormState] = useState<SeriesFormState>(createSeriesFormState());
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [coverImage, setCoverImage] = useState('');
@@ -115,7 +99,20 @@ export function SeriesManagementPage() {
   const [assignError, setAssignError] = useState<string | null>(null);
   const [assignSearch, setAssignSearch] = useState('');
   const [mutatingId, setMutatingId] = useState<number | null>(null);
-  const coverInputRef = useRef<HTMLInputElement | null>(null);
+  const {
+    loading,
+    error,
+    setError,
+    runLatest,
+    runAction,
+  } = useLatestAsyncState();
+  const {
+    search,
+    pendingSearch,
+    setPendingSearch,
+    submitSearch,
+    resetSearch,
+  } = useManagementSearch();
 
   useNotificationEffect(error, {
     type: 'error',
@@ -123,17 +120,12 @@ export function SeriesManagementPage() {
   });
 
   const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await studioSeriesService.getAll();
-      setSeriesList(result);
-    } catch (err) {
-      setError(getErrorMessage(err));
-    } finally {
-      setLoading(false);
+    const result = await runLatest(() => studioSeriesService.getAll());
+    if (!result) {
+      return;
     }
-  }, []);
+    setSeriesList(result);
+  }, [runLatest]);
 
   useEffect(() => {
     load();
@@ -154,18 +146,9 @@ export function SeriesManagementPage() {
     [seriesList, search],
   );
 
-  const submitSearch = useCallback(() => {
-    setSearch(pendingSearch.trim());
-  }, [pendingSearch]);
-
-  const resetSearch = useCallback(() => {
-    setPendingSearch('');
-    setSearch('');
-  }, []);
-
   const openCreate = useCallback(() => {
     setEditor({ mode: 'create' });
-    setFormState(EMPTY_FORM);
+    setFormState(createSeriesFormState());
     setCoverImage('');
     setCoverFile(null);
     setCoverPreviewUrl('');
@@ -175,7 +158,7 @@ export function SeriesManagementPage() {
 
   const openEdit = useCallback((series: Series) => {
     setEditor({ mode: 'edit', series });
-    setFormState(toFormState(series));
+    setFormState(toSeriesFormState(series));
     setCoverImage(series.coverImage ?? '');
     setCoverFile(null);
     setCoverPreviewUrl('');
@@ -185,7 +168,7 @@ export function SeriesManagementPage() {
 
   const closeEditor = useCallback(() => {
     setEditor(null);
-    setFormState(EMPTY_FORM);
+    setFormState(createSeriesFormState());
     setCoverImage('');
     setCoverFile(null);
     setCoverPreviewUrl('');
@@ -293,21 +276,21 @@ export function SeriesManagementPage() {
     coverRemoved,
     closeEditor,
     load,
+    setError,
   ]);
 
   const handleDelete = useCallback(
     async (series: Series) => {
       setMutatingId(series.id);
       try {
-        await studioSeriesService.remove(series.id);
+        const result = await runAction(() => studioSeriesService.remove(series.id));
+        if (result === null) return;
         await load();
-      } catch (err) {
-        setError(getErrorMessage(err));
       } finally {
         setMutatingId(null);
       }
     },
-    [load],
+    [load, runAction],
   );
 
   const openAssign = useCallback(async (series: Series) => {
@@ -456,37 +439,37 @@ export function SeriesManagementPage() {
         width: 280,
         render: (_v, series) => {
           const busy = mutatingId === series.id;
-          return (
-            <div className={styles.actions}>
-              <Button
-                size="sm"
-                variant="solid"
-                disabled={busy}
-                onClick={() => openAssign(series)}
-              >
-                글 관리
-              </Button>
-              <Button
-                size="sm"
-                variant="outlined"
-                disabled={busy}
-                onClick={() => openEdit(series)}
-              >
-                수정
-              </Button>
-              <Popconfirm
-                title="시리즈를 삭제하시겠습니까?"
-                description="연결된 글은 시리즈에서만 해제되며 삭제되지 않습니다."
-                okText="삭제"
-                cancelText="취소"
-                onConfirm={() => handleDelete(series)}
-              >
-                <Button size="sm" variant="text" disabled={busy}>
-                  삭제
-                </Button>
-              </Popconfirm>
-            </div>
-          );
+          const actions: ManagementActionItem[] = [
+            {
+              key: 'assign',
+              label: '글 관리',
+              variant: 'solid',
+              disabled: busy,
+              onClick: () => openAssign(series),
+            },
+            {
+              key: 'edit',
+              label: '수정',
+              variant: 'outlined',
+              disabled: busy,
+              onClick: () => openEdit(series),
+            },
+            {
+              key: 'delete',
+              label: '삭제',
+              variant: 'text',
+              disabled: busy,
+              confirm: {
+                title: '시리즈를 삭제하시겠습니까?',
+                description: '연결된 글은 시리즈에서만 해제되며 삭제되지 않습니다.',
+                okText: '삭제',
+                cancelText: '취소',
+                onConfirm: () => handleDelete(series),
+              },
+            },
+          ];
+
+          return <ManagementActionGroup className={styles.actions} actions={actions} />;
         },
       },
     ],
@@ -497,54 +480,46 @@ export function SeriesManagementPage() {
 
   return (
     <div className={styles.page}>
-      <header className={styles.header}>
-        <div className={styles.headerText}>
-          <Typography.Text className={styles.eyebrow}>Series</Typography.Text>
-          <Typography.Title level={2} className={styles.title}>
-            시리즈 관리
-          </Typography.Title>
-          <Typography.Paragraph className={styles.subtitle}>
-            발행(PUBLISHED)된 글을 묶어 시리즈를 구성하고 순서를 조정합니다. 시리즈는 공개 영역의 앞·뒤 글 네비게이션으로 노출됩니다.
-          </Typography.Paragraph>
-        </div>
-        <div className={styles.headerActions}>
+      <ManagementPageHeader
+        eyebrow="Series"
+        title="시리즈 관리"
+        description="발행(PUBLISHED)된 글을 묶어 시리즈를 구성하고 순서를 조정합니다. 시리즈는 공개 영역의 앞·뒤 글 네비게이션으로 노출됩니다."
+        classNames={{
+          header: styles.header,
+          headerText: styles.headerText,
+          eyebrow: styles.eyebrow,
+          title: styles.title,
+          subtitle: styles.subtitle,
+          side: styles.headerActions,
+        }}
+        side={
+          <>
           <Badge count={seriesList.length} showZero color="var(--public-accent)" />
           <span>{`총 ${seriesList.length.toLocaleString('ko-KR')}개`}</span>
           <Button size="md" variant="solid" onClick={openCreate}>
             새 시리즈
           </Button>
-        </div>
-      </header>
+          </>
+        }
+      />
 
-      <div className={styles.toolbar}>
-        <Input
-          value={pendingSearch}
-          placeholder="제목·슬러그·설명 검색"
-          onChange={(event) => setPendingSearch(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter') submitSearch();
-          }}
-        />
-        <div className={styles.toolbarActions}>
-          <Button size="md" variant="outlined" onClick={resetSearch}>
-            초기화
-          </Button>
-          <Button size="md" variant="solid" onClick={submitSearch}>
-            검색
-          </Button>
-        </div>
-      </div>
+      <ManagementToolbar
+        className={styles.toolbar}
+        actionsClassName={styles.toolbarActions}
+        searchValue={pendingSearch}
+        searchPlaceholder="제목·슬러그·설명 검색"
+        onSearchChange={setPendingSearch}
+        onSearchSubmit={submitSearch}
+        onSearchReset={resetSearch}
+      />
 
-      <div className={styles.tableCard}>
-        {loading && seriesList.length === 0 ? (
-          <div style={{ display: 'flex', justifyContent: 'center', padding: 'var(--orot-space-10)' }}>
-            <Spin size="lg" />
-          </div>
-        ) : error && seriesList.length === 0 ? (
-          <Empty description={error} />
-        ) : filtered.length === 0 ? (
-          <Empty description="조건에 맞는 시리즈가 없습니다." />
-        ) : (
+      <ManagementContentState
+        className={styles.tableCard}
+        loading={loading}
+        error={error}
+        hasData={filtered.length > 0}
+        emptyDescription="조건에 맞는 시리즈가 없습니다."
+      >
           <Table<SeriesRow>
             columns={columns}
             dataSource={filtered}
@@ -552,226 +527,40 @@ export function SeriesManagementPage() {
             loading={loading}
             size="md"
           />
-        )}
-      </div>
+      </ManagementContentState>
 
-      <Modal
-        open={editor !== null}
-        title={editor?.mode === 'edit' ? '시리즈 수정' : '새 시리즈'}
-        okText={editor?.mode === 'edit' ? '저장' : '생성'}
-        cancelText="취소"
-        confirmLoading={saving}
-        onOk={submitEditor}
-        onCancel={closeEditor}
-        destroyOnHidden
-        width={640}
-      >
-        <div className={styles.formGrid}>
-          <div className={`${styles.field} ${styles.fieldFull}`}>
-            <label className={styles.label} htmlFor="series-title">제목 *</label>
-            <Input
-              id="series-title"
-              value={formState.title}
-              onChange={(event) =>
-                setFormState((prev) => ({ ...prev, title: event.target.value }))
-              }
-            />
-          </div>
-          <div className={styles.field}>
-            <label className={styles.label} htmlFor="series-slug">슬러그</label>
-            <Input
-              id="series-slug"
-              value={formState.slug}
-              placeholder="비워두면 제목으로 자동 생성"
-              onChange={(event) =>
-                setFormState((prev) => ({ ...prev, slug: event.target.value }))
-              }
-            />
-            <span className={styles.helper}>공개 URL에 사용됩니다. /series/&lt;slug&gt;</span>
-          </div>
-          <div className={styles.field}>
-            <span className={styles.label}>커버 이미지</span>
-            <input
-              ref={coverInputRef}
-              type="file"
-              accept="image/jpeg,image/png,image/webp,image/gif"
-              className={styles.hiddenInput}
-              onChange={(event) => {
-                const file = event.target.files?.[0] ?? null;
-                handleCoverFileChange(file);
-                event.currentTarget.value = '';
-              }}
-            />
-            <div className={styles.coverCard}>
-              <div className={styles.coverPreview}>
-                {coverPreview ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={coverPreview}
-                    alt="시리즈 커버 미리보기"
-                    className={styles.coverPreviewImage}
-                  />
-                ) : (
-                  <div className={styles.coverPlaceholder}>커버 이미지 없음</div>
-                )}
-              </div>
-              <div className={styles.coverMeta}>
-                <div className={styles.coverActions}>
-                  <Button
-                    size="sm"
-                    variant="outlined"
-                    disabled={saving}
-                    onClick={() => coverInputRef.current?.click()}
-                  >
-                    {coverPreview ? '이미지 교체' : '이미지 선택'}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="text"
-                    disabled={saving || (!coverPreview && !coverFile)}
-                    onClick={clearCoverSelection}
-                  >
-                    이미지 제거
-                  </Button>
-                </div>
-                <span className={styles.helper}>
-                  JPG, PNG, WEBP, GIF 파일을 업로드할 수 있습니다. 저장 버튼을 누르면 반영됩니다.
-                </span>
-                {coverFile && (
-                  <span className={styles.fileMeta}>
-                    {`${coverFile.name} · ${(coverFile.size / 1024 / 1024).toFixed(2)} MB`}
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-          <div className={`${styles.field} ${styles.fieldFull}`}>
-            <label className={styles.label} htmlFor="series-desc">설명</label>
-            <textarea
-              id="series-desc"
-              className={styles.textarea}
-              value={formState.description}
-              onChange={(event) =>
-                setFormState((prev) => ({ ...prev, description: event.target.value }))
-              }
-            />
-          </div>
-          {formError && <Alert type="error" message={formError} />}
-        </div>
-      </Modal>
+      <SeriesEditorModal
+        editor={editor}
+        formState={formState}
+        formError={formError}
+        saving={saving}
+        coverPreview={coverPreview}
+        coverFile={coverFile}
+        onFormChange={(patch) =>
+          setFormState((prev) => ({ ...prev, ...patch }))
+        }
+        onCoverFileChange={handleCoverFileChange}
+        onClearCover={clearCoverSelection}
+        onSubmit={submitEditor}
+        onClose={closeEditor}
+      />
 
-      <Modal
-        open={assignTarget !== null}
-        title={assignTarget ? `글 관리 · ${assignTarget.title}` : '글 관리'}
-        okText="저장"
-        cancelText="취소"
-        confirmLoading={assignLoading}
-        onOk={saveAssignment}
-        onCancel={closeAssign}
-        destroyOnHidden
-        width={880}
-      >
-        {assignError && (
-          <Alert
-            type="error"
-            message={assignError}
-            closable
-            onClose={() => setAssignError(null)}
-            style={{ marginBottom: 'var(--orot-space-3)' }}
-          />
-        )}
-        {assignLoading && assignPool.length === 0 && assignOrder.length === 0 ? (
-          <div style={{ display: 'flex', justifyContent: 'center', padding: 'var(--orot-space-10)' }}>
-            <Spin size="lg" />
-          </div>
-        ) : (
-          <div className={styles.assignLayout}>
-            <div className={styles.assignColumn}>
-              <div className={styles.assignHeader}>
-                <span>발행된 글</span>
-                <span className={styles.assignCount}>{availablePosts.length}편</span>
-              </div>
-              <Input
-                value={assignSearch}
-                placeholder="제목·슬러그 검색"
-                onChange={(event) => setAssignSearch(event.target.value)}
-              />
-              {availablePosts.length === 0 ? (
-                <div className={styles.emptyList}>추가할 수 있는 발행된 글이 없습니다.</div>
-              ) : (
-                <ul className={styles.assignList}>
-                  {availablePosts.map((post) => (
-                    <li key={post.id} className={styles.assignItem}>
-                      <div className={styles.assignItemBody}>
-                        <span className={styles.assignItemTitle}>{post.title}</span>
-                        <span className={styles.assignItemMeta}>
-                          {post.slug} · {formatDate(post.publishedAt)}
-                        </span>
-                      </div>
-                      <div className={styles.assignItemActions}>
-                        <Button
-                          size="sm"
-                          variant="text"
-                          onClick={() => addPostToSeries(post)}
-                        >
-                          추가
-                        </Button>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-
-            <div className={styles.assignColumn}>
-              <div className={styles.assignHeader}>
-                <span>시리즈에 포함 (위에서 아래 순서)</span>
-                <span className={styles.assignCount}>{assignOrder.length}편</span>
-              </div>
-              {assignOrder.length === 0 ? (
-                <div className={styles.emptyList}>왼쪽에서 글을 추가하세요.</div>
-              ) : (
-                <ul className={styles.assignList}>
-                  {assignOrder.map((post, index) => (
-                    <li key={post.id} className={styles.assignItem}>
-                      <span className={styles.orderBadge}>{index + 1}</span>
-                      <div className={styles.assignItemBody}>
-                        <span className={styles.assignItemTitle}>{post.title}</span>
-                        <span className={styles.assignItemMeta}>{post.slug}</span>
-                      </div>
-                      <div className={styles.assignItemActions}>
-                        <Button
-                          size="sm"
-                          variant="text"
-                          disabled={index === 0}
-                          onClick={() => movePost(post.id, -1)}
-                        >
-                          ↑
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="text"
-                          disabled={index === assignOrder.length - 1}
-                          onClick={() => movePost(post.id, 1)}
-                        >
-                          ↓
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="text"
-                          onClick={() => removePostFromSeries(post.id)}
-                        >
-                          제거
-                        </Button>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </div>
-        )}
-      </Modal>
+      <SeriesAssignmentModal
+        assignTarget={assignTarget}
+        assignLoading={assignLoading}
+        assignError={assignError}
+        showInitialLoading={assignLoading && assignPool.length === 0 && assignOrder.length === 0}
+        availablePosts={availablePosts}
+        assignOrder={assignOrder}
+        assignSearch={assignSearch}
+        onAssignSearchChange={setAssignSearch}
+        onAddPost={addPostToSeries}
+        onMovePost={movePost}
+        onRemovePost={removePostFromSeries}
+        onDismissError={() => setAssignError(null)}
+        onSave={saveAssignment}
+        onClose={closeAssign}
+      />
     </div>
   );
 }

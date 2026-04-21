@@ -1,8 +1,13 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
-import { PhotosPage } from '@/components/public/PhotosPage';
+import { PhotosPage } from '@/components/public/photos/PhotosPage';
 import { serverGet, toPaginatedResponse } from '@/utils/server-api';
-import type { ApiListPayload, GalleryItem, GalleryListResponse } from '@/types';
+import type {
+  ApiListPayload,
+  GalleryItem,
+  GalleryListResponse,
+  GallerySort,
+} from '@/types';
 
 export const metadata: Metadata = {
   title: '사진 | orot.dev',
@@ -10,9 +15,16 @@ export const metadata: Metadata = {
 };
 
 const PAGE_SIZE = 24;
+const GALLERY_SORTS: GallerySort[] = [
+  'manual',
+  'takenAtDesc',
+  'takenAtAsc',
+  'createdAtDesc',
+];
 
 interface SearchParams {
   page?: string;
+  sort?: string;
 }
 
 interface PhotosRouteProps {
@@ -28,10 +40,23 @@ function normalizePage(value?: string): number {
   return Number.isInteger(parsed) && parsed > 0 ? parsed : 1;
 }
 
+function normalizeSort(value?: string): GallerySort {
+  if (value && GALLERY_SORTS.includes(value as GallerySort)) {
+    return value as GallerySort;
+  }
+
+  return 'manual';
+}
+
 async function PhotosContent({ searchParams }: { searchParams: SearchParams }) {
+  const currentSort = normalizeSort(searchParams.sort);
   const photosPayload = await serverGet<ApiListPayload<GalleryItem>>(
     '/public/gallery',
-    { page: normalizePage(searchParams.page), limit: PAGE_SIZE },
+    {
+      page: normalizePage(searchParams.page),
+      limit: PAGE_SIZE,
+      ...(currentSort !== 'manual' ? { sort: currentSort } : {}),
+    },
     { cache: 'no-store', revalidate: false },
   );
 
@@ -45,7 +70,7 @@ async function PhotosContent({ searchParams }: { searchParams: SearchParams }) {
         totalPages: 0,
       };
 
-  return <PhotosPage photoList={photoList} />;
+  return <PhotosPage photoList={photoList} currentSort={currentSort} />;
 }
 
 export default async function PhotosRoute({ searchParams }: PhotosRouteProps) {

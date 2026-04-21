@@ -1,4 +1,11 @@
-import { IsOptional, IsInt, IsBoolean, Min, IsString } from 'class-validator';
+import {
+  IsOptional,
+  IsInt,
+  IsBoolean,
+  Min,
+  IsString,
+  IsIn,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type, Transform } from 'class-transformer';
 
@@ -7,6 +14,15 @@ function transformBoolean({ value }: { value: unknown }) {
   if (value === 'false' || value === false) return false;
   return value;
 }
+
+export const GALLERY_SORT_VALUES = [
+  'manual',
+  'takenAtDesc',
+  'takenAtAsc',
+  'createdAtDesc',
+] as const;
+
+export type GallerySort = (typeof GALLERY_SORT_VALUES)[number];
 
 export class QueryGalleryDto {
   @ApiProperty({ required: false })
@@ -33,4 +49,9 @@ export class QueryGalleryDto {
   @IsInt()
   @Min(1)
   limit?: number;
+
+  @ApiPropertyOptional({ enum: GALLERY_SORT_VALUES, default: 'manual' })
+  @IsOptional()
+  @IsIn(GALLERY_SORT_VALUES)
+  sort?: GallerySort = 'manual';
 }

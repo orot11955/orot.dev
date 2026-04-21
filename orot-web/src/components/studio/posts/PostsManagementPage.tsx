@@ -1,26 +1,31 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Badge,
-  Button,
-  Empty,
-  Input,
   Modal,
-  Popconfirm,
   Select,
-  Spin,
   Table,
   Tag,
-  Typography,
 } from 'orot-ui';
 import type { ColumnType } from 'orot-ui';
-import { useNotificationEffect } from '@/hooks';
+import {
+  useLatestAsyncState,
+  useManagementSearch,
+  useNotificationEffect,
+} from '@/hooks';
 import { studioCategoriesService, studioPostsService } from '@/services';
 import type { Category, PostListItem, PostQuery, PostStatus } from '@/types';
-import { formatDate, getErrorMessage, splitTags } from '@/utils/content';
+import {
+  ManagementActionGroup,
+  type ManagementActionItem,
+} from '@/components/studio/shared/actions/ManagementActionGroup';
+import { ManagementContentState } from '@/components/studio/shared/management/ManagementContentState';
+import { ManagementPageHeader } from '@/components/studio/shared/management/ManagementPageHeader';
+import { ManagementToolbar } from '@/components/studio/shared/management/ManagementToolbar';
+import { formatDate, splitTags } from '@/utils/content';
 import { STATUS_META } from '@/components/studio/dashboard/PostStatusChart';
 import styles from './PostsManagement.module.css';
 
@@ -68,15 +73,25 @@ export function PostsManagementPage() {
   const [sort, setSort] = useState<SortValue>('latest');
   const [categoryId, setCategoryId] = useState<number | 'all'>('all');
   const [categories, setCategories] = useState<Category[]>([]);
-  const [search, setSearch] = useState('');
-  const [pendingSearch, setPendingSearch] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [mutatingId, setMutatingId] = useState<number | null>(null);
   const [scheduleTarget, setScheduleTarget] = useState<PostListItem | null>(null);
   const [scheduledAt, setScheduledAt] = useState<string>('');
   const [scheduleError, setScheduleError] = useState<string | null>(null);
-  const reloadTokenRef = useRef(0);
+  const {
+    loading,
+    error,
+    runLatest,
+    runAction,
+  } = useLatestAsyncState();
+  const {
+    search,
+    pendingSearch,
+    setPendingSearch,
+    submitSearch,
+    resetSearch,
+  } = useManagementSearch({
+    resetPage: () => setPage(1),
+  });
 
   useNotificationEffect(error, {
     type: 'error',
@@ -84,10 +99,7 @@ export function PostsManagementPage() {
   });
 
   const load = useCallback(async () => {
-    const token = ++reloadTokenRef.current;
-    setLoading(true);
-    setError(null);
-    try {
+    const result = await runLatest(async () => {
       const query: PostQuery = {
         page,
         limit: DEFAULT_LIMIT,
@@ -97,17 +109,16 @@ export function PostsManagementPage() {
       if (categoryId !== 'all') query.categoryId = categoryId;
       if (search) query.search = search;
 
-      const result = await studioPostsService.getAll(query);
-      if (token !== reloadTokenRef.current) return;
-      setPosts(result.data);
-      setTotal(result.total);
-    } catch (err) {
-      if (token !== reloadTokenRef.current) return;
-      setError(getErrorMessage(err));
-    } finally {
-      if (token === reloadTokenRef.current) setLoading(false);
+      return studioPostsService.getAll(query);
+    });
+
+    if (!result) {
+      return;
     }
-  }, [page, sort, status, categoryId, search]);
+
+    setPosts(result.data);
+    setTotal(result.total);
+  }, [page, sort, status, categoryId, search, runLatest]);
 
   useEffect(() => {
     let cancelled = false;
@@ -128,17 +139,6 @@ export function PostsManagementPage() {
     load();
   }, [load]);
 
-  const submitSearch = useCallback(() => {
-    setSearch(pendingSearch.trim());
-    setPage(1);
-  }, [pendingSearch]);
-
-  const resetSearch = useCallback(() => {
-    setPendingSearch('');
-    setSearch('');
-    setPage(1);
-  }, []);
-
   const handleTransition = useCallback(
     async (
       post: PostListItem,
@@ -147,33 +147,33 @@ export function PostsManagementPage() {
     ) => {
       setMutatingId(post.id);
       try {
-        await studioPostsService.transition(post.id, {
+        const result = await runAction(() =>
+          studioPostsService.transition(post.id, {
           status: target,
           ...(payloadScheduledAt ? { scheduledAt: payloadScheduledAt } : {}),
-        });
+          }),
+        );
+        if (!result) return;
         await load();
-      } catch (err) {
-        setError(getErrorMessage(err));
       } finally {
         setMutatingId(null);
       }
     },
-    [load],
+    [load, runAction],
   );
 
   const handleDelete = useCallback(
     async (post: PostListItem) => {
       setMutatingId(post.id);
       try {
-        await studioPostsService.remove(post.id);
+        const result = await runAction(() => studioPostsService.remove(post.id));
+        if (result === null) return;
         await load();
-      } catch (err) {
-        setError(getErrorMessage(err));
       } finally {
         setMutatingId(null);
       }
     },
-    [load],
+    [load, runAction],
   );
 
   const openScheduleModal = useCallback((post: PostListItem) => {
@@ -289,87 +289,91 @@ export function PostsManagementPage() {
           const canRestart = post.status === 'PUBLISHED';
           const canReview = post.status === 'UPDATED' || post.status === 'ARCHIVED';
           const canCancelSchedule = post.status === 'SCHEDULED';
+          const actions: ManagementActionItem[] = [];
 
-          return (
-            <div className={styles.actions}>
-              {canPublish && (
-                <Button
-                  size="sm"
-                  variant="solid"
-                  disabled={busy}
-                  onClick={() => handleTransition(post, 'PUBLISHED')}
-                >
-                  {post.status === 'SCHEDULED' ? '즉시 발행' : '발행'}
-                </Button>
-              )}
-              {canSchedule && (
-                <Button
-                  size="sm"
-                  variant="outlined"
-                  disabled={busy}
-                  onClick={() => openScheduleModal(post)}
-                >
-                  예약 발행
-                </Button>
-              )}
-              {canCancelSchedule && (
-                <Button
-                  size="sm"
-                  variant="outlined"
-                  disabled={busy}
-                  onClick={() => handleTransition(post, 'DRAFT')}
-                >
-                  예약 취소
-                </Button>
-              )}
-              {canRestart && (
-                <Button
-                  size="sm"
-                  variant="outlined"
-                  disabled={busy}
-                  onClick={() => handleTransition(post, 'UPDATED')}
-                >
-                  수정 시작
-                </Button>
-              )}
-              {canArchive && (
-                <Button
-                  size="sm"
-                  variant="outlined"
-                  disabled={busy}
-                  onClick={() => handleTransition(post, 'ARCHIVED')}
-                >
-                  보관
-                </Button>
-              )}
-              {canReview && (
-                <Button
-                  size="sm"
-                  variant="outlined"
-                  disabled={busy}
-                  onClick={() => handleTransition(post, 'REVIEW')}
-                >
-                  검토로
-                </Button>
-              )}
-              <Link href={editHref}>
-                <Button size="sm" variant="text" disabled={busy}>
-                  수정
-                </Button>
-              </Link>
-              <Popconfirm
-                title="삭제하시겠습니까?"
-                description="삭제된 글은 복구할 수 없습니다."
-                okText="삭제"
-                cancelText="취소"
-                onConfirm={() => handleDelete(post)}
-              >
-                <Button size="sm" variant="text" disabled={busy}>
-                  삭제
-                </Button>
-              </Popconfirm>
-            </div>
-          );
+          if (canPublish) {
+            actions.push({
+              key: 'publish',
+              label: post.status === 'SCHEDULED' ? '즉시 발행' : '발행',
+              variant: 'solid',
+              disabled: busy,
+              onClick: () => handleTransition(post, 'PUBLISHED'),
+            });
+          }
+
+          if (canSchedule) {
+            actions.push({
+              key: 'schedule',
+              label: '예약 발행',
+              variant: 'outlined',
+              disabled: busy,
+              onClick: () => openScheduleModal(post),
+            });
+          }
+
+          if (canCancelSchedule) {
+            actions.push({
+              key: 'cancel-schedule',
+              label: '예약 취소',
+              variant: 'outlined',
+              disabled: busy,
+              onClick: () => handleTransition(post, 'DRAFT'),
+            });
+          }
+
+          if (canRestart) {
+            actions.push({
+              key: 'restart',
+              label: '수정 시작',
+              variant: 'outlined',
+              disabled: busy,
+              onClick: () => handleTransition(post, 'UPDATED'),
+            });
+          }
+
+          if (canArchive) {
+            actions.push({
+              key: 'archive',
+              label: '보관',
+              variant: 'outlined',
+              disabled: busy,
+              onClick: () => handleTransition(post, 'ARCHIVED'),
+            });
+          }
+
+          if (canReview) {
+            actions.push({
+              key: 'review',
+              label: '검토로',
+              variant: 'outlined',
+              disabled: busy,
+              onClick: () => handleTransition(post, 'REVIEW'),
+            });
+          }
+
+          actions.push({
+            key: 'edit',
+            label: '수정',
+            variant: 'text',
+            disabled: busy,
+            href: editHref,
+          });
+
+          actions.push({
+            key: 'delete',
+            label: '삭제',
+            variant: 'text',
+            disabled: busy,
+            confirm: {
+              title: '삭제하시겠습니까?',
+              description: '삭제된 글은 복구할 수 없습니다.',
+              okText: '삭제',
+              cancelText: '취소',
+              onConfirm: () => handleDelete(post),
+            },
+          });
+
+          return <ManagementActionGroup className={styles.actions} actions={actions} />;
         },
       },
     ],
@@ -378,23 +382,35 @@ export function PostsManagementPage() {
 
   return (
     <div className={styles.page}>
-      <header className={styles.header}>
-        <div className={styles.headerText}>
-          <Typography.Text className={styles.eyebrow}>Posts</Typography.Text>
-          <Typography.Title level={2} className={styles.title}>
-            글 관리
-          </Typography.Title>
-          <Typography.Paragraph className={styles.subtitle}>
-            스튜디오에 노출되는 글의 발행·예약·보관·삭제를 관리하고, 에디터로 이동해 내용을 수정합니다.
-          </Typography.Paragraph>
-        </div>
-        <div className={styles.headerMeta}>
-          <Badge count={total} showZero color="var(--public-accent)" />
-          <span>{`총 ${total.toLocaleString('ko-KR')}편`}</span>
-        </div>
-      </header>
+      <ManagementPageHeader
+        eyebrow="Posts"
+        title="글 관리"
+        description="스튜디오에 노출되는 글의 발행·예약·보관·삭제를 관리하고, 에디터로 이동해 내용을 수정합니다."
+        classNames={{
+          header: styles.header,
+          headerText: styles.headerText,
+          eyebrow: styles.eyebrow,
+          title: styles.title,
+          subtitle: styles.subtitle,
+          side: styles.headerMeta,
+        }}
+        side={
+          <>
+            <Badge count={total} showZero color="var(--public-accent)" />
+            <span>{`총 ${total.toLocaleString('ko-KR')}편`}</span>
+          </>
+        }
+      />
 
-      <div className={styles.toolbar}>
+      <ManagementToolbar
+        className={styles.toolbar}
+        actionsClassName={styles.toolbarActions}
+        searchValue={pendingSearch}
+        searchPlaceholder="제목·내용·요약 검색"
+        onSearchChange={setPendingSearch}
+        onSearchSubmit={submitSearch}
+        onSearchReset={resetSearch}
+      >
         <Select
           options={STATUS_OPTIONS}
           value={status}
@@ -426,34 +442,15 @@ export function PostsManagementPage() {
             setPage(1);
           }}
         />
-        <Input
-          value={pendingSearch}
-          placeholder="제목·내용·요약 검색"
-          onChange={(event) => setPendingSearch(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter') submitSearch();
-          }}
-        />
-        <div className={styles.toolbarActions}>
-          <Button size="md" variant="outlined" onClick={resetSearch}>
-            초기화
-          </Button>
-          <Button size="md" variant="solid" onClick={submitSearch}>
-            검색
-          </Button>
-        </div>
-      </div>
+      </ManagementToolbar>
 
-      <div className={styles.tableCard}>
-        {loading && posts.length === 0 ? (
-          <div style={{ display: 'flex', justifyContent: 'center', padding: 'var(--orot-space-10)' }}>
-            <Spin size="lg" />
-          </div>
-        ) : error && posts.length === 0 ? (
-          <Empty description={error} />
-        ) : posts.length === 0 ? (
-          <Empty description="조건에 맞는 글이 없습니다." />
-        ) : (
+      <ManagementContentState
+        className={styles.tableCard}
+        loading={loading}
+        error={error}
+        hasData={posts.length > 0}
+        emptyDescription="조건에 맞는 글이 없습니다."
+      >
           <Table<PostListItem>
             columns={columns}
             dataSource={posts}
@@ -468,8 +465,7 @@ export function PostsManagementPage() {
               onChange: (nextPage) => setPage(nextPage),
             }}
           />
-        )}
-      </div>
+      </ManagementContentState>
 
       <Modal
         open={Boolean(scheduleTarget)}

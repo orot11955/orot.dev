@@ -232,6 +232,11 @@
   text-transform: uppercase;
 }
 
+.detailHint {
+  font-size: var(--orot-font-size-xs);
+  color: var(--orot-color-text-muted);
+}
+
 .detailPublish {
   display: flex;
   align-items: center;

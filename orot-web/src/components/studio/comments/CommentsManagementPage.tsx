@@ -1,23 +1,27 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Badge,
-  Button,
-  Empty,
-  Input,
-  Popconfirm,
   Select,
-  Spin,
   Table,
-  Typography,
 } from 'orot-ui';
 import type { ColumnType } from 'orot-ui';
-import { useNotificationEffect } from '@/hooks';
+import {
+  useLatestAsyncState,
+  useManagementSearch,
+  useNotificationEffect,
+} from '@/hooks';
 import { studioCommentsService } from '@/services';
 import type { Comment, CommentQuery } from '@/types';
-import { getErrorMessage } from '@/utils/content';
+import {
+  ManagementActionGroup,
+  type ManagementActionItem,
+} from '@/components/studio/shared/actions/ManagementActionGroup';
+import { ManagementContentState } from '@/components/studio/shared/management/ManagementContentState';
+import { ManagementPageHeader } from '@/components/studio/shared/management/ManagementPageHeader';
+import { ManagementToolbar } from '@/components/studio/shared/management/ManagementToolbar';
 import styles from './CommentsManagement.module.css';
 
 type StatusValue = 'ALL' | 'APPROVED' | 'PENDING' | 'FILTERED';
@@ -62,14 +66,24 @@ export function CommentsManagementPage() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState<StatusValue>('PENDING');
-  const [pendingSearch, setPendingSearch] = useState('');
-  const [search, setSearch] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [mutatingId, setMutatingId] = useState<number | null>(null);
   const [filteredCount, setFilteredCount] = useState(0);
   const [approvedCount, setApprovedCount] = useState(0);
-  const reloadTokenRef = useRef(0);
+  const {
+    loading,
+    error,
+    runLatest,
+    runAction,
+  } = useLatestAsyncState();
+  const {
+    search,
+    pendingSearch,
+    setPendingSearch,
+    submitSearch,
+    resetSearch,
+  } = useManagementSearch({
+    resetPage: () => setPage(1),
+  });
 
   useNotificationEffect(error, {
     type: 'error',
@@ -77,22 +91,23 @@ export function CommentsManagementPage() {
   });
 
   const load = useCallback(async () => {
-    const token = ++reloadTokenRef.current;
-    setLoading(true);
-    setError(null);
-    try {
+    const result = await runLatest(async () => {
       const query: CommentQuery = {
         page,
         limit: DEFAULT_LIMIT,
       };
       if (status !== 'ALL') query.status = status;
 
-      const result = await studioCommentsService.getAll(query);
-      if (token !== reloadTokenRef.current) return;
+      return studioCommentsService.getAll(query);
+    });
 
-      const normalizedQuery = search.trim().toLowerCase();
-      const filtered = normalizedQuery
-        ? result.data.filter((comment) => {
+    if (!result) {
+      return;
+    }
+
+    const normalizedQuery = search.trim().toLowerCase();
+    const filtered = normalizedQuery
+      ? result.data.filter((comment) => {
           const haystack = [
             comment.content,
             comment.authorName,
@@ -103,17 +118,11 @@ export function CommentsManagementPage() {
             .toLowerCase();
           return haystack.includes(normalizedQuery);
         })
-        : result.data;
+      : result.data;
 
-      setComments(filtered);
-      setTotal(result.total);
-    } catch (err) {
-      if (token !== reloadTokenRef.current) return;
-      setError(getErrorMessage(err));
-    } finally {
-      if (token === reloadTokenRef.current) setLoading(false);
-    }
-  }, [page, status, search]);
+    setComments(filtered);
+    setTotal(result.total);
+  }, [page, status, search, runLatest]);
 
   const loadStats = useCallback(async () => {
     try {
@@ -136,40 +145,27 @@ export function CommentsManagementPage() {
     loadStats();
   }, [loadStats, comments]);
 
-  const submitSearch = useCallback(() => {
-    setSearch(pendingSearch.trim());
-    setPage(1);
-  }, [pendingSearch]);
-
-  const resetSearch = useCallback(() => {
-    setPendingSearch('');
-    setSearch('');
-    setPage(1);
-  }, []);
-
   const handleApprove = useCallback(async (comment: Comment) => {
     setMutatingId(comment.id);
     try {
-      await studioCommentsService.approve(comment.id);
+      const result = await runAction(() => studioCommentsService.approve(comment.id));
+      if (!result) return;
       await load();
-    } catch (err) {
-      setError(getErrorMessage(err));
     } finally {
       setMutatingId(null);
     }
-  }, [load]);
+  }, [load, runAction]);
 
   const handleDelete = useCallback(async (comment: Comment) => {
     setMutatingId(comment.id);
     try {
-      await studioCommentsService.remove(comment.id);
+      const result = await runAction(() => studioCommentsService.remove(comment.id));
+      if (result === null) return;
       await load();
-    } catch (err) {
-      setError(getErrorMessage(err));
     } finally {
       setMutatingId(null);
     }
-  }, [load]);
+  }, [load, runAction]);
 
   const columns = useMemo<ColumnType<CommentRow>[]>(
     () => [
@@ -238,33 +234,34 @@ export function CommentsManagementPage() {
         width: 200,
         render: (_value, comment) => {
           const busy = mutatingId === comment.id;
-          const canApprove = comment.status !== 'APPROVED'
+          const canApprove = comment.status !== 'APPROVED';
+          const actions: ManagementActionItem[] = [];
 
-          return (
-            <div className={styles.actions}>
-              {canApprove && (
-                <Button
-                  size="sm"
-                  variant="solid"
-                  disabled={busy}
-                  onClick={() => handleApprove(comment)}
-                >
-                  승인
-                </Button>
-              )}
-              <Popconfirm
-                title="삭제하시겠습니까?"
-                description="삭제된 댓글은 복구할 수 없습니다."
-                okText="삭제"
-                cancelText="취소"
-                onConfirm={() => handleDelete(comment)}
-              >
-                <Button size="sm" variant="text" disabled={busy}>
-                  삭제
-                </Button>
-              </Popconfirm>
-            </div>
-          );
+          if (canApprove) {
+            actions.push({
+              key: 'approve',
+              label: '승인',
+              variant: 'solid',
+              disabled: busy,
+              onClick: () => handleApprove(comment),
+            });
+          }
+
+          actions.push({
+            key: 'delete',
+            label: '삭제',
+            variant: 'text',
+            disabled: busy,
+            confirm: {
+              title: '삭제하시겠습니까?',
+              description: '삭제된 댓글은 복구할 수 없습니다.',
+              okText: '삭제',
+              cancelText: '취소',
+              onConfirm: () => handleDelete(comment),
+            },
+          });
+
+          return <ManagementActionGroup className={styles.actions} actions={actions} />;
         },
       },
     ],
@@ -273,17 +270,20 @@ export function CommentsManagementPage() {
 
   return (
     <div className={styles.page}>
-      <header className={styles.header}>
-        <div className={styles.headerText}>
-          <Typography.Text className={styles.eyebrow}>Comments</Typography.Text>
-          <Typography.Title level={2} className={styles.title}>
-            댓글 관리
-          </Typography.Title>
-          <Typography.Paragraph className={styles.subtitle}>
-            필터링 키워드에 걸린 댓글만 승인 대기로 넘어오고, 나머지는 자동 공개됩니다. 여기에서 승인·삭제를 처리합니다.
-          </Typography.Paragraph>
-        </div>
-        <div className={styles.headerStats}>
+      <ManagementPageHeader
+        eyebrow="Comments"
+        title="댓글 관리"
+        description="필터링 키워드에 걸린 댓글만 승인 대기로 넘어오고, 나머지는 자동 공개됩니다. 여기에서 승인·삭제를 처리합니다."
+        classNames={{
+          header: styles.header,
+          headerText: styles.headerText,
+          eyebrow: styles.eyebrow,
+          title: styles.title,
+          subtitle: styles.subtitle,
+          side: styles.headerStats,
+        }}
+        side={
+          <>
           <div className={styles.statItem}>
             <span className={styles.statLabel}>필터링 대기</span>
             <span className={styles.statValue}>
@@ -296,52 +296,36 @@ export function CommentsManagementPage() {
               {approvedCount.toLocaleString('ko-KR')}
             </span>
           </div>
-        </div>
-      </header>
+          </>
+        }
+      />
 
-      <div className={styles.toolbar}>
+      <ManagementToolbar
+        className={styles.toolbar}
+        actionsClassName={styles.toolbarActions}
+        searchValue={pendingSearch}
+        searchPlaceholder="내용·작성자·글 제목 검색"
+        onSearchChange={setPendingSearch}
+        onSearchSubmit={submitSearch}
+        onSearchReset={resetSearch}
+      >
         <Select
           options={STATUS_OPTIONS}
           value={status}
           onChange={(value) => {
-            setStatus((value as StatusValue) ?? 'filtered');
+            setStatus((value as StatusValue) ?? 'FILTERED');
             setPage(1);
           }}
         />
-        <Input
-          value={pendingSearch}
-          placeholder="내용·작성자·글 제목 검색"
-          onChange={(event) => setPendingSearch(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter') submitSearch();
-          }}
-        />
-        <div className={styles.toolbarActions}>
-          <Button size="md" variant="outlined" onClick={resetSearch}>
-            초기화
-          </Button>
-          <Button size="md" variant="solid" onClick={submitSearch}>
-            검색
-          </Button>
-        </div>
-      </div>
+      </ManagementToolbar>
 
-      <div className={styles.tableCard}>
-        {loading && comments.length === 0 ? (
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'center',
-              padding: 'var(--orot-space-10)',
-            }}
-          >
-            <Spin size="lg" />
-          </div>
-        ) : error && comments.length === 0 ? (
-          <Empty description={error} />
-        ) : comments.length === 0 ? (
-          <Empty description="조건에 맞는 댓글이 없습니다." />
-        ) : (
+      <ManagementContentState
+        className={styles.tableCard}
+        loading={loading}
+        error={error}
+        hasData={comments.length > 0}
+        emptyDescription="조건에 맞는 댓글이 없습니다."
+      >
           <Table<CommentRow>
             columns={columns}
             dataSource={comments}
@@ -356,8 +340,7 @@ export function CommentsManagementPage() {
               onChange: (nextPage) => setPage(nextPage),
             }}
           />
-        )}
-      </div>
+      </ManagementContentState>
     </div>
   );
 }

@@ -9,7 +9,7 @@ import {
   DEFAULT_PUBLIC_NAV,
   parsePublicMenu,
   parseSocialLinks,
-} from './public-nav';
+} from './public-navigation';
 import styles from './PublicLayout.module.css';
 
 export async function PublicLayout({ children }: { children: ReactNode }) {

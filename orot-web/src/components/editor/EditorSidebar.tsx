@@ -18,7 +18,7 @@ import { editorPostsService } from '@/services';
 import type { PostListItem } from '@/types';
 import { formatDate, getErrorMessage } from '@/utils/content';
 import { STATUS_META } from '@/components/studio/dashboard/PostStatusChart';
-import { EDITOR_FILTERS, type EditorFilter } from './editor-nav';
+import { EDITOR_FILTERS, type EditorFilter } from './editor-navigation';
 import styles from './EditorSidebar.module.css';
 
 interface EditorSidebarProps {

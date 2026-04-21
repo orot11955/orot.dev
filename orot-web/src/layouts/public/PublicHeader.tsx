@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState, type FormEvent } from 'react';
@@ -10,11 +11,10 @@ import {
   MenuIcon,
   Search,
   X,
-  Image
 } from 'orot-ui';
 import { ClientOnly } from '@/components/ClientOnly';
 import { ThemeSwitcher } from '@/components/ThemeSwitcher';
-import { ASSET_TOKENS } from '@/layouts/public-nav'
+import { ASSET_TOKENS } from '@/layouts/public/public-navigation';
 import type { PublicMenuItem } from '@/types';
 import styles from './PublicHeader.module.css';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -38,10 +38,13 @@ interface Props {
 export default function LogoImage({ theme }: Props) {
   const currentTheme = theme === 'dark' ? 'dark' : 'light';
   return (
-    <img
+    <Image
       src={ASSET_TOKENS[currentTheme].logo}
       alt="logo"
-      style={{ height: "50px" }}
+      width={848}
+      height={400}
+      priority
+      style={{ height: '50px', width: 'auto' }}
     />
   );
 }

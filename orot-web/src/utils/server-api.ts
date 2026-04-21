@@ -1,4 +1,4 @@
-import type { ApiEnvelope, ApiListPayload, PaginatedResponse } from '@/types';
+import type { ApiEnvelope } from '@/types';
 import { headers } from 'next/headers';
 import { webServerLogger } from '@/logging/server';
 import { createRequestId } from '@/logging/shared';
@@ -100,14 +100,4 @@ export async function serverGet<T>(
   }
 }
 
-export function toPaginatedResponse<T>(
-  payload: ApiListPayload<T>,
-): PaginatedResponse<T> {
-  return {
-    data: payload.items,
-    total: payload.meta.total,
-    page: payload.meta.page,
-    limit: payload.meta.limit,
-    totalPages: payload.meta.totalPages,
-  };
-}
+export { toPaginatedResponse } from './pagination';

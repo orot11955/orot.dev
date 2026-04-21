@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { PostDetailClientPage } from '@/components/public/PostDetailClientPage';
+import { PostDetailClientPage } from '@/components/public/posts/PostDetailClientPage';
 import { serverGet } from '@/utils/server-api';
 import { resolveAssetUrl, splitTags } from '@/utils/content';
 import { normalizeSlugParam } from '@/utils/slug';

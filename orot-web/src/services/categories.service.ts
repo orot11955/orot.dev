@@ -1,4 +1,9 @@
-import { api } from './api';
+import {
+  createResource,
+  deleteResource,
+  getResource,
+  patchResource,
+} from './service-helpers';
 import { createAreaRoutes } from './api-routes';
 import type {
   Category,
@@ -12,11 +17,11 @@ const categoryRoutes = createAreaRoutes('categories');
 
 export const publicCategoriesService = {
   async getAll(): Promise<Category[]> {
-    return api.get<Category[]>(categoryRoutes.public());
+    return getResource<Category[]>(categoryRoutes.public());
   },
 
   async getBySlug(slug: string): Promise<Category> {
-    return api.get<Category>(categoryRoutes.public(slug));
+    return getResource<Category>(categoryRoutes.public(slug));
   },
 };
 
@@ -24,25 +29,31 @@ export const publicCategoriesService = {
 
 export const studioCategoriesService = {
   async create(payload: CreateCategoryPayload): Promise<Category> {
-    return api.post<Category>(categoryRoutes.studio(), payload);
+    return createResource<Category, CreateCategoryPayload>(
+      categoryRoutes.studio(),
+      payload,
+    );
   },
 
   async getAll(): Promise<Category[]> {
-    return api.get<Category[]>(categoryRoutes.studio());
+    return getResource<Category[]>(categoryRoutes.studio());
   },
 
   async getById(id: number): Promise<Category> {
-    return api.get<Category>(categoryRoutes.studio(id));
+    return getResource<Category>(categoryRoutes.studio(id));
   },
 
   async update(
     id: number,
     payload: UpdateCategoryPayload,
   ): Promise<Category> {
-    return api.patch<Category>(categoryRoutes.studio(id), payload);
+    return patchResource<Category, UpdateCategoryPayload>(
+      categoryRoutes.studio(id),
+      payload,
+    );
   },
 
   async remove(id: number): Promise<void> {
-    await api.delete(categoryRoutes.studio(id));
+    await deleteResource(categoryRoutes.studio(id));
   },
 };

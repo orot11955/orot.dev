@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { PhotoDetailPage } from '@/components/public/PhotoDetailPage';
+import { PhotoDetailPage } from '@/components/public/photos/PhotoDetailPage';
 import { serverGet } from '@/utils/server-api';
 import type { GalleryItem } from '@/types';
 

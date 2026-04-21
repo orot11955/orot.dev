@@ -15,11 +15,12 @@ import {
   Tag,
   Typography,
 } from 'orot-ui';
+import { ImageSelectionCard } from '@/components/studio/shared/media/ImageSelectionCard';
 import { editorPostsService, studioCategoriesService } from '@/services';
 import type { Category, Post, PostStatus, UpdatePostPayload } from '@/types';
 import { getErrorMessage, resolveAssetUrl, splitTags } from '@/utils/content';
 import { STATUS_META } from '@/components/studio/dashboard/PostStatusChart';
-import { useEditorRefresh } from '@/layouts/EditorLayout';
+import { useEditorRefresh } from '@/layouts/editor/EditorLayout';
 import styles from './EditorWorkspace.module.css';
 
 type SaveState = 'idle' | 'dirty' | 'saving' | 'saved' | 'error';
@@ -68,8 +69,6 @@ export function EditorWorkspace({ postId }: EditorWorkspaceProps) {
   const savingRef = useRef(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hydratedRef = useRef(false);
-  const coverInputRef = useRef<HTMLInputElement>(null);
-
   const applyPost = useCallback((next: Post) => {
     setPost(next);
     setTitle(next.title ?? '');
@@ -430,60 +429,35 @@ export function EditorWorkspace({ postId }: EditorWorkspaceProps) {
 
         <div className={styles.metaSection}>
           <Typography.Text className={styles.metaTitle}>대표 이미지</Typography.Text>
-          <input
-            ref={coverInputRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp,image/gif"
-            className={styles.hiddenInput}
-            onChange={(event) => {
-              const file = event.target.files?.[0] ?? null;
-              void handleCoverUpload(file);
-              event.currentTarget.value = '';
+          <ImageSelectionCard
+            imageUrl={coverPreview}
+            imageAlt="대표 이미지 미리보기"
+            placeholder="대표 이미지 없음"
+            chooseLabel={coverImage ? '이미지 교체' : '이미지 업로드'}
+            removeLabel="이미지 제거"
+            removePendingLabel="삭제 중…"
+            helperText="JPG, PNG, WEBP, GIF 파일을 바로 업로드할 수 있습니다."
+            footerText="공개 상세 상단 커버에 사용됩니다."
+            chooseLoading={coverAction === 'uploading'}
+            removing={coverAction === 'removing'}
+            disabled={coverBusy}
+            canRemove={Boolean(coverImage)}
+            classNames={{
+              input: styles.hiddenInput,
+              card: styles.coverCard,
+              preview: styles.coverPreview,
+              image: styles.coverImage,
+              placeholder: styles.coverPlaceholder,
+              content: styles.coverActions,
+              actions: styles.actionRow,
+              helper: styles.metaHelper,
+              footer: styles.metaHelper,
             }}
+            onSelectFile={(file) => {
+              void handleCoverUpload(file);
+            }}
+            onRemove={handleCoverRemove}
           />
-          <div className={styles.coverCard}>
-            <div className={styles.coverPreview}>
-              {coverPreview ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={coverPreview}
-                  alt="대표 이미지 미리보기"
-                  className={styles.coverImage}
-                />
-              ) : (
-                <div className={styles.coverPlaceholder}>대표 이미지 없음</div>
-              )}
-            </div>
-            <div className={styles.coverActions}>
-              <div className={styles.actionRow}>
-                <Button
-                  size="sm"
-                  variant="outlined"
-                  loading={coverAction === 'uploading'}
-                  disabled={coverBusy}
-                  onClick={() => coverInputRef.current?.click()}
-                >
-                  {coverImage ? '이미지 교체' : '이미지 업로드'}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="text"
-                  disabled={coverBusy || !coverImage}
-                  onClick={() => {
-                    void handleCoverRemove();
-                  }}
-                >
-                  {coverAction === 'removing' ? '삭제 중…' : '이미지 제거'}
-                </Button>
-              </div>
-              <span className={styles.metaHelper}>
-                JPG, PNG, WEBP, GIF 파일을 바로 업로드할 수 있습니다.
-              </span>
-            </div>
-          </div>
-          <span className={styles.metaHelper}>
-            공개 상세 상단 커버에 사용됩니다.
-          </span>
         </div>
       </aside>
     </div>

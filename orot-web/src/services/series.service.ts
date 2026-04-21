@@ -1,4 +1,10 @@
-import { api, createFormData } from './api';
+import {
+  createResource,
+  deleteResource,
+  getResource,
+  patchResource,
+  uploadImageResource,
+} from './service-helpers';
 import { createAreaRoutes } from './api-routes';
 import type {
   Series,
@@ -13,11 +19,11 @@ const seriesRoutes = createAreaRoutes('series');
 
 export const publicSeriesService = {
   async getAll(): Promise<Series[]> {
-    return api.get<Series[]>(seriesRoutes.public());
+    return getResource<Series[]>(seriesRoutes.public());
   },
 
   async getBySlug(slug: string): Promise<Series> {
-    return api.get<Series>(seriesRoutes.public(slug));
+    return getResource<Series>(seriesRoutes.public(slug));
   },
 };
 
@@ -25,35 +31,37 @@ export const publicSeriesService = {
 
 export const studioSeriesService = {
   async create(payload: CreateSeriesPayload): Promise<Series> {
-    return api.post<Series>(seriesRoutes.studio(), payload);
+    return createResource<Series, CreateSeriesPayload>(seriesRoutes.studio(), payload);
   },
 
   async getAll(): Promise<Series[]> {
-    return api.get<Series[]>(seriesRoutes.studio());
+    return getResource<Series[]>(seriesRoutes.studio());
   },
 
   async getById(id: number): Promise<Series> {
-    return api.get<Series>(seriesRoutes.studio(id));
+    return getResource<Series>(seriesRoutes.studio(id));
   },
 
   async update(id: number, payload: UpdateSeriesPayload): Promise<Series> {
-    return api.patch<Series>(seriesRoutes.studio(id), payload);
+    return patchResource<Series, UpdateSeriesPayload>(seriesRoutes.studio(id), payload);
   },
 
   async uploadCoverImage(id: number, file: File): Promise<Series> {
-    const form = createFormData({ image: file });
-    return api.post<Series>(seriesRoutes.studio(id, 'cover-image'), form);
+    return uploadImageResource<Series>(seriesRoutes.studio(id, 'cover-image'), file);
   },
 
   async removeCoverImage(id: number): Promise<Series> {
-    return api.delete<Series>(seriesRoutes.studio(id, 'cover-image'));
+    return deleteResource<Series>(seriesRoutes.studio(id, 'cover-image'));
   },
 
   async assignPosts(id: number, payload: AssignPostsPayload): Promise<Series> {
-    return api.patch<Series>(seriesRoutes.studio(id, 'posts'), payload);
+    return patchResource<Series, AssignPostsPayload>(
+      seriesRoutes.studio(id, 'posts'),
+      payload,
+    );
   },
 
   async remove(id: number): Promise<void> {
-    await api.delete(seriesRoutes.studio(id));
+    await deleteResource(seriesRoutes.studio(id));
   },
 };

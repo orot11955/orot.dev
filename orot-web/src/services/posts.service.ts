@@ -1,4 +1,11 @@
-import { api, createFormData, toPaginatedResponse } from './api';
+import {
+  createResource,
+  deleteResource,
+  getResource,
+  listResource,
+  patchResource,
+  uploadImageResource,
+} from './service-helpers';
 import { apiPaths, createAreaRoutes } from './api-routes';
 import type {
   Post,
@@ -8,7 +15,6 @@ import type {
   CreatePostPayload,
   UpdatePostPayload,
   TransitionPostPayload,
-  ApiListPayload,
 } from '@/types';
 import { normalizePostQuery } from '@/utils/post-query';
 import { normalizeSlugParam } from '@/utils/slug';
@@ -19,26 +25,24 @@ const postRoutes = createAreaRoutes('posts');
 
 export const publicPostsService = {
   async getAll(query: PostQuery = {}): Promise<PostListResponse> {
-    const params = normalizePostQuery(query);
-    const data = await api.get<ApiListPayload<PostListResponse['data'][number]>>(
+    return listResource<PostListResponse['data'][number]>(
       postRoutes.public(),
-      { params },
+      normalizePostQuery(query),
     );
-    return toPaginatedResponse(data);
   },
 
   async getBySlug(slug: string): Promise<PostDetail> {
-    return api.get<PostDetail>(postRoutes.public(normalizeSlugParam(slug)));
+    return getResource<PostDetail>(postRoutes.public(normalizeSlugParam(slug)));
   },
 
   async recordView(
     slug: string,
   ): Promise<{ viewCount: number; counted: boolean }> {
-    return api.post(postRoutes.public(normalizeSlugParam(slug), 'view'));
+    return createResource(postRoutes.public(normalizeSlugParam(slug), 'view'));
   },
 
   async getAllTags(): Promise<string[]> {
-    return api.get<string[]>(postRoutes.public('tags'));
+    return getResource<string[]>(postRoutes.public('tags'));
   },
 };
 
@@ -46,40 +50,40 @@ export const publicPostsService = {
 
 export const editorPostsService = {
   async create(payload: CreatePostPayload): Promise<Post> {
-    return api.post<Post>(postRoutes.editor(), payload);
+    return createResource<Post, CreatePostPayload>(postRoutes.editor(), payload);
   },
 
   async getAll(query: PostQuery = {}): Promise<PostListResponse> {
-    const params = normalizePostQuery(query);
-    const data = await api.get<ApiListPayload<PostListResponse['data'][number]>>(
+    return listResource<PostListResponse['data'][number]>(
       postRoutes.editor(),
-      { params },
+      normalizePostQuery(query),
     );
-    return toPaginatedResponse(data);
   },
 
   async getById(id: number): Promise<Post> {
-    return api.get<Post>(postRoutes.editor(id));
+    return getResource<Post>(postRoutes.editor(id));
   },
 
   async update(id: number, payload: UpdatePostPayload): Promise<Post> {
-    return api.patch<Post>(postRoutes.editor(id), payload);
+    return patchResource<Post, UpdatePostPayload>(postRoutes.editor(id), payload);
   },
 
   async uploadCoverImage(id: number, file: File): Promise<Post> {
-    const form = createFormData({ image: file });
-    return api.post<Post>(postRoutes.editor(id, 'cover-image'), form);
+    return uploadImageResource<Post>(postRoutes.editor(id, 'cover-image'), file);
   },
 
   async removeCoverImage(id: number): Promise<Post> {
-    return api.delete<Post>(postRoutes.editor(id, 'cover-image'));
+    return deleteResource<Post>(postRoutes.editor(id, 'cover-image'));
   },
 
   async transition(
     id: number,
     payload: TransitionPostPayload,
   ): Promise<Post> {
-    return api.patch<Post>(postRoutes.editor(id, 'transition'), payload);
+    return patchResource<Post, TransitionPostPayload>(
+      postRoutes.editor(id, 'transition'),
+      payload,
+    );
   },
 };
 
@@ -87,36 +91,37 @@ export const editorPostsService = {
 
 export const studioPostsService = {
   async getAll(query: PostQuery = {}): Promise<PostListResponse> {
-    const params = normalizePostQuery(query);
-    const data = await api.get<ApiListPayload<PostListResponse['data'][number]>>(
+    return listResource<PostListResponse['data'][number]>(
       postRoutes.studio(),
-      { params },
+      normalizePostQuery(query),
     );
-    return toPaginatedResponse(data);
   },
 
   async getById(id: number): Promise<Post> {
-    return api.get<Post>(postRoutes.studio(id));
+    return getResource<Post>(postRoutes.studio(id));
   },
 
   async getBySlug(slug: string): Promise<PostDetail> {
-    return api.get<PostDetail>(
+    return getResource<PostDetail>(
       apiPaths.studio('posts', 'slug', normalizeSlugParam(slug)),
     );
   },
 
   async update(id: number, payload: UpdatePostPayload): Promise<Post> {
-    return api.patch<Post>(postRoutes.studio(id), payload);
+    return patchResource<Post, UpdatePostPayload>(postRoutes.studio(id), payload);
   },
 
   async transition(
     id: number,
     payload: TransitionPostPayload,
   ): Promise<Post> {
-    return api.patch<Post>(postRoutes.studio(id, 'transition'), payload);
+    return patchResource<Post, TransitionPostPayload>(
+      postRoutes.studio(id, 'transition'),
+      payload,
+    );
   },
 
   async remove(id: number): Promise<void> {
-    await api.delete(postRoutes.studio(id));
+    await deleteResource(postRoutes.studio(id));
   },
 };

@@ -17,8 +17,8 @@ import type {
   Series,
 } from '@/types';
 import { resolveAssetUrl } from '@/utils/content';
-import { parseSocialLinks } from '@/layouts/public-nav';
-import { PostCard } from './PostCard';
+import { parseSocialLinks } from '@/layouts/public/public-navigation';
+import { PostCard } from '../shared/PostCard';
 import styles from './HomePage.module.css';
 
 interface HomePageProps {

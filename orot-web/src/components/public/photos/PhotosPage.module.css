@@ -44,6 +44,23 @@
   font-weight: var(--orot-font-weight-bold);
 }
 
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--orot-space-3);
+  padding: var(--orot-space-3) var(--orot-space-4);
+  border: 1px solid var(--public-panel-border);
+  border-radius: var(--orot-radius-lg);
+  background: color-mix(in srgb, var(--public-panel-bg) 84%, var(--orot-color-bg));
+}
+
+.sortSelect {
+  min-width: 100px;
+  max-width: 150px;
+}
+
 .masonry {
   width: 100%;
 }
@@ -91,8 +108,8 @@
   align-items: flex-end;
   padding: var(--orot-space-3);
   background: linear-gradient(180deg,
-    transparent 40%,
-    rgb(0 0 0 / 0.72) 100%);
+      transparent 40%,
+      rgb(0 0 0 / 0.72) 100%);
   opacity: 0;
   transition: opacity var(--orot-transition-base);
 }
@@ -137,4 +154,15 @@
 .empty p {
   margin: 0;
   font-size: var(--orot-font-size-sm);
+}
+
+@media (max-width: 640px) {
+  .toolbar {
+    align-items: stretch;
+  }
+
+  .sortSelect {
+    min-width: 0;
+    width: 100%;
+  }
 }

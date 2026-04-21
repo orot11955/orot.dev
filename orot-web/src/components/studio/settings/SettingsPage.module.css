@@ -372,6 +372,13 @@
 
 .listItemActions {
   display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--orot-space-1);
+}
+
+.listItemButtons {
+  display: flex;
   gap: var(--orot-space-1);
 }
 

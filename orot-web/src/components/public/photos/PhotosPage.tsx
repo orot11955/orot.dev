@@ -3,16 +3,32 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { CalendarDays, ImageIcon, Masonry, Pagination } from 'orot-ui';
-import type { GalleryItem, GalleryListResponse } from '@/types';
+import { CalendarDays, Flex, ImageIcon, Masonry, Pagination, Select } from 'orot-ui';
+import type { GalleryItem, GalleryListResponse, GallerySort } from '@/types';
 import { formatDate, resolveAssetUrl } from '@/utils/content';
 import styles from './PhotosPage.module.css';
 
 interface PhotosPageProps {
   photoList: GalleryListResponse;
+  currentSort: GallerySort;
 }
 
-export function PhotosPage({ photoList }: PhotosPageProps) {
+const SORT_OPTIONS: Array<{ value: GallerySort; label: string }> = [
+  { value: 'manual', label: '정렬' },
+  { value: 'takenAtDesc', label: '촬영일 최신순' },
+  { value: 'takenAtAsc', label: '촬영일 오래된순' },
+  { value: 'createdAtDesc', label: '업로드 최신순' },
+];
+
+function normalizeSort(value?: string | null): GallerySort {
+  if (value && SORT_OPTIONS.some((option) => option.value === value)) {
+    return value as GallerySort;
+  }
+
+  return 'manual';
+}
+
+export function PhotosPage({ photoList, currentSort }: PhotosPageProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -20,6 +36,19 @@ export function PhotosPage({ photoList }: PhotosPageProps) {
     const next = new URLSearchParams(searchParams.toString());
     if (page <= 1) next.delete('page');
     else next.set('page', String(page));
+    const qs = next.toString();
+    router.push(qs ? `/photos?${qs}` : '/photos');
+  };
+
+  const handleSort = (value: string | number | null) => {
+    const next = new URLSearchParams(searchParams.toString());
+    const sort = normalizeSort(value != null ? String(value) : undefined);
+
+    if (sort === 'manual') next.delete('sort');
+    else next.set('sort', sort);
+
+    next.delete('page');
+
     const qs = next.toString();
     router.push(qs ? `/photos?${qs}` : '/photos');
   };
@@ -34,7 +63,15 @@ export function PhotosPage({ photoList }: PhotosPageProps) {
             총 <strong>{photoList.total}</strong>장의 사진을 모아두었어요.
           </p>
         </header>
-
+        <Flex justify='end'>
+          <Select
+            size="md"
+            value={currentSort}
+            options={SORT_OPTIONS}
+            className={styles.sortSelect}
+            onChange={(value) => handleSort(value as string | number | null)}
+          />
+        </Flex>
         {photoList.data.length > 0 ? (
           <Masonry
             columns={{ xs: 1, sm: 2, md: 3, lg: 3, xl: 4 }}

@@ -256,6 +256,12 @@ export interface GalleryItem {
   updatedAt: string;
 }
 
+export type GallerySort =
+  | 'manual'
+  | 'takenAtDesc'
+  | 'takenAtAsc'
+  | 'createdAtDesc';
+
 export interface CreateGalleryItemPayload {
   title?: string;
   description?: string;
@@ -264,13 +270,20 @@ export interface CreateGalleryItemPayload {
   sortOrder?: number;
 }
 
-export type UpdateGalleryItemPayload = CreateGalleryItemPayload;
+export interface UpdateGalleryItemPayload {
+  title?: string;
+  description?: string;
+  altText?: string;
+  takenAt?: string | null;
+  sortOrder?: number;
+}
 
 export interface GalleryQuery {
   page?: number;
   limit?: number;
   search?: string;
   isPublished?: boolean;
+  sort?: GallerySort;
 }
 
 export interface GalleryListResponse {

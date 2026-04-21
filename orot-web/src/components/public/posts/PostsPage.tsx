@@ -18,7 +18,7 @@ import type {
   PostSort,
   Series,
 } from '@/types';
-import { PostCard } from './PostCard';
+import { PostCard } from '../shared/PostCard';
 import styles from './PostsPage.module.css';
 
 interface PostsPageProps {

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { EditorLayout } from '@/layouts/EditorLayout';
+import { EditorLayout } from '@/layouts/editor/EditorLayout';
 
 export const metadata = {
   title: '에디터 · orot.dev',

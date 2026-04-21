@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { serverGet, toPaginatedResponse } from '@/utils/server-api';
-import { HomePage } from '@/components/public/HomePage';
+import { HomePage } from '@/components/public/home/HomePage';
 import type {
   ApiListPayload,
   GalleryItem,

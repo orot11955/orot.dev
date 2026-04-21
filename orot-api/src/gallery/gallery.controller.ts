@@ -99,9 +99,13 @@ export class StudioGalleryController {
     const imageUrl = `/uploads/gallery/${file.filename}`;
     const filePath = join(process.cwd(), 'uploads', 'gallery', file.filename);
     const thumbnail = await createGalleryThumbnail(filePath, file.filename);
+    const takenAt = dto.takenAt?.trim() || thumbnail.takenAt?.toISOString();
 
     return this.galleryService.create(
-      dto,
+      {
+        ...dto,
+        takenAt,
+      },
       imageUrl,
       thumbnail.thumbnailUrl,
       thumbnail.width,

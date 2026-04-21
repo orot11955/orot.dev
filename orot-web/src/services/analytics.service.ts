@@ -1,4 +1,4 @@
-import { api } from './api';
+import { createResource, getResource } from './service-helpers';
 import { createAreaRoutes } from './api-routes';
 import type { AnalyticsStats, PostStatus } from '@/types';
 
@@ -25,7 +25,7 @@ const POST_STATUS_ORDER: PostStatus[] = [
 
 export const publicAnalyticsService = {
   async recordVisit(path: string, referer?: string): Promise<void> {
-    await api.post(analyticsRoutes.public('visit'), { path, referer });
+    await createResource(analyticsRoutes.public('visit'), { path, referer });
   },
 };
 
@@ -33,7 +33,7 @@ export const publicAnalyticsService = {
 
 export const studioAnalyticsService = {
   async getStats(): Promise<AnalyticsStats> {
-    const data = await api.get<StudioAnalyticsPayload>(
+    const data = await getResource<StudioAnalyticsPayload>(
       analyticsRoutes.studio('stats'),
     );
 

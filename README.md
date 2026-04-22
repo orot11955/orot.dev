@@ -26,9 +26,7 @@
 cp .env.example .env
 ```
 
-2. 프라이빗 패키지 토큰이 필요하면 `.npmrc.example`을 참고해 루트 `.npmrc`를 준비
-
-3. 의존성 설치
+2. 의존성 설치
 
 ```bash
 yarn --cwd orot-api install
@@ -107,7 +105,6 @@ yarn docker:migrate
 배포 전에 아래 파일이 준비되어 있어야 합니다.
 
 - 루트 `.env`
-- 루트 `.npmrc`
 - `nginx/nginx.conf`
 
 Compose로 올라가는 서비스:
@@ -146,6 +143,7 @@ Compose로 올라가는 서비스:
 
 - 루트 `package.json`은 공통 실행 스크립트 진입점 역할을 담당합니다.
 - Docker 이미지는 저장소 루트를 빌드 컨텍스트로 사용합니다.
+- 앱 의존성은 공개 npm registry 기준으로 잠겨 있어 루트 `.npmrc` 없이 설치/배포할 수 있습니다.
 - API 컨테이너는 더 이상 기동 시점에 `prisma db push`를 수행하지 않습니다.
 - 기존 운영 DB가 `db push` 시절에 만들어졌다면, 첫 `docker:up` 시 baseline 자동화가 한 번 동작할 수 있습니다.
 - DB 변경이 있을 때는 `orot-api/prisma/schema.prisma`와 함께 migration 파일도 커밋해야 배포에 반영됩니다.

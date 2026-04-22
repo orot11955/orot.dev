@@ -5,7 +5,6 @@ WORKDIR /app
 RUN corepack enable && corepack prepare yarn@1.22.22 --activate
 
 # This Dockerfile expects the repository root as the build context.
-COPY .npmrc ./
 COPY orot-web/package.json ./package.json
 COPY orot-web/yarn.lock ./yarn.lock
 RUN yarn install --frozen-lockfile
@@ -31,10 +30,9 @@ WORKDIR /app
 RUN corepack enable && corepack prepare yarn@1.22.22 --activate
 
 # This Dockerfile expects the repository root as the build context.
-COPY .npmrc ./
 COPY orot-web/package.json ./package.json
 COPY orot-web/yarn.lock ./yarn.lock
-RUN yarn install --frozen-lockfile --production && rm -f .npmrc
+RUN yarn install --frozen-lockfile --production
 
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public

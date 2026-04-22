@@ -42,7 +42,6 @@ preflight_base() {
 
 preflight_build() {
   preflight_base
-  require_file .npmrc "root .npmrc"
 }
 
 preflight_deploy() {

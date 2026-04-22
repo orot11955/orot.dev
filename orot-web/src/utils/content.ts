@@ -58,6 +58,8 @@ function fallbackMessageByStatus(statusCode?: number): string | null {
       return '요청한 데이터를 찾을 수 없습니다.';
     case 409:
       return '이미 처리되었거나 중복된 요청입니다.';
+    case 413:
+      return '전송한 데이터가 너무 큽니다. 업로드 파일 크기나 개수를 줄여 다시 시도해주세요.';
     case 422:
       return '입력한 내용을 다시 확인해주세요.';
     case 429:
@@ -129,6 +131,14 @@ function resolveFriendlyMessage(
     normalized.includes('record to delete does not exist')
   ) {
     return '요청한 데이터를 찾을 수 없습니다.';
+  }
+
+  if (
+    statusCode === 413 ||
+    normalized.includes('payload too large') ||
+    normalized.includes('request entity too large')
+  ) {
+    return '전송한 데이터가 너무 큽니다. 업로드 파일 크기나 개수를 줄여 다시 시도해주세요.';
   }
 
   if (

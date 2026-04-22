@@ -15,6 +15,7 @@ interface PhotoUploadModalProps {
   error: string | null;
   busy: boolean;
   onFileChange: (files: File[]) => void;
+  onRemoveFile: (previewUrl: string) => void;
   onFormChange: (patch: Partial<PhotoFormState>) => void;
   onClose: () => void;
   onSubmit: () => void | Promise<void>;
@@ -27,6 +28,7 @@ export function PhotoUploadModal({
   error,
   busy,
   onFileChange,
+  onRemoveFile,
   onFormChange,
   onClose,
   onSubmit,
@@ -105,6 +107,15 @@ export function PhotoUploadModal({
                 className={styles.uploadPreviewCard}
               >
                 <div className={styles.uploadPreview}>
+                  <button
+                    type="button"
+                    className={styles.uploadPreviewRemove}
+                    onClick={() => onRemoveFile(item.previewUrl)}
+                    disabled={busy}
+                    aria-label={`${item.file.name} 제거`}
+                  >
+                    x
+                  </button>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={item.previewUrl}

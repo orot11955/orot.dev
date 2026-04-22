@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Button,
   Pagination,
@@ -28,6 +28,7 @@ import styles from './PhotosManagement.module.css';
 
 const PAGE_SIZE = 24;
 const MAX_UPLOAD_FILES = 20;
+const MAX_UPLOAD_FILE_BYTES = 20 * 1024 * 1024;
 
 const FILTER_OPTIONS = [
   { value: 'all', label: '전체' },
@@ -53,8 +54,23 @@ function revokeUploadSelections(files: UploadSelection[]) {
   files.forEach((item) => URL.revokeObjectURL(item.previewUrl));
 }
 
+function revokeRemovedUploadSelections(
+  previous: UploadSelection[],
+  next: UploadSelection[],
+) {
+  const nextPreviewUrls = new Set(next.map((item) => item.previewUrl));
+
+  revokeUploadSelections(
+    previous.filter((item) => !nextPreviewUrls.has(item.previewUrl)),
+  );
+}
+
 function resolveUploadTitle(file: File) {
   return file.name.replace(/\.[^.]+$/, '') || file.name;
+}
+
+function formatUploadSizeMb(bytes: number) {
+  return (bytes / 1024 / 1024).toFixed(2);
 }
 
 export function PhotosManagementPage() {
@@ -73,6 +89,7 @@ export function PhotosManagementPage() {
   const [uploadForm, setUploadForm] = useState<PhotoFormState>(buildPhotoFormState(null));
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadBusy, setUploadBusy] = useState(false);
+  const uploadFilesRef = useRef<UploadSelection[]>([]);
   const {
     loading,
     error,
@@ -117,10 +134,29 @@ export function PhotosManagementPage() {
   }, [load]);
 
   useEffect(() => {
-    return () => {
-      revokeUploadSelections(uploadFiles);
-    };
+    uploadFilesRef.current = uploadFiles;
   }, [uploadFiles]);
+
+  useEffect(() => {
+    return () => {
+      revokeUploadSelections(uploadFilesRef.current);
+    };
+  }, []);
+
+  const updateUploadFiles = useCallback(
+    (
+      next:
+        | UploadSelection[]
+        | ((current: UploadSelection[]) => UploadSelection[]),
+    ) => {
+      setUploadFiles((current) => {
+        const resolved = typeof next === 'function' ? next(current) : next;
+        revokeRemovedUploadSelections(current, resolved);
+        return resolved;
+      });
+    },
+    [],
+  );
 
   const openDetail = useCallback((item: GalleryItem) => {
     setDetail(item);
@@ -192,28 +228,39 @@ export function PhotosManagementPage() {
 
   const openUpload = useCallback(() => {
     setUploadOpen(true);
-    setUploadFiles([]);
+    updateUploadFiles([]);
     setUploadForm(buildPhotoFormState(null));
     setUploadError(null);
-  }, []);
+  }, [updateUploadFiles]);
 
   const closeUpload = useCallback(() => {
     setUploadOpen(false);
-    setUploadFiles([]);
+    updateUploadFiles([]);
     setUploadForm(buildPhotoFormState(null));
     setUploadError(null);
-  }, []);
+  }, [updateUploadFiles]);
 
   const handleUploadFileChange = useCallback(
     (files: File[]) => {
       if (files.length > MAX_UPLOAD_FILES) {
         setUploadError(`사진은 한 번에 ${MAX_UPLOAD_FILES}장까지 업로드할 수 있습니다.`);
-        setUploadFiles([]);
+        updateUploadFiles([]);
+        return;
+      }
+
+      const oversizedFile = files.find(
+        (file) => file.size > MAX_UPLOAD_FILE_BYTES,
+      );
+      if (oversizedFile) {
+        setUploadError(
+          `"${oversizedFile.name}" 파일이 ${formatUploadSizeMb(oversizedFile.size)}MB로 제한(20MB)을 초과했습니다.`,
+        );
+        updateUploadFiles([]);
         return;
       }
 
       setUploadError(null);
-      setUploadFiles(buildUploadSelections(files));
+      updateUploadFiles(buildUploadSelections(files));
       setUploadForm((prev) => ({
         ...prev,
         title:
@@ -222,7 +269,26 @@ export function PhotosManagementPage() {
             : '',
       }));
     },
-    [],
+    [updateUploadFiles],
+  );
+
+  const handleUploadRemove = useCallback(
+    (previewUrl: string) => {
+      const nextFiles = uploadFiles.filter(
+        (item) => item.previewUrl !== previewUrl,
+      );
+
+      updateUploadFiles(nextFiles);
+      setUploadError(null);
+
+      if (nextFiles.length === 1) {
+        setUploadForm((prev) => ({
+          ...prev,
+          title: prev.title || resolveUploadTitle(nextFiles[0].file),
+        }));
+      }
+    },
+    [uploadFiles, updateUploadFiles],
   );
 
   const handleUploadSubmit = useCallback(async () => {
@@ -383,6 +449,7 @@ export function PhotosManagementPage() {
         error={uploadError}
         busy={uploadBusy}
         onFileChange={handleUploadFileChange}
+        onRemoveFile={handleUploadRemove}
         onFormChange={(patch) =>
           setUploadForm((prev) => ({ ...prev, ...patch }))
         }

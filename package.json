@@ -30,5 +30,6 @@
     "docker:deploy": "./scripts/docker-stack.sh deploy",
     "docker:down": "./scripts/docker-compose-env.sh down",
     "docker:logs": "./scripts/docker-compose-env.sh logs -f"
-  }
+  },
+  "dependencies": {}
 }

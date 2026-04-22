@@ -2097,10 +2097,10 @@ optionator@^0.9.3:
     type-check "^0.4.0"
     word-wrap "^1.2.5"
 
-orot-ui@^0.1.8:
-  version "0.1.8"
-  resolved "https://registry.yarnpkg.com/orot-ui/-/orot-ui-0.1.8.tgz#22218a595ea039560e0dbeb0dce8b785b04bef6f"
-  integrity sha512-gXB3JxHlhPH8wyB4WnblnaTI+rSTH0qnLkmsYDVK3yTHzZuInrrVBKaSWDoLOoh4CiKzHet+DNRuGRyn1lNz9A==
+orot-ui@^0.1.9:
+  version "0.1.9"
+  resolved "https://registry.yarnpkg.com/orot-ui/-/orot-ui-0.1.9.tgz#a9983e94dce5b7f284ec686e4293f3f1764a1c90"
+  integrity sha512-8vnOuDISK+EGIMboebpKfCi+IBvsLHvctYslydy+Q5MhWpzPyR/5jy7K5EAxunQq5b2cQBOIT+UExWiJP7mNog==
   dependencies:
     lucide-react "^0.511.0"
 

@@ -40,7 +40,7 @@ import { parse } from 'path';
 
 const multerOptions = createImageUploadOptions({
   directory: ['gallery'],
-  maxFileSizeBytes: 20 * 1024 * 1024,
+  maxFileSizeBytes: 50 * 1024 * 1024,
 });
 
 const MAX_GALLERY_UPLOAD_FILES = 20;

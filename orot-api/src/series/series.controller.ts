@@ -36,7 +36,7 @@ import {
 
 const seriesCoverMulterOptions = createImageUploadOptions({
   directory: ['series'],
-  maxFileSizeBytes: 10 * 1024 * 1024,
+  maxFileSizeBytes: 50 * 1024 * 1024,
 });
 
 // ─── Public Routes ───────────────────────────────────────────────────────────

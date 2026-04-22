@@ -93,8 +93,9 @@ function resolveImageRemotePatterns() {
 function resolveMiddlewareClientMaxBodySize() {
   // In development, browser uploads to /api/* pass through Next.js rewrites
   // before reaching the Nest API. The default 10MB limit is too small for
-  // gallery batch uploads (up to 20 files, 20MB each).
-  return '450mb';
+  // gallery batch uploads (up to 20 files, 50MB each), with extra headroom
+  // for multipart form overhead.
+  return '1050mb';
 }
 
 /** @type {import('next').NextConfig} */

@@ -95,7 +95,7 @@ export function PhotoUploadModal({
                 : `${uploadFiles[0].file.name} · ${(uploadFiles[0].file.size / 1024 / 1024).toFixed(2)} MB`}
             </span>
           ) : (
-            <span>클릭하거나 파일을 끌어다 놓으세요 (JPG·PNG·WEBP·GIF, 각 20MB 이하, 최대 20장)</span>
+            <span>클릭하거나 파일을 끌어다 놓으세요 (JPG·PNG·WEBP·GIF, 각 50MB 이하, 최대 20장)</span>
           )}
         </div>
 

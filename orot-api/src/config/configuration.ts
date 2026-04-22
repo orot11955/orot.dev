@@ -45,7 +45,7 @@ const defaultWebOrigins = [
 const configuredWebOrigins = splitCsv(readEnv('WEB_ORIGIN'));
 const slowQueryMs = readNumberEnv('API_SLOW_QUERY_MS', 'SLOW_QUERY_MS') ?? 300;
 const requestBodyLimit =
-  readEnv('API_REQUEST_BODY_LIMIT', 'REQUEST_BODY_LIMIT') || '20mb';
+  readEnv('API_REQUEST_BODY_LIMIT', 'REQUEST_BODY_LIMIT') || '50mb';
 
 export default () => ({
   port: readNumberEnv('API_PORT', 'PORT') ?? 4000,

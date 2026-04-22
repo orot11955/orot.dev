@@ -36,7 +36,7 @@ import { Roles } from '../common/decorators/roles.decorator';
 
 const settingsAssetMulterOptions = createImageUploadOptions({
   directory: ['settings'],
-  maxFileSizeBytes: 10 * 1024 * 1024,
+  maxFileSizeBytes: 50 * 1024 * 1024,
   filenamePrefix: (req) => String(req.params.key ?? 'asset'),
 });
 

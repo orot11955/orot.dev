@@ -28,7 +28,7 @@ import styles from './PhotosManagement.module.css';
 
 const PAGE_SIZE = 24;
 const MAX_UPLOAD_FILES = 20;
-const MAX_UPLOAD_FILE_BYTES = 20 * 1024 * 1024;
+const MAX_UPLOAD_FILE_BYTES = 50 * 1024 * 1024;
 
 const FILTER_OPTIONS = [
   { value: 'all', label: '전체' },
@@ -253,7 +253,7 @@ export function PhotosManagementPage() {
       );
       if (oversizedFile) {
         setUploadError(
-          `"${oversizedFile.name}" 파일이 ${formatUploadSizeMb(oversizedFile.size)}MB로 제한(20MB)을 초과했습니다.`,
+          `"${oversizedFile.name}" 파일이 ${formatUploadSizeMb(oversizedFile.size)}MB로 제한(50MB)을 초과했습니다.`,
         );
         updateUploadFiles([]);
         return;

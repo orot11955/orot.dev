@@ -61,7 +61,7 @@ async function bootstrap() {
   );
   const httpLogging = configService.get<boolean>('httpLogging') ?? false;
   const requestBodyLimit =
-    configService.get<string>('requestBodyLimit')?.trim() || '20mb';
+    configService.get<string>('requestBodyLimit')?.trim() || '50mb';
 
   app.use((req: Request, res: Response, next: NextFunction) => {
     const requestId =

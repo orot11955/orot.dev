@@ -106,6 +106,7 @@ export class GalleryService {
       page = 1,
       limit = 24,
       isPublished,
+      imageUrl,
       search,
       sort = 'manual',
     } = query;
@@ -116,6 +117,10 @@ export class GalleryService {
       where.isPublished = true;
     } else if (isPublished !== undefined) {
       where.isPublished = isPublished;
+    }
+
+    if (imageUrl) {
+      where.imageUrl = imageUrl;
     }
 
     if (search) {

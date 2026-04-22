@@ -26,24 +26,52 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function HomeRoute() {
   const liveOptions = { cache: 'no-store' as const, revalidate: false as const };
-  const [postsPayload, photosPayload, settings, series, tags] =
-    await Promise.all([
-      serverGet<ApiListPayload<PostListItem>>(
-        '/public/posts',
-        { limit: 6 },
-        liveOptions,
-      ),
-      serverGet<ApiListPayload<GalleryItem>>(
+  const settingsPromise = getPublicSettings();
+  const postsPromise = serverGet<ApiListPayload<PostListItem>>(
+    '/public/posts',
+    { limit: 6 },
+    liveOptions,
+  );
+  const photosPromise = serverGet<ApiListPayload<GalleryItem>>(
+    '/public/gallery',
+    { limit: 8 },
+    liveOptions,
+  );
+  const seriesPromise = serverGet<Series[]>(
+    '/public/series',
+    undefined,
+    liveOptions,
+  );
+  const tagsPromise = serverGet<string[]>(
+    '/public/posts/tags',
+    undefined,
+    liveOptions,
+  );
+
+  const settings = await settingsPromise;
+  const configuredHeroImage = settings?.home_hero_image?.trim();
+
+  const configuredHeroPromise = configuredHeroImage
+    ? serverGet<ApiListPayload<GalleryItem>>(
         '/public/gallery',
-        { limit: 8 },
+        { imageUrl: configuredHeroImage, limit: 1 },
         liveOptions,
-      ),
-      getPublicSettings(),
-      serverGet<Series[]>('/public/series', undefined, liveOptions),
-      serverGet<string[]>('/public/posts/tags', undefined, liveOptions),
+      )
+    : Promise.resolve(null);
+
+  const [postsPayload, photosPayload, configuredHeroPayload, series, tags] =
+    await Promise.all([
+      postsPromise,
+      photosPromise,
+      configuredHeroPromise,
+      seriesPromise,
+      tagsPromise,
     ]);
 
   const posts = postsPayload ? toPaginatedResponse(postsPayload).data : [];
+  const configuredHeroPhoto = configuredHeroPayload
+    ? toPaginatedResponse(configuredHeroPayload).data[0] ?? null
+    : null;
   const photoList = photosPayload
     ? toPaginatedResponse(photosPayload)
     : { data: [], total: 0, page: 1, limit: 8, totalPages: 0 };
@@ -56,6 +84,7 @@ export default async function HomeRoute() {
       series={series ?? []}
       tags={tags ?? []}
       settings={settings}
+      configuredHeroPhoto={configuredHeroPhoto}
     />
   );
 }

@@ -25,6 +25,7 @@ interface HomePageProps {
   series: Series[];
   tags: string[];
   settings: PublicSettings | null;
+  configuredHeroPhoto: GalleryItem | null;
 }
 
 export function HomePage({
@@ -33,20 +34,25 @@ export function HomePage({
   series,
   tags,
   settings,
+  configuredHeroPhoto,
 }: HomePageProps) {
   const siteName = settings?.site_name?.trim() || 'orot.dev';
   const siteDesc =
     settings?.site_description?.trim() || '개발, 사진, 그리고 기록';
 
   const configuredHeroUrl = resolveAssetUrl(settings?.home_hero_image);
-  const heroPhoto = configuredHeroUrl ? null : photos[0];
+  const autoHeroPhoto = configuredHeroUrl ? null : photos[0];
+  const heroPhoto = configuredHeroPhoto ?? autoHeroPhoto ?? null;
   const heroUrl =
+    resolveAssetUrl(configuredHeroPhoto?.thumbnailUrl) ||
     configuredHeroUrl ||
+    resolveAssetUrl(heroPhoto?.thumbnailUrl) ||
     resolveAssetUrl(heroPhoto?.imageUrl) ||
     resolveAssetUrl(settings?.site_og_image);
-  const heroAlt = configuredHeroUrl
-    ? `${siteName} 메인 이미지`
-    : heroPhoto?.altText || `${siteName} 대표 이미지`;
+  const heroAlt =
+    heroPhoto?.altText ||
+    heroPhoto?.title ||
+    (configuredHeroUrl ? `${siteName} 메인 이미지` : `${siteName} 대표 이미지`);
   const heroY = settings?.home_hero_image_position_y || '50%';
 
   const ongoingSeries = series.slice(0, 4);

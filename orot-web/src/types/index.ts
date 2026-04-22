@@ -281,6 +281,7 @@ export interface UpdateGalleryItemPayload {
 export interface GalleryQuery {
   page?: number;
   limit?: number;
+  imageUrl?: string;
   search?: string;
   isPublished?: boolean;
   sort?: GallerySort;

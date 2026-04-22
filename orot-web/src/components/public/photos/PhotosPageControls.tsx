@@ -48,7 +48,6 @@ export function PhotosPageControls({
 
   return (
     <div className={styles.toolbar}>
-      <div className={styles.toolbarSpacer} />
       <Select
         size="md"
         value={currentSort}

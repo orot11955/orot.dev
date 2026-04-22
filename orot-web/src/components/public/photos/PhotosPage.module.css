@@ -50,7 +50,6 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--orot-space-3);
-  padding: var(--orot-space-3) var(--orot-space-4);
   border-radius: var(--orot-radius-lg);
 }
 

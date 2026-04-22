@@ -35,6 +35,11 @@ export class QueryGalleryDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
+  imageUrl?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
   search?: string;
 
   @ApiProperty({ required: false, default: 1 })

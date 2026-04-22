@@ -101,14 +101,6 @@ start_application_stack() {
     db orot-api orot-web nginx
 }
 
-reload_nginx_config() {
-  FAILURE_LOG_SERVICES="nginx"
-
-  log "Validating and reloading Nginx config..."
-  docker_compose exec -T nginx nginx -t
-  docker_compose exec -T nginx nginx -s reload
-}
-
 print_status() {
   log "Current service status:"
   docker_compose ps
@@ -169,7 +161,6 @@ case "$COMMAND" in
     run_migrate_flow
     BUILD_API_IMAGE="$previous_build_api_image"
     start_application_stack
-    reload_nginx_config
     log "Deployment complete."
     print_status
     ;;

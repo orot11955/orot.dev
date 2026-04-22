@@ -16,6 +16,36 @@ import type {
 } from '@/types';
 
 const galleryRoutes = createAreaRoutes('gallery');
+const MAX_BATCH_UPLOAD_REQUEST_BYTES = 45 * 1024 * 1024;
+const MAX_BATCH_UPLOAD_FILES = 20;
+
+function chunkGalleryUploadFiles(files: File[]) {
+  const chunks: File[][] = [];
+  let currentChunk: File[] = [];
+  let currentChunkBytes = 0;
+
+  for (const file of files) {
+    const exceedsChunkSize =
+      currentChunk.length > 0 &&
+      currentChunkBytes + file.size > MAX_BATCH_UPLOAD_REQUEST_BYTES;
+    const exceedsChunkCount = currentChunk.length >= MAX_BATCH_UPLOAD_FILES;
+
+    if (exceedsChunkSize || exceedsChunkCount) {
+      chunks.push(currentChunk);
+      currentChunk = [];
+      currentChunkBytes = 0;
+    }
+
+    currentChunk.push(file);
+    currentChunkBytes += file.size;
+  }
+
+  if (currentChunk.length > 0) {
+    chunks.push(currentChunk);
+  }
+
+  return chunks;
+}
 
 // ─── Public ───────────────────────────────────────────────────────────────────
 
@@ -52,17 +82,34 @@ export const studioGalleryService = {
     files: File[],
     payload: CreateGalleryItemPayload,
   ): Promise<GalleryItem[]> {
-    return uploadImageResources<GalleryItem[]>(
-      galleryRoutes.studio('batch'),
-      files,
-      {
-        title: payload.title,
-        description: payload.description,
-        altText: payload.altText,
-        takenAt: payload.takenAt,
-        sortOrder: payload.sortOrder,
-      },
-    );
+    const uploadChunks = chunkGalleryUploadFiles(files);
+    const uploadedItems: GalleryItem[] = [];
+
+    for (let index = 0; index < uploadChunks.length; index += 1) {
+      const chunk = uploadChunks[index];
+      const previousFilesCount = uploadChunks
+        .slice(0, index)
+        .reduce((sum, item) => sum + item.length, 0);
+
+      const items = await uploadImageResources<GalleryItem[]>(
+        galleryRoutes.studio('batch'),
+        chunk,
+        {
+          title: payload.title,
+          description: payload.description,
+          altText: payload.altText,
+          takenAt: payload.takenAt,
+          sortOrder:
+            payload.sortOrder == null
+              ? undefined
+              : payload.sortOrder + previousFilesCount,
+        },
+      );
+
+      uploadedItems.push(...items);
+    }
+
+    return uploadedItems;
   },
 
   async getAll(query: GalleryQuery = {}): Promise<GalleryListResponse> {

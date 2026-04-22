@@ -95,7 +95,7 @@ function resolveMiddlewareClientMaxBodySize() {
   // before reaching the Nest API. The default 10MB limit is too small for
   // gallery batch uploads (up to 20 files, 50MB each), with extra headroom
   // for multipart form overhead.
-  return '1050mb';
+  return '1100mb';
 }
 
 /** @type {import('next').NextConfig} */

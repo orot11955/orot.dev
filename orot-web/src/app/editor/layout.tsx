@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
+import { AuthProvider } from '@/contexts/AuthContext';
 import { createRestrictedMetadata } from '@/utils/metadata';
 import { EditorLayout } from '@/layouts/editor/EditorLayout';
 
@@ -9,5 +10,9 @@ export const metadata: Metadata = createRestrictedMetadata({
 });
 
 export default function EditorRouteLayout({ children }: { children: ReactNode }) {
-  return <EditorLayout>{children}</EditorLayout>;
+  return (
+    <AuthProvider>
+      <EditorLayout>{children}</EditorLayout>
+    </AuthProvider>
+  );
 }

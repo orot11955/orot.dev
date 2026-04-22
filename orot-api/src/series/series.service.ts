@@ -60,24 +60,19 @@ export class SeriesService {
         },
       },
       orderBy: { createdAt: 'desc' },
-      include: {
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        description: true,
+        coverImage: true,
+        createdAt: true,
+        updatedAt: true,
         _count: {
           select: {
             posts: {
               where: { status: PostStatus.PUBLISHED },
             },
-          },
-        },
-        posts: {
-          where: { status: PostStatus.PUBLISHED },
-          orderBy: { seriesOrder: 'asc' },
-          select: {
-            id: true,
-            title: true,
-            slug: true,
-            excerpt: true,
-            publishedAt: true,
-            seriesOrder: true,
           },
         },
       },

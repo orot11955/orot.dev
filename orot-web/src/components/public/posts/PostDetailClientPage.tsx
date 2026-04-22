@@ -6,13 +6,14 @@ import { PageErrorState } from '@/components/PageErrorState';
 import { useAuth } from '@/contexts/AuthContext';
 import { hasAuthSessionHint } from '@/services/auth-session';
 import { publicPostsService, studioPostsService } from '@/services';
-import type { PostDetail } from '@/types';
+import type { PostDetail, Series } from '@/types';
 import { getErrorMessage } from '@/utils/content';
 import { PostDetailPage } from './PostDetailPage';
 
 interface PostDetailClientPageProps {
   slug: string;
   initialPost: PostDetail | null;
+  initialSeries: Series | null;
 }
 
 const VIEWED_POST_STORAGE_PREFIX = 'orot:post-viewed:';
@@ -28,6 +29,7 @@ function formatSessionDateKey(date: Date) {
 export function PostDetailClientPage({
   slug,
   initialPost,
+  initialSeries,
 }: PostDetailClientPageProps) {
   const { user, isLoading: authLoading } = useAuth();
   const [post, setPost] = useState<PostDetail | null>(initialPost);
@@ -137,7 +139,7 @@ export function PostDetailClientPage({
   }, [post, slug]);
 
   if (post) {
-    return <PostDetailPage post={post} />;
+    return <PostDetailPage post={post} initialSeries={initialSeries} />;
   }
 
   if (loading || authLoading) {

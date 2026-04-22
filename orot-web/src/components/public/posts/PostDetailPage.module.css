@@ -243,6 +243,15 @@
   border-top: 1px solid var(--public-panel-border);
 }
 
+.commentsFallback {
+  padding: var(--orot-space-5);
+  border: 1px dashed var(--public-panel-border);
+  border-radius: var(--orot-radius-lg);
+  color: var(--orot-color-text-muted);
+  font-size: var(--orot-font-size-sm);
+  text-align: center;
+}
+
 .tag {
   display: inline-flex;
   align-items: center;

@@ -1,15 +1,11 @@
-'use client';
-
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import {
   ArrowUpRight,
-  Button,
-  ExternalLink,
   Hash,
   Layers,
-} from 'orot-ui';
+  ExternalLink,
+} from 'lucide-react';
 import type {
   GalleryItem,
   PostListItem,
@@ -18,7 +14,8 @@ import type {
 } from '@/types';
 import { resolveAssetUrl } from '@/utils/content';
 import { parseSocialLinks } from '@/layouts/public/public-navigation';
-import { PostCard } from '../shared/PostCard';
+import { HomeHeroActions } from './HomeHeroActions';
+import { HomePostCard } from './HomePostCard';
 import styles from './HomePage.module.css';
 
 interface HomePageProps {
@@ -37,7 +34,6 @@ export function HomePage({
   tags,
   settings,
 }: HomePageProps) {
-  const router = useRouter();
   const siteName = settings?.site_name?.trim() || 'orot.dev';
   const siteDesc =
     settings?.site_description?.trim() || '개발, 사진, 그리고 기록';
@@ -82,18 +78,7 @@ export function HomePage({
           <span className={styles.heroEyebrow}>WELCOME</span>
           <h1 className={styles.heroTitle}>{siteName}</h1>
           <p className={styles.heroDesc}>{siteDesc}</p>
-          <div className={styles.heroActions}>
-            <Button size="md" onClick={() => router.push('/posts')}>
-              글 보기
-            </Button>
-            <Button
-              size="md"
-              style={{ background: "#fa4306", border: "1px solid #fa4306" }}
-              onClick={() => router.push('/photos')}
-            >
-              갤러리
-            </Button>
-          </div>
+          <HomeHeroActions />
         </div>
       </section>
 
@@ -142,7 +127,7 @@ export function HomePage({
           {posts.length > 0 ? (
             <div className={styles.postsGrid}>
               {posts.map((p) => (
-                <PostCard key={p.id} post={p} />
+                <HomePostCard key={p.id} post={p} />
               ))}
             </div>
           ) : (

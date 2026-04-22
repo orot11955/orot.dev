@@ -3,21 +3,33 @@ import { PrismaService } from '../prisma/prisma.service';
 import { DEFAULT_SETTINGS, type SettingKey } from './settings.constants';
 import { UpsertSettingsDto } from './dto/upsert-settings.dto';
 
+const SETTINGS_CACHE_TTL_MS = 60_000;
+
 @Injectable()
 export class SettingsService {
+  private settingsCache: {
+    value: Record<string, string>;
+    expiresAt: number;
+  } | null = null;
+
   constructor(private readonly prisma: PrismaService) {}
 
   async findAll(): Promise<Record<string, string>> {
+    const cached = this.getCachedSettings();
+    if (cached) {
+      return cached;
+    }
+
     const rows = await this.prisma.siteSetting.findMany();
     const map = Object.fromEntries(rows.map((r) => [r.key, r.value]));
 
     // Merge with defaults (return defaults for missing keys)
-    return { ...DEFAULT_SETTINGS, ...map };
+    return this.setCachedSettings({ ...DEFAULT_SETTINGS, ...map });
   }
 
   async findOne(key: string): Promise<string | null> {
-    const row = await this.prisma.siteSetting.findUnique({ where: { key } });
-    return row?.value ?? DEFAULT_SETTINGS[key as SettingKey] ?? null;
+    const all = await this.findAll();
+    return all[key] ?? DEFAULT_SETTINGS[key as SettingKey] ?? null;
   }
 
   async upsertMany(dto: UpsertSettingsDto) {
@@ -29,6 +41,7 @@ export class SettingsService {
       }),
     );
     await Promise.all(ops);
+    this.clearSettingsCache();
     return this.findAll();
   }
 
@@ -39,6 +52,32 @@ export class SettingsService {
       update: { value },
     });
 
+    this.clearSettingsCache();
     return this.findAll();
+  }
+
+  private getCachedSettings(): Record<string, string> | null {
+    if (
+      this.settingsCache &&
+      this.settingsCache.expiresAt > Date.now()
+    ) {
+      return this.settingsCache.value;
+    }
+
+    this.settingsCache = null;
+    return null;
+  }
+
+  private setCachedSettings(value: Record<string, string>) {
+    this.settingsCache = {
+      value,
+      expiresAt: Date.now() + SETTINGS_CACHE_TTL_MS,
+    };
+
+    return value;
+  }
+
+  private clearSettingsCache() {
+    this.settingsCache = null;
   }
 }

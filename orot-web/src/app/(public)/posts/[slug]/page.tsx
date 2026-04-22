@@ -1,12 +1,13 @@
 import type { Metadata } from 'next';
 import { cache } from 'react';
 import { PostDetailClientPage } from '@/components/public/posts/PostDetailClientPage';
+import { AuthProvider } from '@/contexts/AuthContext';
 import { serverGet } from '@/utils/server-api';
 import { splitTags } from '@/utils/content';
 import { createPublicMetadata } from '@/utils/metadata';
 import { getPublicSettings } from '@/utils/public-settings';
 import { normalizeSlugParam } from '@/utils/slug';
-import type { PostDetail } from '@/types';
+import type { PostDetail, Series } from '@/types';
 
 interface PostDetailRouteProps {
   params: Promise<{
@@ -16,6 +17,13 @@ interface PostDetailRouteProps {
 
 const getPublicPostDetail = cache(async (slug: string): Promise<PostDetail | null> =>
   serverGet<PostDetail>(`/public/posts/${slug}`, undefined, {
+    cache: 'no-store',
+    revalidate: false,
+  }),
+);
+
+const getPublicSeries = cache(async (slug: string): Promise<Series | null> =>
+  serverGet<Series>(`/public/series/${slug}`, undefined, {
     cache: 'no-store',
     revalidate: false,
   }),
@@ -66,6 +74,16 @@ export default async function PostDetailRoute({ params }: PostDetailRouteProps) 
   const { slug: rawSlug } = await params;
   const slug = normalizeSlugParam(rawSlug);
   const post = await getPublicPostDetail(slug);
+  const initialSeries =
+    post?.series?.slug ? await getPublicSeries(post.series.slug) : null;
 
-  return <PostDetailClientPage slug={slug} initialPost={post} />;
+  return (
+    <AuthProvider>
+      <PostDetailClientPage
+        slug={slug}
+        initialPost={post}
+        initialSeries={initialSeries}
+      />
+    </AuthProvider>
+  );
 }

@@ -10,6 +10,7 @@ import type {
   ApiListPayload,
   PostListItem,
   PostListResponse,
+  PostSort,
 } from '@/types';
 import { normalizePostQuery } from '@/utils/post-query';
 
@@ -65,6 +66,11 @@ async function PostsContent({ searchParams }: { searchParams: SearchParams }) {
   const postList: PostListResponse = rawPosts
     ? toPaginatedResponse(rawPosts)
     : { data: [], total: 0, page: 1, limit: 15, totalPages: 0 };
+  const currentSearch = searchParams.search ?? '';
+  const currentTag = searchParams.tag ?? '';
+  const currentSeries = searchParams.seriesId ?? '';
+  const currentCategory = searchParams.categorySlug ?? '';
+  const currentSort: PostSort = searchParams.sort === 'popular' ? 'popular' : 'latest';
 
   return (
     <PostsPage
@@ -73,6 +79,11 @@ async function PostsContent({ searchParams }: { searchParams: SearchParams }) {
       series={series ?? []}
       tags={tags ?? []}
       categories={categories ?? []}
+      currentSearch={currentSearch}
+      currentTag={currentTag}
+      currentSeries={currentSeries}
+      currentCategory={currentCategory}
+      currentSort={currentSort}
     />
   );
 }

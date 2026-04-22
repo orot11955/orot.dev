@@ -1,8 +1,6 @@
-'use client';
-
 import type { ReactNode } from 'react';
 import Image from 'next/image';
-import { ArrowUpRight, Mail, Tag } from 'orot-ui';
+import { ArrowUpRight, Mail } from 'lucide-react';
 import type { PublicSettings } from '@/types';
 import { resolveAssetUrl, splitTags } from '@/utils/content';
 import styles from './AboutPage.module.css';
@@ -121,7 +119,9 @@ export function AboutPage({ settings }: AboutPageProps) {
               <div className={styles.stackSection}>
                 <div className={styles.stackTags}>
                   {stack.map((item) => (
-                    <Tag key={item}>{item}</Tag>
+                    <span key={item} className={styles.stackTag}>
+                      {item}
+                    </span>
                   ))}
                 </div>
               </div>

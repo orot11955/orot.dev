@@ -5,13 +5,17 @@ import { PrismaService } from '../prisma/prisma.service';
 import { PostStatus } from '@prisma/client';
 import { createLogger } from '../logging/logger';
 import { runWithRequestContext } from '../logging/request-context';
+import { PostsService } from '../posts/posts.service';
 
 const schedulerLogger = createLogger('orot-api');
 const PUBLISH_JOB_NAME = 'publishScheduledPosts';
 
 @Injectable()
 export class SchedulerService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly postsService: PostsService,
+  ) {}
 
   /**
    * Every minute: publish posts whose scheduledAt has passed
@@ -68,6 +72,10 @@ export class SchedulerService {
               title: post.title,
             });
           }
+        }
+
+        if (publishedCount > 0) {
+          this.postsService.invalidatePublicTagCache();
         }
 
         schedulerLogger.info('scheduler.publish.completed', {

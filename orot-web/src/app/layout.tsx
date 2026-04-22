@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import { ClientLogBridge } from '@/components/ClientLogBridge';
 import { ThemeProvider } from '@/contexts/ThemeContext';
-import { AuthProvider } from '@/contexts/AuthContext';
 import { resolveSiteUrl } from '@/utils/site-url';
 import '@/styles/globals.css';
 
@@ -19,7 +18,7 @@ export default function RootLayout({
       <body>
         <ClientLogBridge />
         <ThemeProvider>
-          <AuthProvider>{children}</AuthProvider>
+          {children}
         </ThemeProvider>
       </body>
     </html>

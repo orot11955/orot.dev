@@ -1,5 +1,3 @@
-'use client';
-
 import Image from 'next/image';
 import Link from 'next/link';
 import {
@@ -7,7 +5,7 @@ import {
   CalendarDays,
   ChevronLeft,
   ImageIcon,
-} from 'orot-ui';
+} from 'lucide-react';
 import type { GalleryItem } from '@/types';
 import { formatDate, resolveAssetUrl } from '@/utils/content';
 import styles from './PhotoDetailPage.module.css';

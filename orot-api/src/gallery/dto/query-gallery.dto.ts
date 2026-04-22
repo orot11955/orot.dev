@@ -3,6 +3,7 @@ import {
   IsInt,
   IsBoolean,
   Min,
+  Max,
   IsString,
   IsIn,
 } from 'class-validator';
@@ -48,6 +49,7 @@ export class QueryGalleryDto {
   @Type(() => Number)
   @IsInt()
   @Min(1)
+  @Max(100)
   limit?: number;
 
   @ApiPropertyOptional({ enum: GALLERY_SORT_VALUES, default: 'manual' })

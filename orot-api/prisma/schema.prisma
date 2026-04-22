@@ -57,6 +57,9 @@ model Post {
   @@index([slug])
   @@index([seriesId])
   @@index([categoryId])
+  @@index([status, publishedAt, updatedAt, createdAt])
+  @@index([status, viewCount, publishedAt, updatedAt, createdAt])
+  @@index([status, seriesId, seriesOrder, publishedAt, updatedAt, createdAt])
   @@map("posts")
 }
 
@@ -102,6 +105,8 @@ model Comment {
 
   @@index([postId])
   @@index([parentId])
+  @@index([postId, status, createdAt])
+  @@index([status, createdAt])
   @@map("comments")
 }
 
@@ -121,6 +126,8 @@ model GalleryItem {
   updatedAt    DateTime  @updatedAt
 
   @@index([isPublished])
+  @@index([isPublished, sortOrder, createdAt])
+  @@index([isPublished, takenAt, createdAt])
   @@map("gallery_items")
 }
 

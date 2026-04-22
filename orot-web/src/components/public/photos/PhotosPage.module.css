@@ -56,6 +56,10 @@
   background: color-mix(in srgb, var(--public-panel-bg) 84%, var(--orot-color-bg));
 }
 
+.toolbarSpacer {
+  flex: 1 1 auto;
+}
+
 .sortSelect {
   min-width: 100px;
   max-width: 150px;
@@ -63,6 +67,8 @@
 
 .masonry {
   width: 100%;
+  column-count: 1;
+  column-gap: 16px;
 }
 
 .pagination {
@@ -72,6 +78,8 @@
 
 .tile {
   display: block;
+  break-inside: avoid;
+  margin-bottom: 16px;
   color: inherit;
 }
 
@@ -161,8 +169,30 @@
     align-items: stretch;
   }
 
+  .toolbarSpacer {
+    display: none;
+  }
+
   .sortSelect {
     min-width: 0;
     width: 100%;
+  }
+}
+
+@media (min-width: 641px) {
+  .masonry {
+    column-count: 2;
+  }
+}
+
+@media (min-width: 900px) {
+  .masonry {
+    column-count: 3;
+  }
+}
+
+@media (min-width: 1200px) {
+  .masonry {
+    column-count: 4;
   }
 }

@@ -3,29 +3,19 @@ import Link from 'next/link';
 import { CalendarDays, Layers, Tag as TagIcon } from 'lucide-react';
 import type { PostListItem } from '@/types';
 import { formatDate, resolveAssetUrl, splitTags } from '@/utils/content';
-import styles from './PostCard.module.css';
+import styles from '../shared/PostCard.module.css';
 
-interface PostCardProps {
+interface HomePostCardProps {
   post: PostListItem;
-  variant?: 'default' | 'compact';
 }
 
-export function PostCard({ post, variant = 'default' }: PostCardProps) {
+export function HomePostCard({ post }: HomePostCardProps) {
   const tags = splitTags(post.tags).slice(0, 3);
   const cover = resolveAssetUrl(post.coverImage);
   const date = formatDate(post.publishedAt ?? post.createdAt);
-  const href = `/posts/${post.slug}`;
 
   return (
-    <Link
-      href={href}
-      className={[
-        styles.card,
-        variant === 'compact' ? styles.variantCompact : '',
-      ]
-        .filter(Boolean)
-        .join(' ')}
-    >
+    <Link href={`/posts/${post.slug}`} className={styles.card}>
       {cover ? (
         <div className={styles.cover}>
           <Image

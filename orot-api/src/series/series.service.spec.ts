@@ -83,4 +83,35 @@ describe('SeriesService', () => {
     });
     expect(tx.post.update).toHaveBeenCalledTimes(2);
   });
+
+  it('loads public series summaries without eager-loading posts', async () => {
+    prisma.series.findMany = jest.fn().mockResolvedValue([]);
+
+    await service.findAllPublic();
+
+    expect(prisma.series.findMany).toHaveBeenCalledWith({
+      where: {
+        posts: {
+          some: { status: PostStatus.PUBLISHED },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        description: true,
+        coverImage: true,
+        createdAt: true,
+        updatedAt: true,
+        _count: {
+          select: {
+            posts: {
+              where: { status: PostStatus.PUBLISHED },
+            },
+          },
+        },
+      },
+    });
+  });
 });

@@ -1,4 +1,4 @@
-import { IsOptional, IsInt, Min, IsEnum } from 'class-validator';
+import { IsOptional, IsInt, Min, Max, IsEnum } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { CommentStatus } from '@prisma/client';
@@ -27,5 +27,6 @@ export class QueryCommentDto {
   @Type(() => Number)
   @IsInt()
   @Min(1)
+  @Max(100)
   limit?: number;
 }

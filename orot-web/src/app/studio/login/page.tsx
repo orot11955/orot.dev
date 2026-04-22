@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { LoginPage } from '@/components/studio/LoginPage';
+import { AuthProvider } from '@/contexts/AuthContext';
 import { createRestrictedMetadata } from '@/utils/metadata';
 
 export const metadata: Metadata = createRestrictedMetadata({
@@ -11,8 +12,10 @@ export const metadata: Metadata = createRestrictedMetadata({
 
 export default function StudioLoginRoute() {
   return (
-    <Suspense fallback={null}>
-      <LoginPage />
-    </Suspense>
+    <AuthProvider>
+      <Suspense fallback={null}>
+        <LoginPage />
+      </Suspense>
+    </AuthProvider>
   );
 }

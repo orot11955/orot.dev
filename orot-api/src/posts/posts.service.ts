@@ -33,6 +33,18 @@ type PublicViewResult = {
   viewCount: number;
   counted: boolean;
 };
+type CachedTags = {
+  value: string[];
+  expiresAt: number;
+};
+type PublicNeighborSource = {
+  id: number;
+  seriesId: number | null;
+  seriesOrder: number | null;
+  publishedAt: Date | null;
+  updatedAt: Date;
+  createdAt: Date;
+};
 
 const AREA_VISIBLE_STATUSES: Record<InternalArea, PostStatus[]> = {
   editor: ['DRAFT', 'COMPLETED', 'REVIEW', 'UPDATED'],
@@ -59,9 +71,12 @@ const AREA_TRANSITIONS: Record<
 };
 
 const DEFAULT_POST_SLUG = 'post';
+const PUBLIC_TAG_CACHE_TTL_MS = 60_000;
 
 @Injectable()
 export class PostsService {
+  private cachedTags: CachedTags | null = null;
+
   constructor(private readonly prisma: PrismaService) {}
 
   async create(dto: CreatePostDto) {
@@ -72,7 +87,7 @@ export class PostsService {
       await this.assertCategoryExists(dto.categoryId);
     }
 
-    return this.prisma.post.create({
+    const created = await this.prisma.post.create({
       data: {
         title: dto.title,
         slug: uniqueSlug,
@@ -91,6 +106,9 @@ export class PostsService {
         category: { select: { id: true, name: true, slug: true } },
       },
     });
+
+    this.invalidatePublicTagCache();
+    return created;
   }
 
   async findAll(query: QueryPostDto, area: PostArea) {
@@ -193,6 +211,11 @@ export class PostsService {
   }
 
   async getAllTags(): Promise<string[]> {
+    const cached = this.getCachedPublicTags();
+    if (cached) {
+      return cached;
+    }
+
     const posts = await this.prisma.post.findMany({
       where: { status: PostStatus.PUBLISHED, tags: { not: null } },
       select: { tags: true },
@@ -207,7 +230,7 @@ export class PostsService {
       }
     }
 
-    return Array.from(tagSet).sort();
+    return this.setCachedPublicTags(Array.from(tagSet).sort());
   }
 
   async findOne(idOrSlug: string | number, isPublic = false) {
@@ -302,7 +325,7 @@ export class PostsService {
       }
     }
 
-    return this.prisma.post.update({
+    const updated = await this.prisma.post.update({
       where: { id },
       data,
       include: {
@@ -310,6 +333,9 @@ export class PostsService {
         category: { select: { id: true, name: true, slug: true } },
       },
     });
+
+    this.invalidatePublicTagCache();
+    return updated;
   }
 
   async transition(id: number, dto: TransitionPostDto, area: InternalArea) {
@@ -345,7 +371,7 @@ export class PostsService {
       data.scheduledAt = null;
     }
 
-    return this.prisma.post.update({
+    const updated = await this.prisma.post.update({
       where: { id },
       data,
       include: {
@@ -353,12 +379,20 @@ export class PostsService {
         category: { select: { id: true, name: true, slug: true } },
       },
     });
+
+    this.invalidatePublicTagCache();
+    return updated;
   }
 
   async remove(id: number) {
     await this.findOneForArea(id, 'studio');
     await this.prisma.post.delete({ where: { id } });
+    this.invalidatePublicTagCache();
     return { message: 'Post deleted' };
+  }
+
+  invalidatePublicTagCache() {
+    this.cachedTags = null;
   }
 
   private resolveBaseSlug(
@@ -396,10 +430,140 @@ export class PostsService {
     }
   }
 
-  private async getPublicNeighbors(post: {
-    id: number;
-    seriesId: number | null;
-  }): Promise<{ prev: PostNeighbor | null; next: PostNeighbor | null }> {
+  private getCachedPublicTags(): string[] | null {
+    if (
+      this.cachedTags &&
+      this.cachedTags.expiresAt > Date.now()
+    ) {
+      return this.cachedTags.value;
+    }
+
+    this.cachedTags = null;
+    return null;
+  }
+
+  private setCachedPublicTags(value: string[]): string[] {
+    this.cachedTags = {
+      value,
+      expiresAt: Date.now() + PUBLIC_TAG_CACHE_TTL_MS,
+    };
+
+    return value;
+  }
+
+  private async getPublicNeighbors(
+    post: PublicNeighborSource,
+  ): Promise<{ prev: PostNeighbor | null; next: PostNeighbor | null }> {
+    if (post.seriesId && post.seriesOrder != null) {
+      const [prev, next] = await Promise.all([
+        this.prisma.post.findFirst({
+          where: {
+            status: PostStatus.PUBLISHED,
+            seriesId: post.seriesId,
+            seriesOrder: { lt: post.seriesOrder },
+          },
+          orderBy: [
+            { seriesOrder: 'desc' },
+            { publishedAt: 'asc' },
+            { updatedAt: 'asc' },
+            { createdAt: 'asc' },
+          ],
+          select: {
+            id: true,
+            title: true,
+            slug: true,
+          },
+        }),
+        this.prisma.post.findFirst({
+          where: {
+            status: PostStatus.PUBLISHED,
+            seriesId: post.seriesId,
+            seriesOrder: { gt: post.seriesOrder },
+          },
+          orderBy: [
+            { seriesOrder: 'asc' },
+            { publishedAt: 'desc' },
+            { updatedAt: 'desc' },
+            { createdAt: 'desc' },
+          ],
+          select: {
+            id: true,
+            title: true,
+            slug: true,
+          },
+        }),
+      ]);
+
+      return { prev, next };
+    }
+
+    if (!post.publishedAt) {
+      return this.getPublicNeighborsFallback(post);
+    }
+
+    const [prev, next] = await Promise.all([
+      this.prisma.post.findFirst({
+        where: {
+          status: PostStatus.PUBLISHED,
+          OR: [
+            { publishedAt: { gt: post.publishedAt } },
+            {
+              publishedAt: post.publishedAt,
+              updatedAt: { gt: post.updatedAt },
+            },
+            {
+              publishedAt: post.publishedAt,
+              updatedAt: post.updatedAt,
+              createdAt: { gt: post.createdAt },
+            },
+          ],
+        },
+        orderBy: [
+          { publishedAt: 'asc' },
+          { updatedAt: 'asc' },
+          { createdAt: 'asc' },
+        ],
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+        },
+      }),
+      this.prisma.post.findFirst({
+        where: {
+          status: PostStatus.PUBLISHED,
+          OR: [
+            { publishedAt: { lt: post.publishedAt } },
+            {
+              publishedAt: post.publishedAt,
+              updatedAt: { lt: post.updatedAt },
+            },
+            {
+              publishedAt: post.publishedAt,
+              updatedAt: post.updatedAt,
+              createdAt: { lt: post.createdAt },
+            },
+          ],
+        },
+        orderBy: [
+          { publishedAt: 'desc' },
+          { updatedAt: 'desc' },
+          { createdAt: 'desc' },
+        ],
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+        },
+      }),
+    ]);
+
+    return { prev, next };
+  }
+
+  private async getPublicNeighborsFallback(
+    post: Pick<PublicNeighborSource, 'id' | 'seriesId'>,
+  ): Promise<{ prev: PostNeighbor | null; next: PostNeighbor | null }> {
     if (post.seriesId) {
       const seriesPosts = await this.prisma.post.findMany({
         where: {

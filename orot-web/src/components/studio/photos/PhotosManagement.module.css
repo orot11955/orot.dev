@@ -111,7 +111,9 @@
   cursor: pointer;
   padding: 0;
   display: block;
-  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
 }
 
 .tile:hover {
@@ -273,6 +275,33 @@
   font-variant-numeric: tabular-nums;
 }
 
+.detailRepair {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--orot-space-3);
+  padding: var(--orot-space-3);
+  border: 1px dashed var(--orot-color-border);
+  border-radius: var(--orot-radius-md);
+  background: var(--orot-color-surface);
+}
+
+.detailRepairText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.detailRepairTitle {
+  font-weight: var(--orot-font-weight-medium);
+  color: var(--orot-color-text);
+}
+
+.detailRepairHint {
+  font-size: var(--orot-font-size-xs);
+  color: var(--orot-color-text-muted);
+}
+
 .detailFooter {
   display: flex;
   justify-content: space-between;
@@ -313,7 +342,9 @@
   color: var(--orot-color-text-muted);
   background: var(--orot-color-surface);
   cursor: pointer;
-  transition: border-color 0.18s ease, background 0.18s ease;
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease;
 }
 
 .uploadDrop:hover {
@@ -452,6 +483,10 @@
   }
   .headerCount {
     align-items: flex-start;
+  }
+  .detailRepair {
+    flex-direction: column;
+    align-items: stretch;
   }
   .detailFooter {
     flex-direction: column;

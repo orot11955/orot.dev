@@ -1,4 +1,5 @@
 import {
+  createResource,
   deleteResource,
   getResource,
   listResource,
@@ -135,6 +136,10 @@ export const studioGalleryService = {
 
   async togglePublish(id: number): Promise<GalleryItem> {
     return patchResource<GalleryItem>(galleryRoutes.studio(id, 'publish'));
+  },
+
+  async reprocess(id: number): Promise<GalleryItem> {
+    return createResource<GalleryItem>(galleryRoutes.studio(id, 'reprocess'));
   },
 
   async remove(id: number): Promise<void> {

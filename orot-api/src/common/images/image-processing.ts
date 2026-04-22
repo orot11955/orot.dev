@@ -1,7 +1,7 @@
 import { mkdir } from 'fs/promises';
 import { dirname } from 'path';
 import { extractTakenAtFromExif } from './exif';
-import { loadSharp } from './sharp-loader';
+import { loadSharp, type SharpMetadata } from './sharp-loader';
 
 export interface ImageDetails {
   width?: number;
@@ -16,6 +16,25 @@ export interface WebpThumbnailOptions {
   quality: number;
 }
 
+const SWAPPED_EXIF_ORIENTATIONS = new Set([5, 6, 7, 8]);
+
+function resolveDisplaySize(metadata: SharpMetadata) {
+  const { width, height, orientation } = metadata;
+
+  if (
+    width === undefined ||
+    height === undefined ||
+    !SWAPPED_EXIF_ORIENTATIONS.has(orientation ?? 0)
+  ) {
+    return { width, height };
+  }
+
+  return {
+    width: height,
+    height: width,
+  };
+}
+
 export async function createWebpThumbnail(
   options: WebpThumbnailOptions,
 ): Promise<ImageDetails | null> {
@@ -24,19 +43,20 @@ export async function createWebpThumbnail(
     return null;
   }
 
-  const image = sharp(options.inputPath);
-  const metadata = await image.metadata();
+  const metadata = await sharp(options.inputPath).metadata();
+  const displaySize = resolveDisplaySize(metadata);
 
   await mkdir(dirname(options.outputPath), { recursive: true });
 
-  await image
+  await sharp(options.inputPath)
+    .rotate()
     .resize({ width: options.width, withoutEnlargement: true })
     .webp({ quality: options.quality })
     .toFile(options.outputPath);
 
   return {
-    width: metadata.width,
-    height: metadata.height,
+    width: displaySize.width,
+    height: displaySize.height,
     takenAt: extractTakenAtFromExif(metadata.exif),
   };
 }

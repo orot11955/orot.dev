@@ -1,11 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  Button,
-  Pagination,
-  Select,
-} from 'orot-ui';
+import { Button, Pagination, Select } from 'orot-ui';
 import {
   useLatestAsyncState,
   useManagementSearch,
@@ -80,31 +76,25 @@ export function PhotosManagementPage() {
   const [filter, setFilter] = useState<FilterValue>('all');
 
   const [detail, setDetail] = useState<GalleryItem | null>(null);
-  const [detailForm, setDetailForm] = useState<PhotoFormState>(buildPhotoFormState(null));
+  const [detailForm, setDetailForm] = useState<PhotoFormState>(
+    buildPhotoFormState(null),
+  );
   const [detailError, setDetailError] = useState<string | null>(null);
   const [detailBusy, setDetailBusy] = useState(false);
 
   const [uploadOpen, setUploadOpen] = useState(false);
   const [uploadFiles, setUploadFiles] = useState<UploadSelection[]>([]);
-  const [uploadForm, setUploadForm] = useState<PhotoFormState>(buildPhotoFormState(null));
+  const [uploadForm, setUploadForm] = useState<PhotoFormState>(
+    buildPhotoFormState(null),
+  );
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadBusy, setUploadBusy] = useState(false);
   const uploadFilesRef = useRef<UploadSelection[]>([]);
-  const {
-    loading,
-    error,
-    runLatest,
-    runAction,
-  } = useLatestAsyncState();
-  const {
-    search,
-    pendingSearch,
-    setPendingSearch,
-    submitSearch,
-    resetSearch,
-  } = useManagementSearch({
-    resetPage: () => setPage(1),
-  });
+  const { loading, error, runLatest, runAction } = useLatestAsyncState();
+  const { search, pendingSearch, setPendingSearch, submitSearch, resetSearch } =
+    useManagementSearch({
+      resetPage: () => setPage(1),
+    });
 
   useNotificationEffect(error, {
     type: 'error',
@@ -208,12 +198,36 @@ export function PhotosManagementPage() {
     [detail, load, runAction],
   );
 
+  const handleDetailReprocess = useCallback(
+    async (item: GalleryItem) => {
+      setDetailBusy(true);
+      setDetailError(null);
+      try {
+        const updated = await runAction(() =>
+          studioGalleryService.reprocess(item.id),
+        );
+        if (!updated) return;
+        if (detail?.id === item.id) {
+          setDetail(updated);
+        }
+        await load();
+      } catch (err) {
+        setDetailError(getErrorMessage(err));
+      } finally {
+        setDetailBusy(false);
+      }
+    },
+    [detail, load, runAction],
+  );
+
   const handleDelete = useCallback(
     async (item: GalleryItem) => {
       setDetailBusy(true);
       setDetailError(null);
       try {
-        const result = await runAction(() => studioGalleryService.remove(item.id));
+        const result = await runAction(() =>
+          studioGalleryService.remove(item.id),
+        );
         if (result === null) return;
         closeDetail();
         await load();
@@ -243,7 +257,9 @@ export function PhotosManagementPage() {
   const handleUploadFileChange = useCallback(
     (files: File[]) => {
       if (files.length > MAX_UPLOAD_FILES) {
-        setUploadError(`사진은 한 번에 ${MAX_UPLOAD_FILES}장까지 업로드할 수 있습니다.`);
+        setUploadError(
+          `사진은 한 번에 ${MAX_UPLOAD_FILES}장까지 업로드할 수 있습니다.`,
+        );
         updateUploadFiles([]);
         return;
       }
@@ -264,9 +280,7 @@ export function PhotosManagementPage() {
       setUploadForm((prev) => ({
         ...prev,
         title:
-          files.length === 1
-            ? prev.title || resolveUploadTitle(files[0])
-            : '',
+          files.length === 1 ? prev.title || resolveUploadTitle(files[0]) : '',
       }));
     },
     [updateUploadFiles],
@@ -436,6 +450,7 @@ export function PhotosManagementPage() {
         onFormChange={(patch) =>
           setDetailForm((prev) => ({ ...prev, ...patch }))
         }
+        onReprocess={handleDetailReprocess}
         onTogglePublish={handleTogglePublish}
         onDelete={handleDelete}
         onClose={closeDetail}

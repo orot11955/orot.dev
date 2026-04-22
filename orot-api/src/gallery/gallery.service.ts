@@ -13,6 +13,13 @@ interface CreateGalleryItemInput {
   height?: number;
 }
 
+interface RefreshGalleryAssetsInput {
+  thumbnailUrl?: string;
+  width?: number;
+  height?: number;
+  takenAt?: Date;
+}
+
 function resolveGalleryOrderBy(
   sort: GallerySort | undefined,
 ): Prisma.GalleryItemOrderByWithRelationInput[] {
@@ -157,6 +164,21 @@ export class GalleryService {
       ...(takenAt !== undefined
         ? { takenAt: takenAt ? new Date(takenAt) : null }
         : {}),
+    };
+
+    return this.prisma.galleryItem.update({ where: { id }, data });
+  }
+
+  async refreshAssets(id: number, input: RefreshGalleryAssetsInput) {
+    await this.findOne(id);
+
+    const data: Prisma.GalleryItemUpdateInput = {
+      ...(input.thumbnailUrl !== undefined
+        ? { thumbnailUrl: input.thumbnailUrl }
+        : {}),
+      ...(input.width !== undefined ? { width: input.width } : {}),
+      ...(input.height !== undefined ? { height: input.height } : {}),
+      ...(input.takenAt !== undefined ? { takenAt: input.takenAt } : {}),
     };
 
     return this.prisma.galleryItem.update({ where: { id }, data });

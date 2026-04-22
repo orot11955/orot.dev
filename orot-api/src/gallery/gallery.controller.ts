@@ -13,6 +13,7 @@ import {
   UploadedFile,
   UploadedFiles,
   BadRequestException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import {
@@ -233,6 +234,44 @@ export class StudioGalleryController {
     @Body() dto: UpdateGalleryItemDto,
   ) {
     return this.galleryService.update(id, dto);
+  }
+
+  @Post(':id/reprocess')
+  @ApiOperation({
+    summary:
+      'Rebuild gallery thumbnail and orientation metadata from the original image',
+  })
+  async reprocess(@Param('id', ParseIntPipe) id: number) {
+    const item = await this.galleryService.findOne(id);
+
+    if (!item.imageUrl.startsWith('/uploads/gallery/')) {
+      throw new BadRequestException('Gallery image path is invalid');
+    }
+
+    const filename = parse(item.imageUrl).base;
+    if (!filename) {
+      throw new BadRequestException('Gallery image filename is invalid');
+    }
+
+    const thumbnail = await createGalleryThumbnail(
+      resolveUploadsDiskPath('gallery', filename),
+      filename,
+    );
+
+    if (
+      thumbnail.thumbnailUrl === undefined &&
+      thumbnail.width === undefined &&
+      thumbnail.height === undefined
+    ) {
+      throw new InternalServerErrorException('Image processing is unavailable');
+    }
+
+    return this.galleryService.refreshAssets(id, {
+      thumbnailUrl: thumbnail.thumbnailUrl,
+      width: thumbnail.width,
+      height: thumbnail.height,
+      takenAt: item.takenAt ?? thumbnail.takenAt,
+    });
   }
 
   @Patch(':id/publish')

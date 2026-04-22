@@ -1,14 +1,25 @@
 import { createRequire } from 'module';
 import { join } from 'path';
 
-export type SharpLike = (input: string) => {
-  metadata(): Promise<{ width?: number; height?: number; exif?: Buffer }>;
-  resize(options: { width: number; withoutEnlargement: boolean }): {
-    webp(options: { quality: number }): {
-      toFile(output: string): Promise<unknown>;
-    };
-  };
-};
+export interface SharpMetadata {
+  width?: number;
+  height?: number;
+  exif?: Buffer;
+  orientation?: number;
+}
+
+export interface SharpInstance {
+  metadata(): Promise<SharpMetadata>;
+  rotate(angle?: number): SharpInstance;
+  resize(options: {
+    width: number;
+    withoutEnlargement: boolean;
+  }): SharpInstance;
+  webp(options: { quality: number }): SharpInstance;
+  toFile(output: string): Promise<unknown>;
+}
+
+export type SharpLike = (input: string) => SharpInstance;
 
 const requireFromApi = createRequire(__filename);
 

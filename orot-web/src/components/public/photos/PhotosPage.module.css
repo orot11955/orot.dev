@@ -51,9 +51,7 @@
   justify-content: space-between;
   gap: var(--orot-space-3);
   padding: var(--orot-space-3) var(--orot-space-4);
-  border: 1px solid var(--public-panel-border);
   border-radius: var(--orot-radius-lg);
-  background: color-mix(in srgb, var(--public-panel-bg) 84%, var(--orot-color-bg));
 }
 
 .toolbarSpacer {

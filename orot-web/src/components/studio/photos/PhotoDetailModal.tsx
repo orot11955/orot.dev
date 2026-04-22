@@ -13,6 +13,7 @@ interface PhotoDetailModalProps {
   error: string | null;
   busy: boolean;
   onFormChange: (patch: Partial<PhotoFormState>) => void;
+  onReprocess: (item: GalleryItem) => void | Promise<void>;
   onTogglePublish: (item: GalleryItem) => void | Promise<void>;
   onDelete: (item: GalleryItem) => void | Promise<void>;
   onClose: () => void;
@@ -25,6 +26,7 @@ export function PhotoDetailModal({
   error,
   busy,
   onFormChange,
+  onReprocess,
   onTogglePublish,
   onDelete,
   onClose,
@@ -52,7 +54,9 @@ export function PhotoDetailModal({
           <div className={styles.detailForm}>
             <div className={styles.detailPublish}>
               <div className={styles.detailPublishText}>
-                <span className={styles.detailPublishTitle}>공개 갤러리 노출</span>
+                <span className={styles.detailPublishTitle}>
+                  공개 갤러리 노출
+                </span>
                 <span className={styles.detailPublishHint}>
                   켜진 사진만 공개 영역 Masonry에 표시됩니다.
                 </span>
@@ -78,6 +82,26 @@ export function PhotoDetailModal({
               <span>{`수정: ${formatDate(detail.updatedAt)}`}</span>
             </div>
 
+            <div className={styles.detailRepair}>
+              <div className={styles.detailRepairText}>
+                <span className={styles.detailRepairTitle}>방향 보정</span>
+                <span className={styles.detailRepairHint}>
+                  세로 사진이 목록에서 가로로 눕는 경우 원본 EXIF 기준으로
+                  썸네일과 비율을 다시 맞춥니다.
+                </span>
+              </div>
+              <Button
+                size="sm"
+                variant="outlined"
+                disabled={busy}
+                onClick={() => {
+                  void onReprocess(detail);
+                }}
+              >
+                방향 보정
+              </Button>
+            </div>
+
             {error && <Alert type="error" message={error} />}
 
             <div className={styles.detailFooter}>
@@ -95,7 +119,12 @@ export function PhotoDetailModal({
                 </Button>
               </Popconfirm>
               <div style={{ display: 'flex', gap: 'var(--orot-space-2)' }}>
-                <Button size="md" variant="outlined" onClick={onClose} disabled={busy}>
+                <Button
+                  size="md"
+                  variant="outlined"
+                  onClick={onClose}
+                  disabled={busy}
+                >
                   닫기
                 </Button>
                 <Button

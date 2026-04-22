@@ -1,17 +1,29 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import styles from './Dashboard.module.css';
 
 interface VisitorTrendChartProps {
   data: Array<{ date: string; count: number }>;
 }
 
-const CHART_WIDTH = 720;
-const CHART_HEIGHT = 200;
-const PADDING_X = 32;
-const PADDING_TOP = 16;
-const PADDING_BOTTOM = 28;
+const DESKTOP_CHART = {
+  width: 720,
+  height: 220,
+  paddingX: 32,
+  paddingTop: 16,
+  paddingBottom: 32,
+  dotRadius: 3,
+};
+
+const MOBILE_CHART = {
+  width: 640,
+  height: 320,
+  paddingX: 24,
+  paddingTop: 20,
+  paddingBottom: 40,
+  dotRadius: 2.5,
+};
 
 function formatShortDate(iso: string): string {
   const d = new Date(iso);
@@ -20,17 +32,35 @@ function formatShortDate(iso: string): string {
 }
 
 export function VisitorTrendChart({ data }: VisitorTrendChartProps) {
+  const [compact, setCompact] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return undefined;
+    }
+
+    const mediaQuery = window.matchMedia('(max-width: 600px)');
+    const sync = () => setCompact(mediaQuery.matches);
+
+    sync();
+    mediaQuery.addEventListener('change', sync);
+    return () => mediaQuery.removeEventListener('change', sync);
+  }, []);
+
+  const chart = compact ? MOBILE_CHART : DESKTOP_CHART;
+
   const points = useMemo(() => {
     if (data.length === 0) return null;
 
-    const max = Math.max(...data.map((d) => d.count), 1);
-    const innerW = CHART_WIDTH - PADDING_X * 2;
-    const innerH = CHART_HEIGHT - PADDING_TOP - PADDING_BOTTOM;
+    const rawMax = Math.max(...data.map((d) => d.count), 1);
+    const max = rawMax <= 4 ? rawMax + 1 : Math.ceil(rawMax * 1.15);
+    const innerW = chart.width - chart.paddingX * 2;
+    const innerH = chart.height - chart.paddingTop - chart.paddingBottom;
     const step = data.length > 1 ? innerW / (data.length - 1) : 0;
 
     const coords = data.map((d, i) => {
-      const x = PADDING_X + step * i;
-      const y = PADDING_TOP + innerH - (d.count / max) * innerH;
+      const x = chart.paddingX + step * i;
+      const y = chart.paddingTop + innerH - (d.count / max) * innerH;
       return { x, y, ...d };
     });
 
@@ -39,19 +69,19 @@ export function VisitorTrendChart({ data }: VisitorTrendChartProps) {
       .join(' ');
 
     const areaPath =
-      `M ${coords[0].x.toFixed(2)} ${PADDING_TOP + innerH} ` +
+      `M ${coords[0].x.toFixed(2)} ${chart.paddingTop + innerH} ` +
       coords.map((p) => `L ${p.x.toFixed(2)} ${p.y.toFixed(2)}`).join(' ') +
-      ` L ${coords[coords.length - 1].x.toFixed(2)} ${PADDING_TOP + innerH} Z`;
+      ` L ${coords[coords.length - 1].x.toFixed(2)} ${chart.paddingTop + innerH} Z`;
 
     return { coords, linePath, areaPath, max, innerH };
-  }, [data]);
+  }, [chart, data]);
 
   if (!points) {
     return <div className={styles.chartEmpty}>표시할 데이터가 없습니다.</div>;
   }
 
   const gridLines = [0, 0.25, 0.5, 0.75, 1].map((ratio) => {
-    const y = PADDING_TOP + points.innerH * (1 - ratio);
+    const y = chart.paddingTop + points.innerH * (1 - ratio);
     return { y, label: Math.round(points.max * ratio) };
   });
 
@@ -59,8 +89,8 @@ export function VisitorTrendChart({ data }: VisitorTrendChartProps) {
     <div className={styles.chartWrap}>
       <svg
         className={styles.chartSvg}
-        viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
-        preserveAspectRatio="none"
+        viewBox={`0 0 ${chart.width} ${chart.height}`}
+        preserveAspectRatio="xMidYMid meet"
         role="img"
         aria-label="최근 방문자 추이"
       >
@@ -74,14 +104,14 @@ export function VisitorTrendChart({ data }: VisitorTrendChartProps) {
         {gridLines.map((g, i) => (
           <g key={i}>
             <line
-              x1={PADDING_X}
-              x2={CHART_WIDTH - PADDING_X}
+              x1={chart.paddingX}
+              x2={chart.width - chart.paddingX}
               y1={g.y}
               y2={g.y}
               className={styles.chartGrid}
             />
             <text
-              x={PADDING_X - 8}
+              x={chart.paddingX - 8}
               y={g.y + 4}
               textAnchor="end"
               className={styles.chartAxisLabel}
@@ -91,19 +121,20 @@ export function VisitorTrendChart({ data }: VisitorTrendChartProps) {
           </g>
         ))}
 
-        <path d={points.areaPath} fill="url(#visitor-area)" />
+        <path d={points.areaPath} className={styles.chartArea} />
         <path
           d={points.linePath}
-          fill="none"
-          stroke="var(--public-accent)"
-          strokeWidth={2}
-          strokeLinecap="round"
-          strokeLinejoin="round"
+          className={styles.chartLine}
         />
 
         {points.coords.map((p) => (
           <g key={p.date}>
-            <circle cx={p.x} cy={p.y} r={3} className={styles.chartDot} />
+            <circle
+              cx={p.x}
+              cy={p.y}
+              r={chart.dotRadius}
+              className={styles.chartDot}
+            />
             <title>{`${formatShortDate(p.date)} · ${p.count}회`}</title>
           </g>
         ))}
@@ -118,7 +149,7 @@ export function VisitorTrendChart({ data }: VisitorTrendChartProps) {
             <text
               key={`label-${p.date}`}
               x={p.x}
-              y={CHART_HEIGHT - 8}
+              y={chart.height - 10}
               textAnchor="middle"
               className={styles.chartAxisLabel}
             >

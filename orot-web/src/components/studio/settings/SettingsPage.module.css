@@ -370,6 +370,18 @@
   background: var(--orot-color-bg);
 }
 
+.listItem > * {
+  min-width: 0;
+}
+
+.listItemSocial {
+  grid-template-columns: minmax(140px, 160px) minmax(0, 1fr) auto;
+}
+
+.listItemCategory {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 120px auto;
+}
+
 .listItemActions {
   display: flex;
   align-items: center;
@@ -425,10 +437,16 @@
     border-right: none;
     border-bottom: var(--orot-border-width) solid var(--orot-color-border);
     scrollbar-width: thin;
+    gap: var(--orot-space-1);
+    padding-bottom: var(--orot-space-2);
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
   }
 
   .tabsCard :global(.orot-tabs--left .orot-tabs__tab) {
     margin-bottom: -1px;
+    flex: 0 0 auto;
+    padding: var(--orot-space-2) var(--orot-space-3);
   }
 
   .tabsCard :global(.orot-tabs--left .orot-tabs__tab::after) {
@@ -456,7 +474,26 @@
     padding: var(--orot-space-3);
   }
 
+  .tabsCard :global(.orot-tabs--left .orot-tabs__content) {
+    padding-top: var(--orot-space-3);
+  }
+
   .actions {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .switchRow {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .listItemActions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .listItemButtons {
     flex-wrap: wrap;
     justify-content: flex-end;
   }

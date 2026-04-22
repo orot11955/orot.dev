@@ -40,12 +40,15 @@ yarn --cwd orot-web install
 
 ## 개발
 
-각 앱은 루트에서 아래 명령으로 실행할 수 있습니다.
+루트에서 아래 명령으로 실행할 수 있습니다.
 
 ```bash
+yarn dev
 yarn dev:api
 yarn dev:web
 ```
+
+`yarn dev`는 `orot-api`와 `orot-web`을 동시에 실행합니다.
 
 자주 쓰는 루트 명령:
 

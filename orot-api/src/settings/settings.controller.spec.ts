@@ -14,6 +14,8 @@ describe('PublicSettingsController', () => {
     const result = await controller.findAll();
 
     expect(result.home_hero_image_position_y).toBe('50%');
+    expect(result.seo_home_title).toBe('');
+    expect(result.seo_home_description).toBe('');
     expect(Object.keys(result).sort()).toEqual([...PUBLIC_SETTING_KEYS].sort());
     expect(result).not.toHaveProperty('private_secret');
   });

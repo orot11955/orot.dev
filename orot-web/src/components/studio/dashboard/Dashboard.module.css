@@ -101,6 +101,7 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--orot-space-3);
+  flex-wrap: wrap;
   font-size: var(--orot-font-size-md);
   font-weight: var(--orot-font-weight-bold);
   color: var(--orot-color-text);
@@ -126,7 +127,8 @@
 
 .chartWrap {
   width: 100%;
-  min-height: 200px;
+  height: min(220px, max(176px, 42vw));
+  min-height: 0;
 }
 
 .chartSvg {
@@ -134,6 +136,18 @@
   height: 100%;
   min-height: 200px;
   display: block;
+}
+
+.chartArea {
+  fill: url(#visitor-area);
+}
+
+.chartLine {
+  fill: none;
+  stroke: var(--public-accent);
+  stroke-width: 2.25;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .chartGrid {
@@ -369,6 +383,10 @@
 }
 
 @media (max-width: 600px) {
+  .page {
+    gap: var(--orot-space-5);
+  }
+
   .statsGrid {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -377,8 +395,53 @@
     padding: var(--orot-space-4);
   }
 
+  .pageTitle {
+    font-size: var(--orot-font-size-lg);
+  }
+
   .pageBadges {
     width: 100%;
     justify-content: flex-start;
+  }
+
+  .panel :global(.orot-card__head) {
+    padding: var(--orot-space-3) var(--orot-space-4);
+  }
+
+  .panel :global(.orot-card__body) {
+    padding: var(--orot-space-4);
+  }
+
+  .panelMeta {
+    width: 100%;
+  }
+
+  .chartWrap {
+    height: min(196px, max(168px, 48vw));
+  }
+
+  .chartSvg {
+    min-height: 0;
+  }
+
+  .chartAxisLabel {
+    font-size: 9px;
+  }
+
+  .rankItem {
+    grid-template-columns: 24px minmax(0, 1fr);
+  }
+
+  .rankMeta {
+    width: 100%;
+    padding-left: calc(24px + var(--orot-space-3));
+  }
+
+  .pipelineItem {
+    flex-wrap: wrap;
+  }
+
+  .pipelineMeta {
+    width: 100%;
   }
 }

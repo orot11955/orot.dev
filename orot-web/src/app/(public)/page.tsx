@@ -12,8 +12,12 @@ import type {
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getPublicSettings();
+  const seoHomeTitle = settings?.seo_home_title?.trim();
+  const seoHomeDescription = settings?.seo_home_description?.trim();
 
   return createPublicMetadata({
+    absoluteTitle: seoHomeTitle,
+    description: seoHomeDescription,
     path: '/',
     settings,
     keywords: ['개발', '사진', '기록', '블로그'],

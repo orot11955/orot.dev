@@ -7,6 +7,8 @@
     "node": ">=22.0.0"
   },
   "scripts": {
+    "dev": "node ./scripts/dev.mjs",
+    "dev:all": "node ./scripts/dev.mjs",
     "dev:web": "yarn --cwd orot-web dev",
     "dev:api": "yarn --cwd orot-api start:dev",
     "build:web": "yarn --cwd orot-web build",

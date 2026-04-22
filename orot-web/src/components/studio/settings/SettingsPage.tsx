@@ -887,8 +887,7 @@ function SocialLinksSection({ settings, onSave }: SectionProps) {
           return (
             <div
               key={index}
-              className={styles.listItem}
-              style={{ gridTemplateColumns: '160px 1fr auto' }}
+              className={`${styles.listItem} ${styles.listItemSocial}`}
             >
               <Input
                 value={item.label}
@@ -912,6 +911,10 @@ function SocialLinksSection({ settings, onSave }: SectionProps) {
 // ─── Section: SEO ─────────────────────────────────────────────────────────────
 
 function SeoSection({ settings, onSave }: SectionProps) {
+  const [homeTitle, setHomeTitle] = useState(settings.seo_home_title ?? '');
+  const [homeDescription, setHomeDescription] = useState(
+    settings.seo_home_description ?? '',
+  );
   const [robots, setRobots] = useState(settings.seo_robots || 'index,follow');
   const [sitemap, setSitemap] = useState(toBool(settings.enable_sitemap));
   const [rss, setRss] = useState(toBool(settings.enable_rss));
@@ -921,6 +924,8 @@ function SeoSection({ settings, onSave }: SectionProps) {
     try {
       await runSaving(() =>
         onSave({
+          seo_home_title: homeTitle.trim(),
+          seo_home_description: homeDescription.trim(),
           seo_robots: robots,
           enable_sitemap: fromBool(sitemap),
           enable_rss: fromBool(rss),
@@ -934,11 +939,34 @@ function SeoSection({ settings, onSave }: SectionProps) {
   return (
     <SettingsSectionShell
       title="SEO 설정"
-      description="검색엔진 크롤링 정책과 사이트맵·RSS 노출 여부를 설정합니다."
+      description="홈 검색 노출 문구와 크롤링 정책, 사이트맵·RSS 노출 여부를 설정합니다."
       footer={<SettingsSubmitButton onClick={submit} loading={saving} />}
     >
       <div className={styles.fieldGrid}>
-        <label className={styles.field}>
+        <label className={`${styles.field} ${styles.fieldWide}`}>
+          <span className={styles.fieldLabel}>홈 검색 제목</span>
+          <Input
+            value={homeTitle}
+            placeholder="비워두면 사이트 이름을 사용합니다."
+            onChange={(event) => setHomeTitle(event.target.value)}
+          />
+          <span className={styles.fieldHelp}>
+            홈(`/`)의 HTML title에 사용됩니다. 검색엔진은 상황에 따라 다른 제목으로 다시 표시할 수 있습니다.
+          </span>
+        </label>
+        <label className={`${styles.field} ${styles.fieldWide}`}>
+          <span className={styles.fieldLabel}>홈 검색 설명</span>
+          <textarea
+            className={styles.textarea}
+            value={homeDescription}
+            placeholder="비워두면 사이트 설명을 사용합니다."
+            onChange={(event) => setHomeDescription(event.target.value)}
+          />
+          <span className={styles.fieldHelp}>
+            홈(`/`)의 meta description에 사용됩니다. 검색엔진은 검색어에 따라 본문 일부를 대신 노출할 수 있습니다.
+          </span>
+        </label>
+        <label className={`${styles.field} ${styles.fieldWide}`}>
           <span className={styles.fieldLabel}>robots 메타</span>
           <Select
             options={ROBOTS_OPTIONS}
@@ -1175,8 +1203,7 @@ function CategoriesSection({ onError, onSuccess }: CategoriesSectionProps) {
             return (
               <div
                 key={String(draft.id)}
-                className={styles.listItem}
-                style={{ gridTemplateColumns: '1fr 1fr 120px auto' }}
+                className={`${styles.listItem} ${styles.listItemCategory}`}
               >
                 <Input
                   value={draft.name}

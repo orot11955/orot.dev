@@ -72,6 +72,10 @@
   justify-content: flex-end;
 }
 
+.toolbar > * {
+  min-width: 0;
+}
+
 .tableCard {
   padding: var(--orot-space-4);
   border: 1px solid var(--public-panel-border);
@@ -328,6 +332,10 @@
   font-size: var(--orot-font-size-sm);
 }
 
+.tableCard :global(.orot-table__scroll) {
+  min-width: 0;
+}
+
 @media (max-width: 960px) {
   .toolbar {
     grid-template-columns: 1fr;
@@ -369,5 +377,118 @@
 @media (max-width: 600px) {
   .headerActions > span {
     flex: 1;
+  }
+}
+
+@media (max-width: 720px) {
+  .toolbarActions {
+    width: 100%;
+  }
+
+  .toolbarActions > * {
+    flex: 1 1 0;
+  }
+
+  .tableCard {
+    padding: var(--orot-space-2);
+  }
+
+  .tableCard :global(.orot-table__scroll) {
+    overflow: visible;
+  }
+
+  .tableCard :global(.orot-table) {
+    display: block;
+    width: 100%;
+    table-layout: auto;
+  }
+
+  .tableCard :global(.orot-table__head) {
+    display: none;
+  }
+
+  .tableCard :global(tbody) {
+    display: grid;
+    gap: var(--orot-space-3);
+  }
+
+  .tableCard :global(.orot-table__row) {
+    display: grid;
+    border: 1px solid var(--orot-color-border);
+    border-radius: var(--orot-radius-md);
+    background: var(--orot-color-bg);
+    overflow: hidden;
+  }
+
+  .tableCard :global(.orot-table__row:last-child) {
+    border-bottom: 1px solid var(--orot-color-border);
+  }
+
+  .tableCard :global(.orot-table__td) {
+    display: grid;
+    grid-template-columns: minmax(72px, 84px) minmax(0, 1fr);
+    align-items: flex-start;
+    gap: var(--orot-space-3);
+    padding: var(--orot-space-3);
+    border-bottom: 1px solid var(--orot-color-border);
+    overflow: visible;
+    text-align: left !important;
+    white-space: normal;
+  }
+
+  .tableCard :global(.orot-table__td:last-child) {
+    border-bottom: none;
+  }
+
+  .tableCard :global(.orot-table__td::before) {
+    font-size: var(--orot-font-size-xs);
+    font-weight: var(--orot-font-weight-medium);
+    color: var(--orot-color-text-muted);
+  }
+
+  .tableCard :global(.orot-table__td:nth-child(1)::before) {
+    content: '시리즈';
+  }
+
+  .tableCard :global(.orot-table__td:nth-child(2)::before) {
+    content: '글 수';
+  }
+
+  .tableCard :global(.orot-table__td:nth-child(3)::before) {
+    content: '생성일';
+  }
+
+  .tableCard :global(.orot-table__td:nth-child(4)::before) {
+    content: '수정일';
+  }
+
+  .tableCard :global(.orot-table__td:nth-child(5)) {
+    grid-template-columns: 1fr;
+    gap: var(--orot-space-2);
+  }
+
+  .tableCard :global(.orot-table__td:nth-child(5)::before) {
+    content: '관리';
+  }
+
+  .tableCard :global(.orot-table__pagination) {
+    justify-content: center;
+  }
+
+  .titleText {
+    white-space: normal;
+  }
+
+  .slug,
+  .description {
+    overflow-wrap: anywhere;
+  }
+
+  .numeric {
+    text-align: left;
+  }
+
+  .actions {
+    justify-content: flex-start;
   }
 }

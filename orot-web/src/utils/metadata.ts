@@ -8,6 +8,7 @@ const DEFAULT_OG_IMAGE = '/full_orot_black.png';
 
 interface PublicMetadataOptions {
   title?: string;
+  absoluteTitle?: string;
   description?: string;
   path?: string;
   settings?: PublicSettings | null;
@@ -91,6 +92,7 @@ export function resolveSiteDescription(settings?: PublicSettings | null): string
 
 export function createPublicMetadata({
   title,
+  absoluteTitle,
   description,
   path,
   settings,
@@ -103,10 +105,12 @@ export function createPublicMetadata({
 }: PublicMetadataOptions): Metadata {
   const siteName = resolveSiteName(settings);
   const pageTitle = normalizeText(title);
+  const explicitTitle = normalizeText(absoluteTitle);
   const pageDescription = normalizeText(description) ?? resolveSiteDescription(settings);
   const imageUrl = resolveMetadataImage(settings, image);
-  const metadataTitle = pageTitle ? `${pageTitle} | ${siteName}` : siteName;
-  const socialTitle = pageTitle ?? siteName;
+  const metadataTitle =
+    explicitTitle ?? (pageTitle ? `${pageTitle} | ${siteName}` : siteName);
+  const socialTitle = explicitTitle ?? pageTitle ?? siteName;
   const normalizedKeywords = normalizeList(keywords);
   const normalizedTags = normalizeList(tags);
 

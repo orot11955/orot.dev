@@ -27,7 +27,8 @@ function normalizeLogLevel(value?: string | null): LogLevel {
 
 function shouldLog(level: LogLevel): boolean {
   const configuredLevel = normalizeLogLevel(
-    process.env.LOG_LEVEL?.trim().toLowerCase(),
+    process.env.API_LOG_LEVEL?.trim().toLowerCase() ??
+      process.env.LOG_LEVEL?.trim().toLowerCase(),
   );
   const weights: Record<LogLevel, number> = {
     debug: 10,
@@ -137,7 +138,7 @@ function sanitizeValue(value: unknown, depth = 0): unknown {
 
 function writeLog(level: LogLevel, entry: Record<string, unknown>) {
   const payload =
-    process.env.LOG_PRETTY === 'true'
+    (process.env.API_LOG_PRETTY ?? process.env.LOG_PRETTY) === 'true'
       ? JSON.stringify(entry, null, 2)
       : JSON.stringify(entry);
 

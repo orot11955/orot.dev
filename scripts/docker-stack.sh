@@ -6,9 +6,18 @@ WAIT_TIMEOUT="${DOCKER_WAIT_TIMEOUT:-120}"
 LOG_TAIL="${DOCKER_LOG_TAIL:-80}"
 BUILD_API_IMAGE="${BUILD_API_IMAGE:-true}"
 FAILURE_LOG_SERVICES=""
+COMPOSE_ENV_FILE="${COMPOSE_ENV_FILE:-}"
+
+if [ -z "$COMPOSE_ENV_FILE" ]; then
+  COMPOSE_ENV_FILE=".env.production"
+fi
 
 log() {
   printf '%s\n' "$1"
+}
+
+docker_compose() {
+  docker compose --env-file "$COMPOSE_ENV_FILE" "$@"
 }
 
 require_command() {
@@ -32,12 +41,12 @@ require_file() {
 
 validate_compose() {
   log "Validating Docker Compose config..."
-  docker compose config >/dev/null
+  docker_compose config >/dev/null
 }
 
 preflight_base() {
   require_command docker
-  require_file .env "Compose environment file"
+  require_file "$COMPOSE_ENV_FILE" "Compose environment file"
 }
 
 preflight_build() {
@@ -54,7 +63,7 @@ build_app_images() {
   validate_compose
 
   log "Building application images..."
-  docker compose build --pull orot-api orot-web
+  docker_compose build --pull orot-api orot-web
 }
 
 build_api_image() {
@@ -62,21 +71,21 @@ build_api_image() {
   validate_compose
 
   log "Building API image..."
-  docker compose build --pull orot-api
+  docker_compose build --pull orot-api
 }
 
 start_database() {
   FAILURE_LOG_SERVICES="db"
 
   log "Starting database and waiting for health checks..."
-  docker compose up -d --wait --wait-timeout "$WAIT_TIMEOUT" db
+  docker_compose up -d --wait --wait-timeout "$WAIT_TIMEOUT" db
 }
 
 run_migration_job() {
   FAILURE_LOG_SERVICES="db orot-migrate"
 
   log "Running Prisma migration job..."
-  docker compose --profile ops run --rm --no-deps orot-migrate
+  docker_compose --profile ops run --rm --no-deps orot-migrate
 }
 
 start_application_stack() {
@@ -84,7 +93,7 @@ start_application_stack() {
   FAILURE_LOG_SERVICES="db orot-api orot-web nginx"
 
   log "Starting application services..."
-  docker compose up -d \
+  docker_compose up -d \
     --no-build \
     --remove-orphans \
     --wait \
@@ -94,7 +103,7 @@ start_application_stack() {
 
 print_status() {
   log "Current service status:"
-  docker compose ps
+  docker_compose ps
 }
 
 print_failure_context() {
@@ -110,12 +119,12 @@ print_failure_context() {
 
   if command -v docker >/dev/null 2>&1; then
     log "Current service status:"
-    docker compose ps
+    docker_compose ps
   fi
 
   if [ -n "$FAILURE_LOG_SERVICES" ]; then
     log "Recent logs:"
-    docker compose logs --tail "$LOG_TAIL" $FAILURE_LOG_SERVICES
+    docker_compose logs --tail "$LOG_TAIL" $FAILURE_LOG_SERVICES
   fi
 }
 

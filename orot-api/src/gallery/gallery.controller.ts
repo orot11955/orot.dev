@@ -11,9 +11,10 @@ import {
   UseGuards,
   UseInterceptors,
   UploadedFile,
+  UploadedFiles,
   BadRequestException,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import {
   ApiTags,
   ApiBearerAuth,
@@ -35,11 +36,23 @@ import {
   toUploadsPublicUrl,
 } from '../common/uploads';
 import { createGalleryThumbnail } from './image-processing';
+import { parse } from 'path';
 
 const multerOptions = createImageUploadOptions({
   directory: ['gallery'],
   maxFileSizeBytes: 20 * 1024 * 1024,
 });
+
+const MAX_GALLERY_UPLOAD_FILES = 20;
+
+interface PreparedGalleryUpload {
+  dto: CreateGalleryItemDto;
+  imageUrl: string;
+  thumbnailUrl?: string;
+  width?: number;
+  height?: number;
+  tempFilePath: string;
+}
 
 // ─── Public Routes ───────────────────────────────────────────────────────────
 
@@ -71,6 +84,58 @@ export class PublicGalleryController {
 export class StudioGalleryController {
   constructor(private readonly galleryService: GalleryService) {}
 
+  private resolveFallbackTitle(file: Express.Multer.File) {
+    const fallback = parse(file.originalname).name.trim();
+    return fallback || undefined;
+  }
+
+  private cleanupPreparedUpload(upload: PreparedGalleryUpload) {
+    safeRemoveFile(upload.tempFilePath);
+    safeRemoveUploadedAsset(upload.thumbnailUrl, '/uploads/gallery/thumbs/');
+  }
+
+  private async prepareUpload(
+    file: Express.Multer.File,
+    dto: CreateGalleryItemDto,
+    options?: {
+      fallbackTitle?: string;
+      sortOrderOffset?: number;
+    },
+  ): Promise<PreparedGalleryUpload> {
+    const imageUrl = toUploadsPublicUrl('gallery', file.filename);
+    const filePath = resolveUploadsDiskPath('gallery', file.filename);
+    const fallbackThumbnailUrl = toUploadsPublicUrl(
+      'gallery',
+      'thumbs',
+      `${parse(file.filename).name}.webp`,
+    );
+
+    try {
+      const thumbnail = await createGalleryThumbnail(filePath, file.filename);
+      const title = dto.title?.trim() || options?.fallbackTitle;
+      const takenAt = dto.takenAt?.trim() || thumbnail.takenAt?.toISOString();
+      const baseSortOrder = dto.sortOrder ?? 0;
+
+      return {
+        dto: {
+          ...dto,
+          title,
+          takenAt,
+          sortOrder: baseSortOrder + (options?.sortOrderOffset ?? 0),
+        },
+        imageUrl,
+        thumbnailUrl: thumbnail.thumbnailUrl,
+        width: thumbnail.width,
+        height: thumbnail.height,
+        tempFilePath: file.path,
+      };
+    } catch (error) {
+      safeRemoveFile(file.path);
+      safeRemoveUploadedAsset(fallbackThumbnailUrl, '/uploads/gallery/thumbs/');
+      throw error;
+    }
+  }
+
   @Post()
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Upload gallery image' })
@@ -80,28 +145,71 @@ export class StudioGalleryController {
     @Body() dto: CreateGalleryItemDto,
   ) {
     if (!file) throw new BadRequestException('Image file is required');
-    const imageUrl = toUploadsPublicUrl('gallery', file.filename);
-    const filePath = resolveUploadsDiskPath('gallery', file.filename);
-    const thumbnail = await createGalleryThumbnail(filePath, file.filename);
-    const takenAt = dto.takenAt?.trim() || thumbnail.takenAt?.toISOString();
+    const prepared = await this.prepareUpload(file, dto);
 
     try {
       return await this.galleryService.create(
-        {
-          ...dto,
-          takenAt,
-        },
-        imageUrl,
-        thumbnail.thumbnailUrl,
-        thumbnail.width,
-        thumbnail.height,
+        prepared.dto,
+        prepared.imageUrl,
+        prepared.thumbnailUrl,
+        prepared.width,
+        prepared.height,
       );
     } catch (error) {
-      safeRemoveFile(file.path);
-      safeRemoveUploadedAsset(
-        thumbnail.thumbnailUrl,
-        '/uploads/gallery/thumbs/',
+      this.cleanupPreparedUpload(prepared);
+      throw error;
+    }
+  }
+
+  @Post('batch')
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Upload multiple gallery images' })
+  @UseInterceptors(
+    FilesInterceptor('image', MAX_GALLERY_UPLOAD_FILES, multerOptions),
+  )
+  async createMany(
+    @UploadedFiles() files: Express.Multer.File[],
+    @Body() dto: CreateGalleryItemDto,
+  ) {
+    if (!files?.length) {
+      throw new BadRequestException('Image file is required');
+    }
+
+    const preparedUploads: PreparedGalleryUpload[] = [];
+
+    for (let index = 0; index < files.length; index += 1) {
+      const file = files[index];
+
+      try {
+        preparedUploads.push(
+          await this.prepareUpload(file, dto, {
+            fallbackTitle: this.resolveFallbackTitle(file),
+            sortOrderOffset: index,
+          }),
+        );
+      } catch (error) {
+        preparedUploads.forEach((upload) => this.cleanupPreparedUpload(upload));
+
+        for (const pendingFile of files.slice(index + 1)) {
+          safeRemoveFile(pendingFile.path);
+        }
+
+        throw error;
+      }
+    }
+
+    try {
+      return await this.galleryService.createMany(
+        preparedUploads.map((upload) => ({
+          dto: upload.dto,
+          imageUrl: upload.imageUrl,
+          thumbnailUrl: upload.thumbnailUrl,
+          width: upload.width,
+          height: upload.height,
+        })),
       );
+    } catch (error) {
+      preparedUploads.forEach((upload) => this.cleanupPreparedUpload(upload));
       throw error;
     }
   }

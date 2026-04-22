@@ -12,7 +12,10 @@ type PrismaEventClient = PrismaClient & {
 };
 
 function resolveSlowQueryMs(): number {
-  const parsed = Number.parseInt(process.env.SLOW_QUERY_MS || '300', 10);
+  const parsed = Number.parseInt(
+    process.env.API_SLOW_QUERY_MS || process.env.SLOW_QUERY_MS || '300',
+    10,
+  );
   return Number.isFinite(parsed) ? parsed : 300;
 }
 

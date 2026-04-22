@@ -19,5 +19,7 @@ export function resolveSiteUrl(): URL {
     return configuredUrl;
   }
 
-  return new URL(`http://localhost:${process.env.PORT ?? '3000'}`);
+  return new URL(
+    `http://localhost:${process.env.WEB_PORT ?? process.env.PORT ?? '3000'}`,
+  );
 }

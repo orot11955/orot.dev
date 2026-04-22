@@ -7,28 +7,34 @@ import styles from './PhotosManagement.module.css';
 interface PhotoMetadataFieldsProps {
   form: PhotoFormState;
   idPrefix: string;
+  showTitle?: boolean;
   takenAtHint?: string;
+  sortOrderHint?: string;
   onChange: (patch: Partial<PhotoFormState>) => void;
 }
 
 export function PhotoMetadataFields({
   form,
   idPrefix,
+  showTitle = true,
   takenAtHint,
+  sortOrderHint,
   onChange,
 }: PhotoMetadataFieldsProps) {
   return (
     <>
-      <div className={styles.detailRow}>
-        <label className={styles.detailLabel} htmlFor={`${idPrefix}-title`}>
-          제목
-        </label>
-        <Input
-          id={`${idPrefix}-title`}
-          value={form.title}
-          onChange={(event) => onChange({ title: event.target.value })}
-        />
-      </div>
+      {showTitle && (
+        <div className={styles.detailRow}>
+          <label className={styles.detailLabel} htmlFor={`${idPrefix}-title`}>
+            제목
+          </label>
+          <Input
+            id={`${idPrefix}-title`}
+            value={form.title}
+            onChange={(event) => onChange({ title: event.target.value })}
+          />
+        </div>
+      )}
 
       <div className={styles.detailRow}>
         <label className={styles.detailLabel} htmlFor={`${idPrefix}-description`}>
@@ -80,6 +86,9 @@ export function PhotoMetadataFields({
           value={form.sortOrder}
           onChange={(event) => onChange({ sortOrder: event.target.value })}
         />
+        {sortOrderHint && (
+          <span className={styles.detailHint}>{sortOrderHint}</span>
+        )}
       </div>
     </>
   );

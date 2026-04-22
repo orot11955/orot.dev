@@ -27,6 +27,7 @@ import {
 import styles from './PhotosManagement.module.css';
 
 const PAGE_SIZE = 24;
+const MAX_UPLOAD_FILES = 20;
 
 const FILTER_OPTIONS = [
   { value: 'all', label: '전체' },
@@ -35,6 +36,26 @@ const FILTER_OPTIONS = [
 ];
 
 type FilterValue = 'all' | 'published' | 'unpublished';
+
+interface UploadSelection {
+  file: File;
+  previewUrl: string;
+}
+
+function buildUploadSelections(files: File[]) {
+  return files.map((file) => ({
+    file,
+    previewUrl: URL.createObjectURL(file),
+  }));
+}
+
+function revokeUploadSelections(files: UploadSelection[]) {
+  files.forEach((item) => URL.revokeObjectURL(item.previewUrl));
+}
+
+function resolveUploadTitle(file: File) {
+  return file.name.replace(/\.[^.]+$/, '') || file.name;
+}
 
 export function PhotosManagementPage() {
   const [items, setItems] = useState<GalleryItem[]>([]);
@@ -48,8 +69,7 @@ export function PhotosManagementPage() {
   const [detailBusy, setDetailBusy] = useState(false);
 
   const [uploadOpen, setUploadOpen] = useState(false);
-  const [uploadFile, setUploadFile] = useState<File | null>(null);
-  const [uploadPreview, setUploadPreview] = useState<string>('');
+  const [uploadFiles, setUploadFiles] = useState<UploadSelection[]>([]);
   const [uploadForm, setUploadForm] = useState<PhotoFormState>(buildPhotoFormState(null));
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadBusy, setUploadBusy] = useState(false);
@@ -97,9 +117,10 @@ export function PhotosManagementPage() {
   }, [load]);
 
   useEffect(() => {
-    if (!uploadPreview) return;
-    return () => URL.revokeObjectURL(uploadPreview);
-  }, [uploadPreview]);
+    return () => {
+      revokeUploadSelections(uploadFiles);
+    };
+  }, [uploadFiles]);
 
   const openDetail = useCallback((item: GalleryItem) => {
     setDetail(item);
@@ -171,58 +192,59 @@ export function PhotosManagementPage() {
 
   const openUpload = useCallback(() => {
     setUploadOpen(true);
-    setUploadFile(null);
-    setUploadPreview('');
+    setUploadFiles([]);
     setUploadForm(buildPhotoFormState(null));
     setUploadError(null);
   }, []);
 
   const closeUpload = useCallback(() => {
     setUploadOpen(false);
-    setUploadFile(null);
-    setUploadPreview('');
+    setUploadFiles([]);
     setUploadForm(buildPhotoFormState(null));
     setUploadError(null);
   }, []);
 
   const handleUploadFileChange = useCallback(
-    (file: File | null) => {
-      if (!file) {
-        setUploadFile(null);
-        setUploadPreview((prev) => {
-          if (prev) URL.revokeObjectURL(prev);
-          return '';
-        });
+    (files: File[]) => {
+      if (files.length > MAX_UPLOAD_FILES) {
+        setUploadError(`사진은 한 번에 ${MAX_UPLOAD_FILES}장까지 업로드할 수 있습니다.`);
+        setUploadFiles([]);
         return;
       }
 
-      setUploadFile(file);
-      setUploadPreview((prev) => {
-        if (prev) URL.revokeObjectURL(prev);
-        return URL.createObjectURL(file);
-      });
-      if (!uploadForm.title) {
-        setUploadForm((prev) => ({
-          ...prev,
-          title: file.name.replace(/\.[^.]+$/, ''),
-        }));
-      }
+      setUploadError(null);
+      setUploadFiles(buildUploadSelections(files));
+      setUploadForm((prev) => ({
+        ...prev,
+        title:
+          files.length === 1
+            ? prev.title || resolveUploadTitle(files[0])
+            : '',
+      }));
     },
-    [uploadForm.title],
+    [],
   );
 
   const handleUploadSubmit = useCallback(async () => {
-    if (!uploadFile) {
+    if (uploadFiles.length === 0) {
       setUploadError('이미지 파일을 선택해주세요.');
       return;
     }
+
     setUploadBusy(true);
     setUploadError(null);
     try {
-      await studioGalleryService.upload(
-        uploadFile,
-        buildPhotoPayload(uploadForm, { fallbackSortOrder: 0 }),
-      );
+      const payload = buildPhotoPayload(uploadForm, { fallbackSortOrder: 0 });
+
+      if (uploadFiles.length === 1) {
+        await studioGalleryService.upload(uploadFiles[0].file, payload);
+      } else {
+        await studioGalleryService.uploadMany(
+          uploadFiles.map((item) => item.file),
+          payload,
+        );
+      }
+
       closeUpload();
       setPage(1);
       await load();
@@ -231,7 +253,7 @@ export function PhotosManagementPage() {
     } finally {
       setUploadBusy(false);
     }
-  }, [uploadFile, uploadForm, closeUpload, load]);
+  }, [uploadFiles, uploadForm, closeUpload, load]);
 
   const publishedCount = useMemo(
     () => items.filter((item) => item.isPublished).length,
@@ -356,8 +378,7 @@ export function PhotosManagementPage() {
 
       <PhotoUploadModal
         open={uploadOpen}
-        uploadFile={uploadFile}
-        uploadPreview={uploadPreview}
+        uploadFiles={uploadFiles}
         form={uploadForm}
         error={uploadError}
         busy={uploadBusy}

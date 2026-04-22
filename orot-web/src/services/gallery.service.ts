@@ -4,6 +4,7 @@ import {
   listResource,
   patchResource,
   uploadImageResource,
+  uploadImageResources,
 } from './service-helpers';
 import { createAreaRoutes } from './api-routes';
 import type {
@@ -45,6 +46,23 @@ export const studioGalleryService = {
       takenAt: payload.takenAt,
       sortOrder: payload.sortOrder,
     });
+  },
+
+  async uploadMany(
+    files: File[],
+    payload: CreateGalleryItemPayload,
+  ): Promise<GalleryItem[]> {
+    return uploadImageResources<GalleryItem[]>(
+      galleryRoutes.studio('batch'),
+      files,
+      {
+        title: payload.title,
+        description: payload.description,
+        altText: payload.altText,
+        takenAt: payload.takenAt,
+        sortOrder: payload.sortOrder,
+      },
+    );
   },
 
   async getAll(query: GalleryQuery = {}): Promise<GalleryListResponse> {

@@ -1,9 +1,23 @@
-const DEFAULT_API_PORT = '4000';
 const DEFAULT_PUBLIC_API_BASE = '/api';
-const DEFAULT_SERVER_API_ORIGIN = `http://localhost:${DEFAULT_API_PORT}`;
+
+function resolveDefaultApiPort(): string {
+  return process.env.API_PORT?.trim() || '4000';
+}
+
+function resolveDefaultServerApiOrigin(): string {
+  return `http://localhost:${resolveDefaultApiPort()}`;
+}
 
 function isAbsoluteUrl(url: string): boolean {
   return /^https?:\/\//i.test(url);
+}
+
+function isLikelyContainerServiceHostname(hostname: string): boolean {
+  return hostname !== 'localhost' &&
+    hostname !== '127.0.0.1' &&
+    hostname !== '0.0.0.0' &&
+    !hostname.includes('.') &&
+    !hostname.includes(':');
 }
 
 function trimTrailingSlash(url: string): string {
@@ -20,8 +34,29 @@ function normalizeRelativeApiBase(url: string): string {
   return trimTrailingSlash(withLeadingSlash);
 }
 
+function normalizeDevAbsoluteUrl(url: string): string {
+  if (process.env.NODE_ENV !== 'development' || !isAbsoluteUrl(url)) {
+    return url;
+  }
+
+  try {
+    const parsed = new URL(url);
+    if (!isLikelyContainerServiceHostname(parsed.hostname)) {
+      return url;
+    }
+
+    parsed.hostname = 'localhost';
+    parsed.port = resolveDefaultApiPort();
+    return parsed.toString();
+  } catch {
+    return url;
+  }
+}
+
 export function resolvePublicApiOrigin(): string {
-  const configuredApiUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
+  const configuredApiUrl = normalizeDevAbsoluteUrl(
+    process.env.NEXT_PUBLIC_API_URL?.trim() ?? '',
+  );
 
   if (!configuredApiUrl || !isAbsoluteUrl(configuredApiUrl)) {
     return '';
@@ -31,7 +66,9 @@ export function resolvePublicApiOrigin(): string {
 }
 
 export function resolvePublicApiBaseUrl(): string {
-  const configuredApiUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
+  const configuredApiUrl = normalizeDevAbsoluteUrl(
+    process.env.NEXT_PUBLIC_API_URL?.trim() ?? '',
+  );
 
   if (!configuredApiUrl) {
     return DEFAULT_PUBLIC_API_BASE;
@@ -45,15 +82,19 @@ export function resolvePublicApiBaseUrl(): string {
 }
 
 export function resolveServerApiBaseUrl(): string {
-  const internalApiOrigin = process.env.INTERNAL_API_ORIGIN?.trim();
+  const internalApiOrigin = normalizeDevAbsoluteUrl(
+    process.env.INTERNAL_API_ORIGIN?.trim() ?? '',
+  );
   if (internalApiOrigin && isAbsoluteUrl(internalApiOrigin)) {
     return normalizeAbsoluteApiBase(internalApiOrigin);
   }
 
-  const configuredApiUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
+  const configuredApiUrl = normalizeDevAbsoluteUrl(
+    process.env.NEXT_PUBLIC_API_URL?.trim() ?? '',
+  );
   if (configuredApiUrl && isAbsoluteUrl(configuredApiUrl)) {
     return normalizeAbsoluteApiBase(configuredApiUrl);
   }
 
-  return `${DEFAULT_SERVER_API_ORIGIN}/api`;
+  return `${resolveDefaultServerApiOrigin()}/api`;
 }

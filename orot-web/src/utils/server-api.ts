@@ -8,8 +8,61 @@ interface ServerGetOptions extends Omit<RequestInit, 'next'> {
   revalidate?: number | false;
 }
 
+const DEFAULT_SERVER_API_TIMEOUT_MS = 3_000;
+
 function getApiBase(): string {
   return resolveServerApiBaseUrl();
+}
+
+function resolveServerApiTimeoutMs(): number {
+  const rawTimeout =
+    process.env.WEB_SERVER_API_TIMEOUT_MS?.trim() ??
+    process.env.SERVER_API_TIMEOUT_MS?.trim();
+  if (!rawTimeout) {
+    return DEFAULT_SERVER_API_TIMEOUT_MS;
+  }
+
+  const parsed = Number.parseInt(rawTimeout, 10);
+  return Number.isFinite(parsed) && parsed > 0
+    ? parsed
+    : DEFAULT_SERVER_API_TIMEOUT_MS;
+}
+
+function mergeAbortSignals(
+  requestSignal: AbortSignal | null | undefined,
+  timeoutMs: number,
+): AbortSignal {
+  const timeoutSignal = AbortSignal.timeout(timeoutMs);
+
+  if (!requestSignal) {
+    return timeoutSignal;
+  }
+
+  if (typeof AbortSignal.any === 'function') {
+    return AbortSignal.any([requestSignal, timeoutSignal]);
+  }
+
+  const controller = new AbortController();
+
+  const abortFrom = (signal: AbortSignal) => {
+    if (!controller.signal.aborted) {
+      controller.abort(signal.reason);
+    }
+  };
+
+  if (requestSignal.aborted) {
+    abortFrom(requestSignal);
+    return controller.signal;
+  }
+
+  requestSignal.addEventListener('abort', () => abortFrom(requestSignal), {
+    once: true,
+  });
+  timeoutSignal.addEventListener('abort', () => abortFrom(timeoutSignal), {
+    once: true,
+  });
+
+  return controller.signal;
 }
 
 async function resolveServerRequestId(): Promise<string> {
@@ -40,6 +93,7 @@ export async function serverGet<T>(
   const { revalidate = 60, ...requestOptions } = options ?? {};
   const shouldUseRevalidate =
     revalidate !== false && requestOptions.cache !== 'no-store';
+  const timeoutMs = resolveServerApiTimeoutMs();
 
   try {
     const base = getApiBase();
@@ -59,6 +113,7 @@ export async function serverGet<T>(
     } = {
       ...requestOptions,
       headers: mergeRequestHeaders(requestOptions.headers, requestId),
+      signal: mergeAbortSignals(requestOptions.signal, timeoutMs),
     };
 
     if (shouldUseRevalidate) {
@@ -91,6 +146,21 @@ export async function serverGet<T>(
       return null;
     }
   } catch (error) {
+    if (
+      error instanceof Error &&
+      (error.name === 'TimeoutError' ||
+        (error.name === 'AbortError' &&
+          fetchWasAbortedByTimeout(requestOptions.signal)))
+    ) {
+      webServerLogger.warn('server.fetch.timeout', {
+        requestId,
+        method: requestOptions.method ?? 'GET',
+        path,
+        timeoutMs,
+      });
+      return null;
+    }
+
     webServerLogger.error('server.fetch.error', error, {
       requestId,
       method: requestOptions.method ?? 'GET',
@@ -101,3 +171,9 @@ export async function serverGet<T>(
 }
 
 export { toPaginatedResponse } from './pagination';
+
+function fetchWasAbortedByTimeout(
+  requestSignal: AbortSignal | null | undefined,
+): boolean {
+  return !requestSignal?.aborted;
+}

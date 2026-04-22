@@ -95,8 +95,16 @@ describe('PostsService', () => {
       series: { id: 3, title: 'Series', slug: 'series' },
     });
     prisma.post.findFirst
-      .mockResolvedValueOnce({ id: 21, title: 'Series Prev', slug: 'series-prev' })
-      .mockResolvedValueOnce({ id: 23, title: 'Series Next', slug: 'series-next' });
+      .mockResolvedValueOnce({
+        id: 21,
+        title: 'Series Prev',
+        slug: 'series-prev',
+      })
+      .mockResolvedValueOnce({
+        id: 23,
+        title: 'Series Next',
+        slug: 'series-next',
+      });
 
     const result = await service.findOneForArea('series-current', 'public');
 

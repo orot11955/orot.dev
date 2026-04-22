@@ -5,7 +5,7 @@ import {
   type WebLogLevel,
 } from './shared';
 
-const CLIENT_LOG_ENDPOINT = '/_logs/client';
+const CLIENT_LOG_ENDPOINT = '/api/client-logs';
 const CLIENT_SESSION_STORAGE_KEY = 'orot:client-session-id';
 
 interface ClientLogMeta extends Record<string, unknown> {

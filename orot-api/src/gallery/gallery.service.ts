@@ -5,6 +5,14 @@ import { CreateGalleryItemDto } from './dto/create-gallery-item.dto';
 import { UpdateGalleryItemDto } from './dto/update-gallery-item.dto';
 import { QueryGalleryDto, type GallerySort } from './dto/query-gallery.dto';
 
+interface CreateGalleryItemInput {
+  dto: CreateGalleryItemDto;
+  imageUrl: string;
+  thumbnailUrl?: string;
+  width?: number;
+  height?: number;
+}
+
 function resolveGalleryOrderBy(
   sort: GallerySort | undefined,
 ): Prisma.GalleryItemOrderByWithRelationInput[] {
@@ -25,17 +33,34 @@ function resolveGalleryOrderBy(
       return [{ createdAt: 'desc' }, { id: 'desc' }];
     case 'manual':
     default:
-      return [
-        { sortOrder: 'asc' },
-        { createdAt: 'desc' },
-        { id: 'desc' },
-      ];
+      return [{ sortOrder: 'asc' }, { createdAt: 'desc' }, { id: 'desc' }];
   }
 }
 
 @Injectable()
 export class GalleryService {
   constructor(private readonly prisma: PrismaService) {}
+
+  private buildCreateData({
+    dto,
+    imageUrl,
+    thumbnailUrl,
+    width,
+    height,
+  }: CreateGalleryItemInput): Prisma.GalleryItemCreateInput {
+    return {
+      title: dto.title,
+      description: dto.description,
+      altText: dto.altText,
+      imageUrl,
+      thumbnailUrl: thumbnailUrl ?? imageUrl,
+      width,
+      height,
+      takenAt: dto.takenAt ? new Date(dto.takenAt) : undefined,
+      sortOrder: dto.sortOrder ?? 0,
+      isPublished: false,
+    };
+  }
 
   async create(
     dto: CreateGalleryItemDto,
@@ -45,24 +70,38 @@ export class GalleryService {
     height?: number,
   ) {
     return this.prisma.galleryItem.create({
-      data: {
-        title: dto.title,
-        description: dto.description,
-        altText: dto.altText,
+      data: this.buildCreateData({
+        dto,
         imageUrl,
-        thumbnailUrl: thumbnailUrl ?? imageUrl,
+        thumbnailUrl,
         width,
         height,
-        takenAt: dto.takenAt ? new Date(dto.takenAt) : undefined,
-        sortOrder: dto.sortOrder ?? 0,
-        isPublished: false,
-      },
+      }),
     });
   }
 
+  async createMany(inputs: CreateGalleryItemInput[]) {
+    if (inputs.length === 0) {
+      return [];
+    }
+
+    return this.prisma.$transaction(
+      inputs.map((input) =>
+        this.prisma.galleryItem.create({
+          data: this.buildCreateData(input),
+        }),
+      ),
+    );
+  }
+
   async findAll(query: QueryGalleryDto, isPublic = false) {
-    const { page = 1, limit = 24, isPublished, search, sort = 'manual' } =
-      query;
+    const {
+      page = 1,
+      limit = 24,
+      isPublished,
+      search,
+      sort = 'manual',
+    } = query;
     const skip = (page - 1) * limit;
 
     const where: Record<string, unknown> = {};

@@ -431,10 +431,7 @@ export class PostsService {
   }
 
   private getCachedPublicTags(): string[] | null {
-    if (
-      this.cachedTags &&
-      this.cachedTags.expiresAt > Date.now()
-    ) {
+    if (this.cachedTags && this.cachedTags.expiresAt > Date.now()) {
       return this.cachedTags.value;
     }
 

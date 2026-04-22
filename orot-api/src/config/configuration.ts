@@ -1,45 +1,83 @@
+function readEnv(...keys: string[]): string | undefined {
+  for (const key of keys) {
+    const value = process.env[key]?.trim();
+    if (value) {
+      return value;
+    }
+  }
+
+  return undefined;
+}
+
+function readBooleanEnv(...keys: string[]): boolean | undefined {
+  const value = readEnv(...keys);
+  if (value === undefined) {
+    return undefined;
+  }
+
+  return value === 'true';
+}
+
+function readNumberEnv(...keys: string[]): number | undefined {
+  const value = readEnv(...keys);
+  if (!value) {
+    return undefined;
+  }
+
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function splitCsv(value?: string): string[] {
+  return (value ?? '')
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+}
+
+const defaultWebPort = readEnv('WEB_PORT') || '3000';
 const defaultWebOrigins = [
-  'http://localhost:3000',
-  'http://localhost:3001',
-  'http://127.0.0.1:3000',
-  'http://127.0.0.1:3001',
-  'http://10.10.10.3:3000',
-  'http://10.10.10.3:3001',
+  `http://localhost:${defaultWebPort}`,
+  `http://127.0.0.1:${defaultWebPort}`,
+  `http://forge.home:${defaultWebPort}`,
 ];
 
-const configuredWebOrigins = (process.env.WEB_ORIGIN || '')
-  .split(',')
-  .map((origin) => origin.trim())
-  .filter(Boolean);
-
-const slowQueryMs = Number.parseInt(process.env.SLOW_QUERY_MS || '300', 10);
-const requestBodyLimit = process.env.REQUEST_BODY_LIMIT?.trim() || '20mb';
+const configuredWebOrigins = splitCsv(readEnv('WEB_ORIGIN'));
+const slowQueryMs = readNumberEnv('API_SLOW_QUERY_MS', 'SLOW_QUERY_MS') ?? 300;
+const requestBodyLimit =
+  readEnv('API_REQUEST_BODY_LIMIT', 'REQUEST_BODY_LIMIT') || '20mb';
 
 export default () => ({
-  port: parseInt(process.env.PORT || '4000', 10),
+  port: readNumberEnv('API_PORT', 'PORT') ?? 4000,
+  siteUrl: readEnv('SITE_URL') || 'https://orot.dev',
   webOrigin: configuredWebOrigins[0] || defaultWebOrigins[0],
   webOrigins: Array.from(
     new Set([...defaultWebOrigins, ...configuredWebOrigins]),
   ),
-  httpLogging: process.env.HTTP_LOGGING === 'true',
+  httpLogging: readBooleanEnv('API_HTTP_LOGGING', 'HTTP_LOGGING') ?? false,
   logLevel:
-    process.env.LOG_LEVEL ||
+    readEnv('API_LOG_LEVEL', 'LOG_LEVEL') ||
     (process.env.NODE_ENV === 'production' ? 'info' : 'debug'),
-  logPretty: process.env.LOG_PRETTY === 'true',
+  logPretty: readBooleanEnv('API_LOG_PRETTY', 'LOG_PRETTY') ?? false,
   slowQueryMs: Number.isFinite(slowQueryMs) ? slowQueryMs : 300,
   requestBodyLimit,
   auth: {
-    accessSecret: process.env.JWT_ACCESS_SECRET || 'access-secret',
-    refreshSecret: process.env.JWT_REFRESH_SECRET || 'refresh-secret',
-    accessExpiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '15m',
-    refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '30d',
+    accessSecret:
+      readEnv('API_JWT_ACCESS_SECRET', 'JWT_ACCESS_SECRET') || 'access-secret',
+    refreshSecret:
+      readEnv('API_JWT_REFRESH_SECRET', 'JWT_REFRESH_SECRET') ||
+      'refresh-secret',
+    accessExpiresIn:
+      readEnv('API_JWT_ACCESS_EXPIRES_IN', 'JWT_ACCESS_EXPIRES_IN') || '15m',
+    refreshExpiresIn:
+      readEnv('API_JWT_REFRESH_EXPIRES_IN', 'JWT_REFRESH_EXPIRES_IN') || '30d',
   },
   cookie: {
-    domain: process.env.COOKIE_DOMAIN || '',
-    secure: process.env.COOKIE_SECURE === 'true',
+    domain: readEnv('API_COOKIE_DOMAIN', 'COOKIE_DOMAIN') || '',
+    secure: readBooleanEnv('API_COOKIE_SECURE', 'COOKIE_SECURE') ?? false,
   },
   studio: {
-    username: process.env.STUDIO_USERNAME || 'admin',
-    password: process.env.STUDIO_PASSWORD || 'admin',
+    username: readEnv('API_STUDIO_USERNAME', 'STUDIO_USERNAME') || 'admin',
+    password: readEnv('API_STUDIO_PASSWORD', 'STUDIO_PASSWORD') || 'admin',
   },
 });

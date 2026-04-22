@@ -1,6 +1,7 @@
 import { Controller, Get, Res } from '@nestjs/common';
 import type { Response } from 'express';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { SettingsService } from '../settings/settings.service';
 import { PostStatus } from '@prisma/client';
@@ -19,13 +20,15 @@ export class FeedController {
   constructor(
     private readonly prisma: PrismaService,
     private readonly settingsService: SettingsService,
+    private readonly configService: ConfigService,
   ) {}
 
   @Get('rss.xml')
   @ApiOperation({ summary: 'RSS 2.0 feed' })
   async getRss(@Res() res: Response) {
     const settings = await this.settingsService.findAll();
-    const siteUrl = process.env.SITE_URL ?? 'https://orot.dev';
+    const siteUrl =
+      this.configService.get<string>('siteUrl') ?? 'https://orot.dev';
     const siteName = settings['site_name'] ?? 'OROT.DEV';
     const siteDesc = settings['site_description'] ?? '';
 
@@ -89,7 +92,8 @@ export class FeedController {
   @Get('sitemap.xml')
   @ApiOperation({ summary: 'XML sitemap' })
   async getSitemap(@Res() res: Response) {
-    const siteUrl = process.env.SITE_URL ?? 'https://orot.dev';
+    const siteUrl =
+      this.configService.get<string>('siteUrl') ?? 'https://orot.dev';
 
     const [posts, series] = await Promise.all([
       this.prisma.post.findMany({

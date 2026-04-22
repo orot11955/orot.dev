@@ -7,12 +7,14 @@ import styles from './PhotosManagement.module.css';
 
 interface PhotoUploadModalProps {
   open: boolean;
-  uploadFile: File | null;
-  uploadPreview: string;
+  uploadFiles: Array<{
+    file: File;
+    previewUrl: string;
+  }>;
   form: PhotoFormState;
   error: string | null;
   busy: boolean;
-  onFileChange: (file: File | null) => void;
+  onFileChange: (files: File[]) => void;
   onFormChange: (patch: Partial<PhotoFormState>) => void;
   onClose: () => void;
   onSubmit: () => void | Promise<void>;
@@ -20,8 +22,7 @@ interface PhotoUploadModalProps {
 
 export function PhotoUploadModal({
   open,
-  uploadFile,
-  uploadPreview,
+  uploadFiles,
   form,
   error,
   busy,
@@ -30,6 +31,12 @@ export function PhotoUploadModal({
   onClose,
   onSubmit,
 }: PhotoUploadModalProps) {
+  const isBatchUpload = uploadFiles.length > 1;
+  const totalSizeMb = uploadFiles.reduce(
+    (sum, item) => sum + item.file.size,
+    0,
+  ) / 1024 / 1024;
+
   return (
     <Modal
       open={open}
@@ -59,48 +66,81 @@ export function PhotoUploadModal({
               void onSubmit();
             }}
             loading={busy}
-            disabled={!uploadFile}
+            disabled={uploadFiles.length === 0}
           >
-            업로드
+            {isBatchUpload ? `${uploadFiles.length}장 업로드` : '업로드'}
           </Button>
         </div>
       )}
     >
       <div className={styles.uploadForm}>
         <div
-          className={`${styles.uploadDrop}${uploadFile ? ` ${styles.uploadDropActive}` : ''}`}
+          className={`${styles.uploadDrop}${uploadFiles.length > 0 ? ` ${styles.uploadDropActive}` : ''}`}
         >
           <input
             type="file"
             accept="image/jpeg,image/png,image/webp,image/gif"
+            multiple
             className={styles.uploadDropInput}
             onChange={(event) => {
-              const file = event.target.files?.[0] ?? null;
-              onFileChange(file);
+              onFileChange(Array.from(event.target.files ?? []));
             }}
           />
-          {uploadFile ? (
-            <span>{`${uploadFile.name} · ${(uploadFile.size / 1024 / 1024).toFixed(2)} MB`}</span>
+          {uploadFiles.length > 0 ? (
+            <span>
+              {isBatchUpload
+                ? `${uploadFiles.length}개 파일 선택됨 · 총 ${totalSizeMb.toFixed(2)} MB`
+                : `${uploadFiles[0].file.name} · ${(uploadFiles[0].file.size / 1024 / 1024).toFixed(2)} MB`}
+            </span>
           ) : (
-            <span>클릭하거나 파일을 끌어다 놓으세요 (JPG·PNG·WEBP·GIF, 20MB 이하)</span>
+            <span>클릭하거나 파일을 끌어다 놓으세요 (JPG·PNG·WEBP·GIF, 각 20MB 이하, 최대 20장)</span>
           )}
         </div>
 
-        {uploadPreview && (
-          <div className={styles.uploadPreview}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={uploadPreview}
-              alt="업로드 미리보기"
-              className={styles.uploadPreviewImage}
-            />
+        {uploadFiles.length > 0 && (
+          <div className={styles.uploadPreviewList}>
+            {uploadFiles.map((item, index) => (
+              <div
+                key={`${item.file.name}-${item.file.size}-${index}`}
+                className={styles.uploadPreviewCard}
+              >
+                <div className={styles.uploadPreview}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={item.previewUrl}
+                    alt={item.file.name}
+                    className={styles.uploadPreviewImage}
+                  />
+                </div>
+                <div className={styles.uploadPreviewMeta}>
+                  <span className={styles.uploadPreviewName}>{item.file.name}</span>
+                  <span>{`${(item.file.size / 1024 / 1024).toFixed(2)} MB`}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {isBatchUpload && (
+          <div className={styles.uploadHint}>
+            제목은 각 파일명으로 자동 입력되고, 정렬 순서는 입력한 값부터 사진마다 1씩 증가합니다.
           </div>
         )}
 
         <PhotoMetadataFields
           form={form}
           idPrefix="upload"
-          takenAtHint="비워두면 이미지 메타데이터의 촬영일을 자동으로 사용합니다."
+          showTitle={!isBatchUpload}
+          takenAtHint={
+            isBatchUpload
+              ? '비워두면 각 이미지 메타데이터의 촬영일을 자동으로 사용합니다.'
+              : '비워두면 이미지 메타데이터의 촬영일을 자동으로 사용합니다.'
+          }
+          sortOrderHint={
+            isBatchUpload
+              ? '여러 장 업로드 시 입력한 값부터 순서대로 적용됩니다.'
+              : undefined
+          }
           onChange={onFormChange}
         />
 

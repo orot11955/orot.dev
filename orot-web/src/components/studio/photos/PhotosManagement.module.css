@@ -344,11 +344,46 @@
   min-height: 180px;
 }
 
+.uploadPreviewList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--orot-space-3);
+}
+
+.uploadPreviewCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--orot-space-2);
+}
+
 .uploadPreviewImage {
   max-width: 100%;
   max-height: 240px;
   object-fit: contain;
   display: block;
+}
+
+.uploadPreviewMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--orot-font-size-xs);
+  color: var(--orot-color-text-muted);
+}
+
+.uploadPreviewName {
+  color: var(--orot-color-text);
+  font-weight: var(--orot-font-weight-medium);
+  word-break: break-word;
+}
+
+.uploadHint {
+  padding: var(--orot-space-3);
+  border: 1px solid var(--public-panel-border);
+  border-radius: var(--orot-radius-md);
+  background: var(--orot-color-surface);
+  color: var(--orot-color-text-muted);
+  font-size: var(--orot-font-size-xs);
 }
 
 @media (max-width: 960px) {

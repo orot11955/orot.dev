@@ -66,7 +66,7 @@ export function HomePage({
               priority
               unoptimized
               sizes="100vw"
-              objectPosition={`0 ${heroY}`}
+              style={{ objectPosition: `0 ${heroY}` }}
               className={styles.heroImage}
             />
           ) : (

@@ -28,7 +28,7 @@ function shouldLog(level: WebLogLevel): boolean {
 
 function writeLog(level: WebLogLevel, entry: Record<string, unknown>) {
   const payload =
-    process.env.LOG_PRETTY === 'true'
+    (process.env.WEB_LOG_PRETTY ?? process.env.LOG_PRETTY) === 'true'
       ? JSON.stringify(entry, null, 2)
       : JSON.stringify(entry);
 

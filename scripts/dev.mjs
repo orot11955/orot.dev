@@ -1,5 +1,6 @@
 import { spawn } from 'node:child_process';
 import { createInterface } from 'node:readline';
+import { buildAppEnv, REPO_ROOT } from './root-env.mjs';
 
 const yarnBin = process.platform === 'win32' ? 'yarn.cmd' : 'yarn';
 
@@ -9,12 +10,14 @@ const services = [
     color: '\u001b[36m',
     cmd: yarnBin,
     args: ['--cwd', 'orot-api', 'start:dev'],
+    env: buildAppEnv('api', 'development'),
   },
   {
     name: 'web',
     color: '\u001b[35m',
     cmd: yarnBin,
     args: ['--cwd', 'orot-web', 'dev'],
+    env: buildAppEnv('web', 'development'),
   },
 ];
 
@@ -65,8 +68,9 @@ function finish(exitCode = 0) {
 
 for (const service of services) {
   const child = spawn(service.cmd, service.args, {
+    cwd: REPO_ROOT,
     stdio: ['inherit', 'pipe', 'pipe'],
-    env: process.env,
+    env: service.env,
   });
 
   children.set(service.name, child);

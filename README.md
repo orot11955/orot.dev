@@ -23,8 +23,12 @@
 1. 환경변수 파일 준비
 
 ```bash
-cp .env.example .env
+cp .env.development.example .env.development
+cp .env.production.example .env.production
 ```
+
+개발만 바로 시작할 때는 `.env.development`를 만들지 않아도 됩니다.
+루트 실행 스크립트는 `.env.development`가 없으면 `.env.development.example`을 기본값으로 사용합니다.
 
 2. 의존성 설치
 
@@ -38,6 +42,12 @@ yarn --cwd orot-web install
 
 ## 개발
 
+개발용 루트 환경변수 파일:
+
+- [.env.development.example](/root/workbench/02_orot.dev_site/orot.dev/.env.development.example): 기본 개발 템플릿
+- `.env.development`: 팀/개인 개발 기본값
+- `.env.local`, `.env.development.local`: 로컬 오버라이드
+
 루트에서 아래 명령으로 실행할 수 있습니다.
 
 ```bash
@@ -47,6 +57,7 @@ yarn dev:web
 ```
 
 `yarn dev`는 `orot-api`와 `orot-web`을 동시에 실행합니다.
+이 명령들은 루트 env 로더를 통해 같은 설정 집합을 web/api에 나눠서 주입합니다.
 
 자주 쓰는 루트 명령:
 
@@ -65,6 +76,13 @@ yarn db:seed
 운영/배포 기준 DB 반영은 항상 Prisma migration 파일을 커밋한 뒤 `prisma migrate deploy`로 진행합니다.
 
 ## 배포
+
+배포용 루트 환경변수 파일:
+
+- [.env.production.example](/root/workbench/02_orot.dev_site/orot.dev/.env.production.example): 운영/Compose 템플릿
+- `.env.production`: 실제 운영 값
+
+`docker` 스크립트는 `.env.production`을 기준으로 동작합니다.
 
 루트 기준 통합 배포 절차입니다.
 
@@ -104,7 +122,7 @@ yarn docker:migrate
 
 배포 전에 아래 파일이 준비되어 있어야 합니다.
 
-- 루트 `.env`
+- 루트 `.env.production`
 - `nginx/nginx.conf`
 
 Compose로 올라가는 서비스:
@@ -116,28 +134,58 @@ Compose로 올라가는 서비스:
 
 ## 환경변수
 
-환경변수는 실행 방식에 따라 파일이 다릅니다.
+환경변수는 이제 루트에서만 관리합니다. 앱 폴더 안의 env 파일은 더 이상 기준 경로가 아닙니다.
 
-- 루트 `.env`: Docker Compose 통합 실행용. 시작점은 [.env.example](/root/workbench/02_orot.dev_site/orot.dev/.env.example)입니다.
-- `orot-api/.env`: API 단독 개발용. 시작점은 [orot-api/.env.example](/root/workbench/02_orot.dev_site/orot.dev/orot-api/.env.example)입니다.
-- `orot-web/.env.local`: Web 단독 개발용. 시작점은 [orot-web/.env.local.example](/root/workbench/02_orot.dev_site/orot.dev/orot-web/.env.local.example)입니다.
-- `.env.compose`: 선택형 Compose 프리셋입니다. 자동 로드되지 않으므로 필요할 때만 `docker compose --env-file .env.compose ...`로 사용합니다.
+루트 로더 우선순위:
 
-루트 `.env`의 주요 그룹:
+- 개발: `.env.development` 또는 `.env.development.example`
+- 공통 로컬 오버라이드: `.env.local`
+- 모드별 로컬 오버라이드: `.env.development.local`, `.env.production.local`
+- 마지막 우선순위: 현재 셸 환경변수
 
-- `SITE_URL`, `WEB_ORIGIN`, `HTTP_PORT`: 대표 도메인, API CORS origin, 외부 노출 포트
+### Development
+
+- 개발 기본 템플릿: [.env.development.example](/root/workbench/02_orot.dev_site/orot.dev/.env.development.example)
+- 루트 스크립트 `yarn dev`, `yarn dev:web`, `yarn dev:api`, `yarn db:*`는 모두 이 루트 개발 env 체계를 사용합니다.
+
+개발 기준 규칙:
+
+- 브라우저는 항상 `NEXT_PUBLIC_API_URL=/api` 같은 same-origin 경로를 쓰는 쪽이 안전합니다.
+- Next.js 서버 프록시 대상은 `INTERNAL_API_ORIGIN`으로 분리합니다. 개발 기본값은 `http://localhost:4000`입니다.
+- API CORS 대상은 루트 `WEB_ORIGIN`으로 관리합니다. 예: `http://localhost:3000,http://forge.home:3000`
+- `WEB_PORT`, `API_PORT`는 루트 실행기에서 각 앱의 `PORT`로 매핑됩니다.
+
+### Production / Compose
+
+- 루트 `.env.production`
+- 시작 템플릿은 [.env.production.example](/root/workbench/02_orot.dev_site/orot.dev/.env.production.example)입니다.
+- `.env.compose`
+  선택형 Compose 프리셋입니다. 자동 로드되지 않으므로 필요할 때만 `docker compose --env-file .env.compose ...`로 사용합니다.
+
+운영/Compose 기준 규칙:
+
+- `NEXT_PUBLIC_API_URL=/api`
+- `INTERNAL_API_ORIGIN=http://orot-api:4000`
+- `WEB_ORIGIN=https://orot.dev` 같은 외부 공개 origin 사용
+- `API_COOKIE_SECURE=true`
+- Compose 스택은 내부 포트 `orot-web:3000`, `orot-api:4000`을 기준으로 nginx와 healthcheck가 연결됩니다.
+
+루트 env의 주요 그룹:
+
+- 공통: `SITE_URL`, `WEB_ORIGIN`, `TZ`, `LOG_LEVEL`, `LOG_PRETTY`
+- Web: `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_SITE_URL`, `INTERNAL_API_ORIGIN`, `WEB_LOG_LEVEL`, `WEB_LOG_PRETTY`, `WEB_SERVER_API_TIMEOUT_MS`, `WEB_IMAGE_REMOTE_PATTERNS`, `NEXT_PUBLIC_CLIENT_ERROR_LOGGING`, `CLIENT_ERROR_LOGGING`, `WEB_PORT`
+- API: `API_DATABASE_URL`, `API_HTTP_LOGGING`, `API_LOG_LEVEL`, `API_LOG_PRETTY`, `API_REQUEST_BODY_LIMIT`, `API_SLOW_QUERY_MS`, `API_STUDIO_*`, `API_JWT_*`, `API_COOKIE_*`, `API_PORT`
 - `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`, `MARIADB_ROOT_PASSWORD`: MariaDB 및 API 연결 정보
 - `DB_SEED_ON_DEPLOY`: 배포 시 `prisma db seed` 실행 여부
 - `DB_AUTO_BASELINE_LEGACY`: 기존 Prisma 이력 없는 운영 DB를 첫 배포 때 자동 baseline 할지 여부
-- `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`: 인증 토큰 시크릿
-- `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_SITE_URL`: Next.js 클라이언트에 노출되는 공개 URL
-- `HTTP_LOGGING`, `LOG_LEVEL`, `WEB_LOG_LEVEL`, `LOG_PRETTY`, `SLOW_QUERY_MS`: API/Web 서버 로그 제어
-- `CLIENT_ERROR_LOGGING`, `NEXT_PUBLIC_CLIENT_ERROR_LOGGING`: 브라우저 오류 수집 제어
+- `HTTP_PORT`: nginx 외부 노출 포트
 
-단독 개발 시 참고할 값:
+### 빠른 기준표
 
-- `orot-api/.env`의 `DATABASE_URL`은 로컬 DB를 직접 바라봅니다.
-- `orot-web/.env.local`의 `INTERNAL_API_ORIGIN`은 Next.js dev rewrite 대상 API origin을 바꿀 때만 사용합니다.
+- 로컬 Next dev가 로컬 API를 붙을 때: `NEXT_PUBLIC_API_URL=/api`, `INTERNAL_API_ORIGIN=http://localhost:4000`
+- Docker Compose 안의 Next가 API 컨테이너를 붙을 때: `NEXT_PUBLIC_API_URL=/api`, `INTERNAL_API_ORIGIN=http://orot-api:4000`
+- 브라우저가 절대 URL `http://localhost:4000`을 직접 쓰게 만드는 설정은 `forge.home:3000`처럼 다른 호스트명으로 접속할 때 엇갈릴 수 있습니다.
+- 루트 실행기는 `API_DATABASE_URL -> DATABASE_URL`, `API_JWT_* -> JWT_*`, `WEB_PORT/API_PORT -> PORT`처럼 앱별 런타임 키로 매핑해 줍니다.
 
 ## 메모
 

@@ -57,10 +57,7 @@ export class SettingsService {
   }
 
   private getCachedSettings(): Record<string, string> | null {
-    if (
-      this.settingsCache &&
-      this.settingsCache.expiresAt > Date.now()
-    ) {
+    if (this.settingsCache && this.settingsCache.expiresAt > Date.now()) {
       return this.settingsCache.value;
     }
 

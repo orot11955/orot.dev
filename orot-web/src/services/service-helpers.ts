@@ -52,3 +52,14 @@ export function uploadImageResource<T>(
     image: file,
   });
 }
+
+export function uploadImageResources<T>(
+  path: string,
+  files: File[],
+  entries: Record<string, FormEntryValue> = {},
+): Promise<T> {
+  return postFormResource<T>(path, {
+    ...entries,
+    image: files,
+  });
+}

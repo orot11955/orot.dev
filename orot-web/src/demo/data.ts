@@ -609,6 +609,8 @@ const settings: StudioSettings = {
   site_description: '글쓰기, 발행, 사진, 댓글 운영까지 체험하는 포트폴리오 데모',
   site_og_image: asset('demo-hero'),
   site_logo: '',
+  site_logo_light: '',
+  site_logo_dark: '',
   seo_home_title: 'OROT.DEV Demo | Content Studio Portfolio',
   seo_home_description:
     'Next.js 기반 web-only 데모입니다. 정적 데이터와 localStorage로 에디터와 스튜디오를 체험합니다.',

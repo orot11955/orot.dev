@@ -231,7 +231,10 @@ interface SectionProps {
 function SiteInfoSection({ settings, onSave, onSettingsChange }: SectionProps) {
   const [siteName, setSiteName] = useState(settings.site_name ?? '');
   const [siteDescription, setSiteDescription] = useState(settings.site_description ?? '');
-  const [siteLogo, setSiteLogo] = useState(settings.site_logo ?? '');
+  const [siteLogoLight, setSiteLogoLight] = useState(
+    settings.site_logo_light ?? settings.site_logo ?? '',
+  );
+  const [siteLogoDark, setSiteLogoDark] = useState(settings.site_logo_dark ?? '');
   const [siteOgImage, setSiteOgImage] = useState(settings.site_og_image ?? '');
   const [homeHeroImage, setHomeHeroImage] = useState(settings.home_hero_image ?? '');
   const [heroCandidates, setHeroCandidates] = useState<GalleryItem[]>([]);
@@ -285,7 +288,8 @@ function SiteInfoSection({ settings, onSave, onSettingsChange }: SectionProps) {
 
       try {
         const next = await studioSettingsService.uploadMedia(key, file);
-        setSiteLogo(next.site_logo ?? '');
+        setSiteLogoLight(next.site_logo_light ?? next.site_logo ?? '');
+        setSiteLogoDark(next.site_logo_dark ?? '');
         setSiteOgImage(next.site_og_image ?? '');
         onSettingsChange?.(next);
         setMediaUploadNotice('이미지가 업로드되었습니다.');
@@ -304,7 +308,9 @@ function SiteInfoSection({ settings, onSave, onSettingsChange }: SectionProps) {
         onSave({
           site_name: siteName.trim(),
           site_description: siteDescription.trim(),
-          site_logo: siteLogo.trim(),
+          site_logo: '',
+          site_logo_light: siteLogoLight.trim(),
+          site_logo_dark: siteLogoDark.trim(),
           site_og_image: siteOgImage.trim(),
           home_hero_image: homeHeroImage.trim(),
           home_hero_image_position_y: homeHeroImagePositionY,
@@ -336,14 +342,26 @@ function SiteInfoSection({ settings, onSave, onSettingsChange }: SectionProps) {
           <span className={styles.fieldHelp}>홈 hero 및 SEO 메타 description에 사용됩니다.</span>
         </label>
         <ManagedSettingsImageField
-          label="사이트 로고"
-          value={siteLogo}
-          previewLabel="로고 미리보기"
-          placeholder="기본 OROT 로고 사용"
-          help="공개 헤더 로고에 사용됩니다. PNG, JPG, WebP, GIF 파일을 업로드할 수 있습니다."
-          uploading={uploadingMediaKey === 'site_logo'}
-          onSelect={(file) => handleMediaUpload('site_logo', file)}
-          onClear={() => setSiteLogo('')}
+          label="라이트 모드 로고"
+          value={siteLogoLight}
+          previewLabel="라이트 모드 로고 미리보기"
+          placeholder="기본 블랙 OROT 로고 사용"
+          help="Light, Sepia처럼 밝은 배경 테마의 공개 헤더에 사용됩니다."
+          previewTone="light"
+          uploading={uploadingMediaKey === 'site_logo_light'}
+          onSelect={(file) => handleMediaUpload('site_logo_light', file)}
+          onClear={() => setSiteLogoLight('')}
+        />
+        <ManagedSettingsImageField
+          label="다크 모드 로고"
+          value={siteLogoDark}
+          previewLabel="다크 모드 로고 미리보기"
+          placeholder="기본 화이트 OROT 로고 사용"
+          help="Dark, Forest, Ocean처럼 어두운 배경 테마의 공개 헤더에 사용됩니다."
+          previewTone="dark"
+          uploading={uploadingMediaKey === 'site_logo_dark'}
+          onSelect={(file) => handleMediaUpload('site_logo_dark', file)}
+          onClear={() => setSiteLogoDark('')}
         />
         <ManagedSettingsImageField
           label="기본 OpenGraph 이미지"
@@ -452,6 +470,7 @@ function ManagedSettingsImageField({
   placeholder,
   help,
   variant = 'logo',
+  previewTone = 'neutral',
   uploading,
   onSelect,
   onClear,
@@ -462,11 +481,18 @@ function ManagedSettingsImageField({
   placeholder: string;
   help: string;
   variant?: 'logo' | 'wide';
+  previewTone?: 'neutral' | 'light' | 'dark';
   uploading: boolean;
   onSelect: (file: File | null) => void;
   onClear: () => void;
 }) {
   const previewUrl = resolveAssetUrl(value?.trim());
+  const previewToneClass =
+    previewTone === 'light'
+      ? styles.settingsMediaPreviewLight
+      : previewTone === 'dark'
+        ? styles.settingsMediaPreviewDark
+        : '';
 
   return (
     <div className={`${styles.field} ${styles.fieldWide}`}>
@@ -476,6 +502,7 @@ function ManagedSettingsImageField({
           className={[
             styles.settingsMediaPreview,
             variant === 'wide' ? styles.settingsMediaPreviewWide : '',
+            previewToneClass,
           ]
             .filter(Boolean)
             .join(' ')}

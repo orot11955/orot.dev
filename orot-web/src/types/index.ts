@@ -308,6 +308,8 @@ export interface PublicSettings {
   site_description: string;
   site_og_image: string;
   site_logo: string;
+  site_logo_light: string;
+  site_logo_dark: string;
   seo_home_title: string;
   seo_home_description: string;
   home_hero_image: string;

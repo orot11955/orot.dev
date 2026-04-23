@@ -957,7 +957,10 @@ export async function demoUploadImage<T>(
   if (scope === 'studio' && resource === 'settings' && idOrAction === 'media') {
     const key = action ?? 'about_nametag_image';
     const value =
-      key === 'site_logo' || key === 'site_og_image'
+      key === 'site_logo' ||
+      key === 'site_logo_light' ||
+      key === 'site_logo_dark' ||
+      key === 'site_og_image'
         ? '/demo-media/demo-hero.svg'
         : '/demo-media/demo-nametag.svg';
 

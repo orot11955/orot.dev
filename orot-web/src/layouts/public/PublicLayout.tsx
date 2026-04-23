@@ -25,7 +25,12 @@ export async function PublicLayout({ children }: { children: ReactNode }) {
   const navItems = menu.filter((item) => item.enabled !== false);
   const social = parseGlobalLinks(settings);
   const siteName = settings?.site_name?.trim() || 'orot.dev';
-  const siteLogo = resolveAssetUrl(settings?.site_logo);
+  const siteLogoLight = resolveAssetUrl(
+    settings?.site_logo_light || settings?.site_logo,
+  );
+  const siteLogoDark = resolveAssetUrl(
+    settings?.site_logo_dark || settings?.site_logo,
+  );
   const allowThemeSwitch = toBool(settings?.allow_theme_switch ?? 'true');
 
   return (
@@ -33,7 +38,8 @@ export async function PublicLayout({ children }: { children: ReactNode }) {
       <PublicPageVisit />
       <PublicHeader
         siteName={siteName}
-        siteLogo={siteLogo}
+        siteLogoLight={siteLogoLight}
+        siteLogoDark={siteLogoDark}
         nav={navItems}
         allowThemeSwitch={allowThemeSwitch}
       />

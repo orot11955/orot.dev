@@ -19,7 +19,8 @@ import styles from './PublicHeader.module.css';
 
 interface PublicHeaderProps {
   siteName: string;
-  siteLogo?: string;
+  siteLogoLight?: string;
+  siteLogoDark?: string;
   nav: PublicMenuItem[];
   allowThemeSwitch: boolean;
 }
@@ -30,30 +31,50 @@ function isActive(pathname: string, href: string): boolean {
 }
 
 function LogoImage({
-  siteLogo,
+  siteLogoLight,
+  siteLogoDark,
 }: {
-  siteLogo?: string;
+  siteLogoLight?: string;
+  siteLogoDark?: string;
 }) {
-  if (siteLogo) {
+  const renderVariant = (src: string | undefined, variant: 'light' | 'dark') => {
+    const variantClass =
+      variant === 'dark' ? styles.logoVariantDark : styles.logoVariantLight;
+
+    if (src) {
+      return (
+        <Image
+          src={src}
+          alt=""
+          width={140}
+          height={42}
+          unoptimized
+          className={`${styles.logoImage} ${styles.logoVariant} ${variantClass}`}
+          aria-hidden="true"
+        />
+      );
+    }
+
     return (
-      <Image
-        src={siteLogo}
-        alt=""
-        width={140}
-        height={42}
-        unoptimized
-        className={styles.logoImage}
+      <span
+        className={`${styles.logoMark} ${styles.logoVariant} ${variantClass}`}
         aria-hidden="true"
       />
     );
-  }
+  };
 
-  return <span className={styles.logoMark} aria-hidden="true" />;
+  return (
+    <span className={styles.logoStack} aria-hidden="true">
+      {renderVariant(siteLogoLight, 'light')}
+      {renderVariant(siteLogoDark, 'dark')}
+    </span>
+  );
 }
 
 export function PublicHeader({
   siteName,
-  siteLogo,
+  siteLogoLight,
+  siteLogoDark,
   nav,
   allowThemeSwitch,
 }: PublicHeaderProps) {
@@ -94,7 +115,7 @@ export function PublicHeader({
             <MenuIcon size={20} />
           </button>
           <Link href="/" className={styles.brand} aria-label={`${siteName} 홈`}>
-            <LogoImage siteLogo={siteLogo} />
+            <LogoImage siteLogoLight={siteLogoLight} siteLogoDark={siteLogoDark} />
           </Link>
         </div>
 

@@ -5,6 +5,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   useTransition,
   type ChangeEvent,
@@ -48,6 +49,12 @@ interface FilterToken {
   key: string;
   label: string;
   href: string;
+}
+
+interface TagGaugeState {
+  visible: boolean;
+  width: number;
+  offset: number;
 }
 
 function cx(...classNames: Array<string | false | null | undefined>) {
@@ -103,8 +110,14 @@ export function PostsPageControls({
   filteredTotal,
 }: PostsPageControlsProps) {
   const router = useRouter();
+  const tagScrollerRef = useRef<HTMLDivElement>(null);
   const [keyword, setKeyword] = useState(currentSearch);
   const [isPending, startTransition] = useTransition();
+  const [tagGauge, setTagGauge] = useState<TagGaugeState>({
+    visible: false,
+    width: 0,
+    offset: 0,
+  });
 
   const queryState = useMemo(
     () => ({
@@ -120,6 +133,77 @@ export function PostsPageControls({
   useEffect(() => {
     setKeyword(currentSearch);
   }, [currentSearch]);
+
+  useEffect(() => {
+    const scroller = tagScrollerRef.current;
+
+    if (!scroller || tags.length === 0) {
+      setTagGauge({ visible: false, width: 0, offset: 0 });
+      return;
+    }
+
+    let frameId = 0;
+
+    const updateGauge = () => {
+      frameId = 0;
+
+      const maxScroll = Math.max(0, scroller.scrollWidth - scroller.clientWidth);
+      const visible = maxScroll > 1 && scroller.clientWidth > 0;
+
+      if (!visible) {
+        setTagGauge((current) =>
+          current.visible ? { visible: false, width: 0, offset: 0 } : current,
+        );
+        return;
+      }
+
+      const ratio = scroller.clientWidth / scroller.scrollWidth;
+      const width = Math.max(28, scroller.clientWidth * ratio);
+      const maxOffset = Math.max(0, scroller.clientWidth - width);
+      const offset = (scroller.scrollLeft / maxScroll) * maxOffset;
+      const next = {
+        visible: true,
+        width: Math.round(width * 100) / 100,
+        offset: Math.round(offset * 100) / 100,
+      };
+
+      setTagGauge((current) =>
+        current.visible === next.visible &&
+        current.width === next.width &&
+        current.offset === next.offset
+          ? current
+          : next,
+      );
+    };
+
+    const requestUpdate = () => {
+      if (frameId) {
+        return;
+      }
+
+      frameId = window.requestAnimationFrame(updateGauge);
+    };
+
+    const resizeObserver =
+      typeof ResizeObserver === 'undefined'
+        ? null
+        : new ResizeObserver(requestUpdate);
+
+    requestUpdate();
+    scroller.addEventListener('scroll', requestUpdate, { passive: true });
+    window.addEventListener('resize', requestUpdate);
+    resizeObserver?.observe(scroller);
+
+    return () => {
+      if (frameId) {
+        window.cancelAnimationFrame(frameId);
+      }
+
+      scroller.removeEventListener('scroll', requestUpdate);
+      window.removeEventListener('resize', requestUpdate);
+      resizeObserver?.disconnect();
+    };
+  }, [tags]);
 
   const activeSeries = useMemo(
     () => series.find((item) => String(item.id) === queryState.seriesId),
@@ -345,33 +429,48 @@ export function PostsPageControls({
             <Tags size={13} aria-hidden="true" />
             TAGS
           </span>
-          <div className={styles.tagScroller}>
-            <Link
-              href={createHref({ tag: null })}
-              prefetch={false}
-              className={cx(
-                styles.tagChip,
-                !queryState.tag && styles.tagChipActive,
-              )}
-              aria-current={!queryState.tag ? 'true' : undefined}
-            >
-              전체
-            </Link>
-            {tags.map((tag) => (
+          <div className={styles.tagScrollerWrap}>
+            <div ref={tagScrollerRef} className={styles.tagScroller}>
               <Link
-                key={tag}
-                href={createHref({ tag })}
+                href={createHref({ tag: null })}
                 prefetch={false}
                 className={cx(
                   styles.tagChip,
-                  queryState.tag === tag && styles.tagChipActive,
+                  !queryState.tag && styles.tagChipActive,
                 )}
-                aria-current={queryState.tag === tag ? 'true' : undefined}
+                aria-current={!queryState.tag ? 'true' : undefined}
               >
-                <Hash size={12} aria-hidden="true" />
-                {tag}
+                전체
               </Link>
-            ))}
+              {tags.map((tag) => (
+                <Link
+                  key={tag}
+                  href={createHref({ tag })}
+                  prefetch={false}
+                  className={cx(
+                    styles.tagChip,
+                    queryState.tag === tag && styles.tagChipActive,
+                  )}
+                  aria-current={queryState.tag === tag ? 'true' : undefined}
+                >
+                  <Hash size={12} aria-hidden="true" />
+                  {tag}
+                </Link>
+              ))}
+            </div>
+            <div
+              className={styles.tagScrollGauge}
+              data-visible={tagGauge.visible ? 'true' : 'false'}
+              aria-hidden="true"
+            >
+              <span
+                className={styles.tagScrollGaugeThumb}
+                style={{
+                  width: tagGauge.width ? `${tagGauge.width}px` : undefined,
+                  transform: `translateX(${tagGauge.offset}px)`,
+                }}
+              />
+            </div>
           </div>
         </div>
       )}

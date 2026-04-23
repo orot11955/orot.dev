@@ -32,7 +32,8 @@
     "docker:logs": "./scripts/docker-compose-env.sh logs -f",
     "docker:demo:up": "docker compose --env-file .env.demo -f docker-compose.demo-web.yml up -d --build",
     "docker:demo:down": "docker compose --env-file .env.demo -f docker-compose.demo-web.yml down",
-    "docker:demo:logs": "docker compose --env-file .env.demo -f docker-compose.demo-web.yml logs -f"
+    "docker:demo:logs": "docker compose --env-file .env.demo -f docker-compose.demo-web.yml logs -f",
+    "docker:all:up": "./scripts/docker-stack.sh deploy && docker compose --env-file .env.demo -f docker-compose.demo-web.yml up -d --build"
   },
   "dependencies": {}
 }

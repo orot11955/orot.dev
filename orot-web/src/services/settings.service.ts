@@ -9,6 +9,8 @@ import type { PublicSettings, StudioSettings, UpdateSettingsPayload } from '@/ty
 const settingsRoutes = createAreaRoutes('settings');
 export type ManagedSettingsMediaKey =
   | 'site_logo'
+  | 'site_logo_light'
+  | 'site_logo_dark'
   | 'site_og_image'
   | 'about_nametag_image';
 

@@ -41,6 +41,22 @@
   transform: translateY(-1px);
 }
 
+.logoStack {
+  display: grid;
+  align-items: center;
+  justify-items: start;
+  width: min(140px, 38vw);
+  height: 50px;
+}
+
+.logoVariant {
+  grid-area: 1 / 1;
+}
+
+.logoVariantDark {
+  display: none;
+}
+
 .logoMark {
   display: block;
   width: 106px;
@@ -57,6 +73,18 @@
   max-width: 140px;
   height: 42px;
   object-fit: contain;
+}
+
+:global([data-orot-theme='dark']) .logoVariantLight,
+:global([data-orot-theme='forest']) .logoVariantLight,
+:global([data-orot-theme='ocean']) .logoVariantLight {
+  display: none;
+}
+
+:global([data-orot-theme='dark']) .logoVariantDark,
+:global([data-orot-theme='forest']) .logoVariantDark,
+:global([data-orot-theme='ocean']) .logoVariantDark {
+  display: block;
 }
 
 :global([data-orot-theme='dark']) .logoMark,

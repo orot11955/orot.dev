@@ -11,6 +11,8 @@ interface HomeHeroImageProps {
   objectPosition: string;
 }
 
+const loadedHeroSources = new Set<string>();
+
 function cx(...classNames: Array<string | false | null | undefined>) {
   return classNames.filter(Boolean).join(' ');
 }
@@ -22,12 +24,20 @@ export function HomeHeroImage({
   objectPosition,
 }: HomeHeroImageProps) {
   const originalImageRef = useRef<HTMLImageElement>(null);
-  const [isLoaded, setIsLoaded] = useState(false);
   const hasPreview = Boolean(previewSrc && previewSrc !== src);
+  const [isLoaded, setIsLoaded] = useState(() => loadedHeroSources.has(src));
 
   useEffect(() => {
     const originalImage = originalImageRef.current;
-    setIsLoaded(Boolean(originalImage?.complete && originalImage.naturalWidth > 0));
+    const isAlreadyLoaded = Boolean(
+      originalImage?.complete && originalImage.naturalWidth > 0,
+    );
+
+    if (isAlreadyLoaded) {
+      loadedHeroSources.add(src);
+    }
+
+    setIsLoaded(isAlreadyLoaded || loadedHeroSources.has(src));
   }, [src]);
 
   return (
@@ -58,7 +68,10 @@ export function HomeHeroImage({
         unoptimized
         sizes="100vw"
         style={{ objectPosition }}
-        onLoad={() => setIsLoaded(true)}
+        onLoad={() => {
+          loadedHeroSources.add(src);
+          setIsLoaded(true);
+        }}
         className={cx(
           styles.heroImage,
           hasPreview && styles.heroOriginalImage,

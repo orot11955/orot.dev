@@ -33,6 +33,7 @@
 }
 
 .heroPreviewImage {
+  z-index: 0;
   filter: blur(10px) saturate(1.08);
   transform: scale(1.03);
   transition:
@@ -46,15 +47,13 @@
 }
 
 .heroOriginalImage {
-  opacity: 0;
+  z-index: 1;
   transition:
-    opacity 0.55s ease,
     transform 0.9s ease;
   transform: scale(1.012);
 }
 
 .heroOriginalLoaded {
-  opacity: 1;
   transform: scale(1);
 }
 

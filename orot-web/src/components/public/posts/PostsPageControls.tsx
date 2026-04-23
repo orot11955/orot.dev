@@ -129,6 +129,7 @@ export function PostsPageControls({
     }),
     [currentSearch, currentTag, currentSeries, currentCategory, currentSort],
   );
+  const currentHref = useMemo(() => buildPostsHref(queryState), [queryState]);
 
   useEffect(() => {
     setKeyword(currentSearch);
@@ -226,11 +227,16 @@ export function PostsPageControls({
   const navigate = useCallback(
     (patch: QueryPatch) => {
       const href = buildPostsHref(queryState, patch);
+
+      if (href === currentHref) {
+        return;
+      }
+
       startTransition(() => {
-        router.push(href);
+        router.replace(href, { scroll: false });
       });
     },
-    [queryState, router],
+    [currentHref, queryState, router],
   );
 
   const createHref = useCallback(
@@ -434,6 +440,8 @@ export function PostsPageControls({
               <Link
                 href={createHref({ tag: null })}
                 prefetch={false}
+                replace
+                scroll={false}
                 className={cx(
                   styles.tagChip,
                   !queryState.tag && styles.tagChipActive,
@@ -447,6 +455,8 @@ export function PostsPageControls({
                   key={tag}
                   href={createHref({ tag })}
                   prefetch={false}
+                  replace
+                  scroll={false}
                   className={cx(
                     styles.tagChip,
                     queryState.tag === tag && styles.tagChipActive,
@@ -485,6 +495,8 @@ export function PostsPageControls({
             key={token.key}
             href={token.href}
             prefetch={false}
+            replace
+            scroll={false}
             className={styles.activeToken}
           >
             {token.label}
@@ -492,7 +504,13 @@ export function PostsPageControls({
           </Link>
         ))}
         {hasResettableFilters && (
-          <Link href="/posts" prefetch={false} className={styles.resetFilters}>
+          <Link
+            href="/posts"
+            prefetch={false}
+            replace
+            scroll={false}
+            className={styles.resetFilters}
+          >
             <X size={12} aria-hidden="true" />
             필터 초기화
           </Link>
@@ -511,6 +529,8 @@ export function PostsPageControls({
           <Link
             href={createHref({ seriesId: null })}
             prefetch={false}
+            replace
+            scroll={false}
             className={styles.seriesBannerClose}
           >
             <X size={14} aria-hidden="true" />

@@ -43,6 +43,13 @@ interface PostsRouteProps {
 }
 
 async function PostsContent({ searchParams }: { searchParams: SearchParams }) {
+  const hasRefinements = Boolean(
+    searchParams.search ||
+      searchParams.tag ||
+      searchParams.seriesId ||
+      searchParams.categorySlug ||
+      searchParams.sort === 'popular',
+  );
   const params = {
     limit: 15,
     ...normalizePostQuery({
@@ -54,14 +61,24 @@ async function PostsContent({ searchParams }: { searchParams: SearchParams }) {
       sort: searchParams.sort,
     }),
   } satisfies Record<string, string | number>;
-  const liveOptions = { cache: 'no-store' as const, revalidate: false as const };
+  const liveOptions = {
+    cache: 'no-store' as const,
+    revalidate: false as const,
+  };
+  const cachedOptions = { revalidate: 60 as const };
 
   const [rawPosts, rawAllPosts, series, tags, categories] = await Promise.all([
     serverGet<ApiListPayload<PostListItem>>('/public/posts', params, liveOptions),
-    serverGet<ApiListPayload<PostListItem>>('/public/posts', { limit: 1 }, liveOptions),
-    serverGet<Series[]>('/public/series', undefined, liveOptions),
-    serverGet<string[]>('/public/posts/tags', undefined, liveOptions),
-    serverGet<Category[]>('/public/categories', undefined, liveOptions),
+    hasRefinements
+      ? serverGet<ApiListPayload<PostListItem>>(
+          '/public/posts',
+          { limit: 1 },
+          cachedOptions,
+        )
+      : Promise.resolve(null),
+    serverGet<Series[]>('/public/series', undefined, cachedOptions),
+    serverGet<string[]>('/public/posts/tags', undefined, cachedOptions),
+    serverGet<Category[]>('/public/categories', undefined, cachedOptions),
   ]);
 
   const postList: PostListResponse = rawPosts
@@ -71,12 +88,15 @@ async function PostsContent({ searchParams }: { searchParams: SearchParams }) {
   const currentTag = searchParams.tag ?? '';
   const currentSeries = searchParams.seriesId ?? '';
   const currentCategory = searchParams.categorySlug ?? '';
-  const currentSort: PostSort = searchParams.sort === 'popular' ? 'popular' : 'latest';
+  const currentSort: PostSort =
+    searchParams.sort === 'popular' ? 'popular' : 'latest';
 
   return (
     <PostsPage
       postList={postList}
-      overallTotal={rawAllPosts?.meta.total ?? postList.total}
+      overallTotal={
+        hasRefinements ? (rawAllPosts?.meta.total ?? postList.total) : postList.total
+      }
       series={series ?? []}
       tags={tags ?? []}
       categories={categories ?? []}

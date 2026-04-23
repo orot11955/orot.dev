@@ -109,11 +109,7 @@ function createFetchOptions(
   requestOptions: Omit<RequestInit, 'next'>,
   requestId: string,
   timeoutMs: number,
-): RequestInit & {
-  next?: {
-    revalidate: number;
-  };
-} {
+): RequestInit {
   const safeRequestOptions = { ...requestOptions } as RequestInit & {
     next?: unknown;
   };

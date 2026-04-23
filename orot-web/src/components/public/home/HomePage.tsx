@@ -1,4 +1,3 @@
-import Image from 'next/image';
 import Link from 'next/link';
 import {
   ArrowUpRight,
@@ -15,6 +14,7 @@ import type {
 import { resolveAssetUrl } from '@/utils/content';
 import { parseSocialLinks } from '@/layouts/public/public-navigation';
 import { HomeHeroActions } from './HomeHeroActions';
+import { HomeHeroImage } from './HomeHeroImage';
 import { HomePostCard } from './HomePostCard';
 import styles from './HomePage.module.css';
 
@@ -44,11 +44,11 @@ export function HomePage({
   const autoHeroPhoto = configuredHeroUrl ? null : photos[0];
   const heroPhoto = configuredHeroPhoto ?? autoHeroPhoto ?? null;
   const heroUrl =
-    resolveAssetUrl(configuredHeroPhoto?.thumbnailUrl) ||
     configuredHeroUrl ||
-    resolveAssetUrl(heroPhoto?.thumbnailUrl) ||
     resolveAssetUrl(heroPhoto?.imageUrl) ||
     resolveAssetUrl(settings?.site_og_image);
+  const heroPreviewUrl =
+    resolveAssetUrl(heroPhoto?.thumbnailUrl) || null;
   const heroAlt =
     heroPhoto?.altText ||
     heroPhoto?.title ||
@@ -65,15 +65,11 @@ export function HomePage({
       <section className={styles.hero}>
         <div className={styles.heroMedia}>
           {heroUrl ? (
-            <Image
+            <HomeHeroImage
               src={heroUrl}
+              previewSrc={heroPreviewUrl}
               alt={heroAlt}
-              fill
-              priority
-              unoptimized
-              sizes="100vw"
-              style={{ objectPosition: `0 ${heroY}` }}
-              className={styles.heroImage}
+              objectPosition={`0 ${heroY}`}
             />
           ) : (
             <div className={styles.heroPlaceholder} />

@@ -4,6 +4,7 @@ import { PhotosPage } from '@/components/public/photos/PhotosPage';
 import { createPublicMetadata } from '@/utils/metadata';
 import { getPublicSettings } from '@/utils/public-settings';
 import { serverGet, toPaginatedResponse } from '@/utils/server-api';
+import { PublicCollectionSkeleton } from '@/components/public/shared/PublicCollectionSkeleton';
 import type {
   ApiListPayload,
   GalleryItem,
@@ -86,7 +87,7 @@ export default async function PhotosRoute({ searchParams }: PhotosRouteProps) {
   const resolved = await searchParams;
 
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<PublicCollectionSkeleton variant="photos" />}>
       <PhotosContent searchParams={resolved} />
     </Suspense>
   );

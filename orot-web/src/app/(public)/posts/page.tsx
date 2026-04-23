@@ -4,6 +4,7 @@ import { serverGet, toPaginatedResponse } from '@/utils/server-api';
 import { createPublicMetadata } from '@/utils/metadata';
 import { getPublicSettings } from '@/utils/public-settings';
 import { PostsPage } from '@/components/public/posts/PostsPage';
+import { PublicCollectionSkeleton } from '@/components/public/shared/PublicCollectionSkeleton';
 import type {
   Series,
   Category,
@@ -91,7 +92,7 @@ async function PostsContent({ searchParams }: { searchParams: SearchParams }) {
 export default async function PostsRoute({ searchParams }: PostsRouteProps) {
   const resolved = await searchParams;
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<PublicCollectionSkeleton variant="posts" />}>
       <PostsContent searchParams={resolved} />
     </Suspense>
   );

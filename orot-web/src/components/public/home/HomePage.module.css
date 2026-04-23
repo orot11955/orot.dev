@@ -26,6 +26,13 @@
   position: absolute;
   inset: 0;
   z-index: -1;
+  background:
+    radial-gradient(ellipse at top right,
+      color-mix(in srgb, var(--orot-color-primary) 18%, transparent),
+      transparent 60%),
+    linear-gradient(180deg,
+      color-mix(in srgb, var(--orot-color-primary) 6%, var(--orot-color-bg)) 0%,
+      var(--orot-color-bg) 100%);
 }
 
 .heroImage {

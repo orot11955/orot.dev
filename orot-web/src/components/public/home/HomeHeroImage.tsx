@@ -11,10 +11,21 @@ interface HomeHeroImageProps {
   objectPosition: string;
 }
 
-const loadedHeroSources = new Set<string>();
-
 function cx(...classNames: Array<string | false | null | undefined>) {
   return classNames.filter(Boolean).join(' ');
+}
+
+function imageIsReady(image: HTMLImageElement | null): image is HTMLImageElement {
+  return Boolean(image?.complete && image.naturalWidth > 0);
+}
+
+function revealAfterDecode(image: HTMLImageElement, onReady: () => void) {
+  if (typeof image.decode !== 'function') {
+    onReady();
+    return;
+  }
+
+  image.decode().then(onReady, onReady);
 }
 
 export function HomeHeroImage({
@@ -25,19 +36,29 @@ export function HomeHeroImage({
 }: HomeHeroImageProps) {
   const originalImageRef = useRef<HTMLImageElement>(null);
   const hasPreview = Boolean(previewSrc && previewSrc !== src);
-  const [isLoaded, setIsLoaded] = useState(() => loadedHeroSources.has(src));
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useLayoutEffect(() => {
     const originalImage = originalImageRef.current;
-    const isAlreadyLoaded = Boolean(
-      originalImage?.complete && originalImage.naturalWidth > 0,
-    );
+    let cancelled = false;
 
-    if (isAlreadyLoaded) {
-      loadedHeroSources.add(src);
+    setIsLoaded(false);
+
+    if (!imageIsReady(originalImage)) {
+      return () => {
+        cancelled = true;
+      };
     }
 
-    setIsLoaded(isAlreadyLoaded || loadedHeroSources.has(src));
+    revealAfterDecode(originalImage, () => {
+      if (!cancelled && originalImageRef.current === originalImage) {
+        setIsLoaded(true);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, [src]);
 
   return (
@@ -48,6 +69,7 @@ export function HomeHeroImage({
           alt=""
           aria-hidden="true"
           fill
+          priority
           unoptimized
           sizes="100vw"
           style={{ objectPosition }}
@@ -68,9 +90,14 @@ export function HomeHeroImage({
         unoptimized
         sizes="100vw"
         style={{ objectPosition }}
-        onLoad={() => {
-          loadedHeroSources.add(src);
-          setIsLoaded(true);
+        onLoad={(event) => {
+          const image = event.currentTarget;
+
+          revealAfterDecode(image, () => {
+            if (originalImageRef.current === image) {
+              setIsLoaded(true);
+            }
+          });
         }}
         className={cx(
           styles.heroImage,

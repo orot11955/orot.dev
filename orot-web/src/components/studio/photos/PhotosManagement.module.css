@@ -447,7 +447,7 @@
   font-size: var(--orot-font-size-xs);
 }
 
-@media (max-width: 960px) {
+@media (max-width: 1180px) {
   .toolbar {
     grid-template-columns: 1fr 1fr;
   }

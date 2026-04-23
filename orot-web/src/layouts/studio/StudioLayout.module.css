@@ -220,7 +220,7 @@
   padding: var(--orot-space-3) var(--orot-space-4);
 }
 
-@media (max-width: 960px) {
+@media (max-width: 1180px) {
   .sidebar {
     display: none;
   }

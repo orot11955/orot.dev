@@ -68,12 +68,25 @@
   display: inline-flex;
   align-items: center;
   gap: var(--orot-space-1);
+  min-width: 0;
+  max-width: 100%;
   padding: 2px 8px;
   border-radius: var(--orot-radius-sm);
   background: color-mix(in srgb, var(--orot-color-primary) 12%, transparent);
   color: var(--orot-color-primary);
   font-size: var(--orot-font-size-xs);
   font-weight: var(--orot-font-weight-medium);
+}
+
+.seriesTitle {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.seriesOrder {
+  flex-shrink: 0;
 }
 
 .category {
@@ -125,10 +138,6 @@
   display: inline-flex;
   align-items: center;
   gap: var(--orot-space-1);
-}
-
-.variantCompact .cover {
-  aspect-ratio: 3 / 2;
 }
 
 .variantCompact .body {

@@ -51,7 +51,12 @@ export function PostCard({ post, variant = 'default' }: PostCardProps) {
             {post.series && (
               <span className={styles.series}>
                 <Layers size={12} />
-                {post.series.title}
+                <span className={styles.seriesTitle}>{post.series.title}</span>
+                {post.seriesOrder != null && (
+                  <span className={styles.seriesOrder}>
+                    · {post.seriesOrder}번째
+                  </span>
+                )}
               </span>
             )}
           </div>

@@ -311,10 +311,11 @@ export interface PublicSettings {
   seo_home_title: string;
   seo_home_description: string;
   home_hero_image: string;
+  home_hero_image_position_y: string;
   about_content: string;
   about_stack: string;  // 쉼표(,)로 구분된 기술 스택
   about_resume: string;
-  about_links: string;  // "레이블|URL" 형식, 줄바꿈으로 구분
+  about_links: string;  // legacy: 전역 링크(social_links)로 통합됨
   about_nametag_image: string;
   public_menu: string;  // JSON 문자열: PublicMenuItem[]
   default_theme: string;

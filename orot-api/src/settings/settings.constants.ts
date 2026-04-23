@@ -81,5 +81,7 @@ export const PUBLIC_SETTING_KEYS: readonly SettingKey[] = [
 ] as const;
 
 export const MANAGED_SETTINGS_ASSET_KEYS: ReadonlySet<SettingKey> = new Set([
+  SETTING_KEYS.SITE_OG_IMAGE,
+  SETTING_KEYS.SITE_LOGO,
   SETTING_KEYS.ABOUT_NAMETAG_IMAGE,
 ]);

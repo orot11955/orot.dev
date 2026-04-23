@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1300" role="img" aria-labelledby="title desc">
+  <title id="title">OROT.DEV demo gallery item</title>
+  <desc id="desc">Gallery placeholder artwork for the demo photo collection.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#134e4a"/>
+      <stop offset="0.5" stop-color="#0f172a"/>
+      <stop offset="1" stop-color="#fbbf24"/>
+    </linearGradient>
+  </defs>
+  <rect width="1000" height="1300" fill="url(#bg)"/>
+  <rect x="90" y="100" width="820" height="1100" rx="48" fill="#f8fafc" opacity="0.9"/>
+  <rect x="150" y="174" width="680" height="560" rx="36" fill="#0f766e"/>
+  <circle cx="668" cy="318" r="72" fill="#fde68a"/>
+  <path d="M150 650l180-210 142 154 96-86 262 142v84H150z" fill="#ccfbf1"/>
+  <rect x="150" y="820" width="430" height="28" rx="14" fill="#102a43"/>
+  <rect x="150" y="886" width="680" height="20" rx="10" fill="#486581"/>
+  <rect x="150" y="932" width="540" height="20" rx="10" fill="#829ab1"/>
+  <rect x="150" y="1024" width="220" height="80" rx="22" fill="#f59e0b"/>
+  <rect x="398" y="1024" width="196" height="80" rx="22" fill="#0f766e"/>
+  <text x="150" y="1160" fill="#102a43" font-family="Inter, Arial, sans-serif" font-size="44" font-weight="800">Gallery</text>
+</svg>

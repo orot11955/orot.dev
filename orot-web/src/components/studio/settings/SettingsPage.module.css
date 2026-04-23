@@ -277,6 +277,63 @@
   gap: var(--orot-space-2);
 }
 
+.settingsMediaRow {
+  display: flex;
+  align-items: center;
+  gap: var(--orot-space-4);
+  flex-wrap: wrap;
+}
+
+.settingsMediaPreview {
+  flex-shrink: 0;
+  width: 160px;
+  height: 72px;
+  border: 1px solid var(--public-panel-border);
+  border-radius: var(--orot-radius-md);
+  overflow: hidden;
+  background: color-mix(in srgb, var(--orot-color-bg) 84%, var(--public-panel-bg));
+}
+
+.settingsMediaPreviewWide {
+  width: min(320px, 100%);
+  height: 168px;
+}
+
+.settingsMediaImage,
+.settingsMediaFallback {
+  width: 100%;
+  height: 100%;
+}
+
+.settingsMediaImage {
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+}
+
+.settingsMediaPreviewWide .settingsMediaImage {
+  background-size: cover;
+}
+
+.settingsMediaFallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--orot-space-3);
+  color: var(--orot-color-text-muted);
+  font-size: var(--orot-font-size-xs);
+  font-weight: var(--orot-font-weight-semibold);
+  text-align: center;
+}
+
+.settingsMediaActions {
+  display: flex;
+  flex: 1;
+  min-width: 220px;
+  flex-direction: column;
+  gap: var(--orot-space-2);
+}
+
 .hiddenInput {
   position: absolute;
   width: 1px;
@@ -511,6 +568,16 @@
   .nametagMediaActions {
     min-width: 0;
     flex-basis: 100%;
+  }
+
+  .settingsMediaActions {
+    min-width: 0;
+    flex-basis: 100%;
+  }
+
+  .settingsMediaPreview,
+  .settingsMediaPreviewWide {
+    width: 100%;
   }
 
   .previewMediaCircle {

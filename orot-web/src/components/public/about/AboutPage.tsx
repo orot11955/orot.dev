@@ -2,29 +2,12 @@ import type { ReactNode } from 'react';
 import Image from 'next/image';
 import { ArrowUpRight, Mail } from 'lucide-react';
 import type { PublicSettings } from '@/types';
+import { parseGlobalLinks } from '@/layouts/public/public-navigation';
 import { resolveAssetUrl, splitTags } from '@/utils/content';
 import styles from './AboutPage.module.css';
 
 interface AboutPageProps {
   settings: PublicSettings | null;
-}
-
-interface LinkItem {
-  label: string;
-  url: string;
-}
-
-function parseAboutLinks(raw?: string | null): LinkItem[] {
-  if (!raw) return [];
-  return raw
-    .split('\n')
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line) => {
-      const [label, url] = line.split('|').map((x) => x?.trim() ?? '');
-      return label && url ? { label, url } : null;
-    })
-    .filter((item): item is LinkItem => item !== null);
 }
 
 function splitParagraphs(text?: string | null): string[] {
@@ -56,7 +39,7 @@ export function AboutPage({ settings }: AboutPageProps) {
   const intro = splitParagraphs(settings?.about_content);
   const stack = splitTags(settings?.about_stack);
   const resume = splitParagraphs(settings?.about_resume);
-  const links = parseAboutLinks(settings?.about_links);
+  const links = parseGlobalLinks(settings);
   const nametagImageUrl = resolveAssetUrl(settings?.about_nametag_image);
 
   const initial = siteName.replace(/[^A-Za-z0-9가-힣]/g, '').charAt(0) || 'O';

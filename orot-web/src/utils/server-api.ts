@@ -3,6 +3,8 @@ import { headers } from 'next/headers';
 import { webServerLogger } from '@/logging/server';
 import { createRequestId } from '@/logging/shared';
 import { resolveServerApiBaseUrls } from './api-origin';
+import { isDemoMode } from '@/demo/mode';
+import { demoServerGet } from '@/demo/server';
 
 interface ServerGetOptions extends Omit<RequestInit, 'next'> {
   revalidate?: number | false;
@@ -137,6 +139,10 @@ export async function serverGet<T>(
   params?: Record<string, string | number>,
   options?: ServerGetOptions,
 ): Promise<T | null> {
+  if (isDemoMode()) {
+    return demoServerGet<T>(path, params);
+  }
+
   const requestId = await resolveServerRequestId();
   const { revalidate = 60, ...requestOptions } = options ?? {};
   const shouldUseRevalidate =

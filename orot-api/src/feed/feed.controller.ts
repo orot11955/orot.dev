@@ -1,4 +1,4 @@
-import { Controller, Get, Res } from '@nestjs/common';
+import { Controller, Get, NotFoundException, Res } from '@nestjs/common';
 import type { Response } from 'express';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
@@ -14,6 +14,8 @@ const escapeXml = (str: string) =>
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&apos;');
 
+const isEnabled = (value: string | undefined) => value !== 'false';
+
 @ApiTags('Feed')
 @Controller()
 export class FeedController {
@@ -27,6 +29,10 @@ export class FeedController {
   @ApiOperation({ summary: 'RSS 2.0 feed' })
   async getRss(@Res() res: Response) {
     const settings = await this.settingsService.findAll();
+    if (!isEnabled(settings['enable_rss'])) {
+      throw new NotFoundException('RSS feed is disabled');
+    }
+
     const siteUrl =
       this.configService.get<string>('siteUrl') ?? 'https://orot.dev';
     const siteName = settings['site_name'] ?? 'OROT.DEV';
@@ -79,7 +85,7 @@ export class FeedController {
     <description>${escapeXml(siteDesc)}</description>
     <language>ko</language>
     <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
-    <atom:link href="${siteUrl}/api/rss.xml" rel="self" type="application/rss+xml"/>
+    <atom:link href="${siteUrl}/rss.xml" rel="self" type="application/rss+xml"/>
     ${items}
   </channel>
 </rss>`;
@@ -92,6 +98,11 @@ export class FeedController {
   @Get('sitemap.xml')
   @ApiOperation({ summary: 'XML sitemap' })
   async getSitemap(@Res() res: Response) {
+    const settings = await this.settingsService.findAll();
+    if (!isEnabled(settings['enable_sitemap'])) {
+      throw new NotFoundException('Sitemap is disabled');
+    }
+
     const siteUrl =
       this.configService.get<string>('siteUrl') ?? 'https://orot.dev';
 

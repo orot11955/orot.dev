@@ -51,6 +51,14 @@
   background-size: contain;
 }
 
+.logoImage {
+  display: block;
+  width: auto;
+  max-width: 140px;
+  height: 42px;
+  object-fit: contain;
+}
+
 :global([data-orot-theme='dark']) .logoMark,
 :global([data-orot-theme='forest']) .logoMark,
 :global([data-orot-theme='ocean']) .logoMark {

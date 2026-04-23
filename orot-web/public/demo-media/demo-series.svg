@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" role="img" aria-labelledby="title desc">
+  <title id="title">OROT.DEV demo series</title>
+  <desc id="desc">Series cover artwork for grouped demo posts.</desc>
+  <rect width="1200" height="760" fill="#111827"/>
+  <rect x="90" y="100" width="286" height="560" rx="34" fill="#14b8a6"/>
+  <rect x="456" y="100" width="286" height="560" rx="34" fill="#f59e0b"/>
+  <rect x="824" y="100" width="286" height="560" rx="34" fill="#e5e7eb"/>
+  <rect x="146" y="178" width="174" height="26" rx="13" fill="#ecfeff"/>
+  <rect x="146" y="246" width="158" height="18" rx="9" fill="#ccfbf1"/>
+  <rect x="146" y="288" width="120" height="18" rx="9" fill="#99f6e4"/>
+  <rect x="512" y="178" width="174" height="26" rx="13" fill="#fff7ed"/>
+  <rect x="512" y="246" width="158" height="18" rx="9" fill="#ffedd5"/>
+  <rect x="512" y="288" width="120" height="18" rx="9" fill="#fed7aa"/>
+  <rect x="880" y="178" width="174" height="26" rx="13" fill="#111827"/>
+  <rect x="880" y="246" width="158" height="18" rx="9" fill="#4b5563"/>
+  <rect x="880" y="288" width="120" height="18" rx="9" fill="#6b7280"/>
+  <path d="M180 530h120M546 530h120M914 530h120" stroke="#111827" stroke-width="24" stroke-linecap="round" opacity="0.7"/>
+  <text x="90" y="708" fill="#f8fafc" font-family="Inter, Arial, sans-serif" font-size="46" font-weight="800">Series</text>
+</svg>

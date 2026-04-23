@@ -14,7 +14,7 @@ import type {
   Series,
 } from '@/types';
 import { resolveAssetUrl } from '@/utils/content';
-import { parseSocialLinks } from '@/layouts/public/public-navigation';
+import { parseGlobalLinks } from '@/layouts/public/public-navigation';
 import { HomeHeroActions } from './HomeHeroActions';
 import { HomeHeroImage } from './HomeHeroImage';
 import { HomePostCard } from './HomePostCard';
@@ -59,7 +59,7 @@ export function HomePage({
 
   const ongoingSeries = series.slice(0, 4);
   const topTags = tags.slice(0, 18);
-  const external = parseSocialLinks(settings?.social_links);
+  const external = parseGlobalLinks(settings);
 
   return (
     <div className={styles.page}>

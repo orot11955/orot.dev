@@ -25,6 +25,7 @@ import {
   studioGalleryService,
   studioSettingsService,
 } from '@/services';
+import type { ManagedSettingsMediaKey } from '@/services/settings.service';
 import type {
   Category,
   CreateCategoryPayload,
@@ -36,6 +37,7 @@ import type {
   UpdateCategoryPayload,
   UpdateSettingsPayload,
 } from '@/types';
+import { parseGlobalLinks } from '@/layouts/public/public-navigation';
 import { getErrorMessage, resolveAssetUrl } from '@/utils/content';
 import { safeParseJsonArray } from '@/utils/json';
 import { SettingsListEditor } from './components/SettingsListEditor';
@@ -134,7 +136,13 @@ export function SettingsPage() {
     {
       key: 'site',
       label: '사이트 정보',
-      children: <SiteInfoSection settings={settings} onSave={save} />,
+      children: (
+        <SiteInfoSection
+          settings={settings}
+          onSave={save}
+          onSettingsChange={(next) => setSettings(next)}
+        />
+      ),
     },
     {
       key: 'about',
@@ -159,8 +167,8 @@ export function SettingsPage() {
     },
     {
       key: 'social',
-      label: '소셜 링크',
-      children: <SocialLinksSection settings={settings} onSave={save} />,
+      label: '전역 링크',
+      children: <GlobalLinksSection settings={settings} onSave={save} />,
     },
     {
       key: 'seo',
@@ -220,7 +228,7 @@ interface SectionProps {
   onSettingsChange?: (next: StudioSettings) => void;
 }
 
-function SiteInfoSection({ settings, onSave }: SectionProps) {
+function SiteInfoSection({ settings, onSave, onSettingsChange }: SectionProps) {
   const [siteName, setSiteName] = useState(settings.site_name ?? '');
   const [siteDescription, setSiteDescription] = useState(settings.site_description ?? '');
   const [siteLogo, setSiteLogo] = useState(settings.site_logo ?? '');
@@ -229,6 +237,10 @@ function SiteInfoSection({ settings, onSave }: SectionProps) {
   const [heroCandidates, setHeroCandidates] = useState<GalleryItem[]>([]);
   const [heroLoading, setHeroLoading] = useState(true);
   const [heroLoadError, setHeroLoadError] = useState<string | null>(null);
+  const [uploadingMediaKey, setUploadingMediaKey] =
+    useState<ManagedSettingsMediaKey | null>(null);
+  const [mediaUploadNotice, setMediaUploadNotice] = useState<string | null>(null);
+  const [mediaUploadError, setMediaUploadError] = useState<string | null>(null);
   const { saving, runSaving } = useSavingAction();
   const [homeHeroImagePositionY, setHomeHeroImagePositionY] = useState(
     settings.home_hero_image_position_y ?? '50%',
@@ -261,6 +273,31 @@ function SiteInfoSection({ settings, onSave }: SectionProps) {
     };
   }, []);
 
+  const handleMediaUpload = useCallback(
+    async (key: ManagedSettingsMediaKey, file: File | null) => {
+      if (!file) {
+        return;
+      }
+
+      setUploadingMediaKey(key);
+      setMediaUploadNotice(null);
+      setMediaUploadError(null);
+
+      try {
+        const next = await studioSettingsService.uploadMedia(key, file);
+        setSiteLogo(next.site_logo ?? '');
+        setSiteOgImage(next.site_og_image ?? '');
+        onSettingsChange?.(next);
+        setMediaUploadNotice('이미지가 업로드되었습니다.');
+      } catch (err) {
+        setMediaUploadError(getErrorMessage(err));
+      } finally {
+        setUploadingMediaKey(null);
+      }
+    },
+    [onSettingsChange],
+  );
+
   const submit = async () => {
     try {
       await runSaving(() =>
@@ -289,15 +326,6 @@ function SiteInfoSection({ settings, onSave }: SectionProps) {
           <span className={styles.fieldLabel}>사이트 이름</span>
           <Input value={siteName} onChange={(e) => setSiteName(e.target.value)} />
         </label>
-        <label className={styles.field}>
-          <span className={styles.fieldLabel}>로고 URL</span>
-          <Input
-            value={siteLogo}
-            placeholder="https://..."
-            onChange={(e) => setSiteLogo(e.target.value)}
-          />
-          <span className={styles.fieldHelp}>비워두면 기본 텍스트 로고를 사용합니다.</span>
-        </label>
         <label className={`${styles.field} ${styles.fieldWide}`}>
           <span className={styles.fieldLabel}>사이트 설명</span>
           <textarea
@@ -307,15 +335,37 @@ function SiteInfoSection({ settings, onSave }: SectionProps) {
           />
           <span className={styles.fieldHelp}>홈 hero 및 SEO 메타 description에 사용됩니다.</span>
         </label>
-        <label className={`${styles.field} ${styles.fieldWide}`}>
-          <span className={styles.fieldLabel}>기본 OpenGraph 이미지 URL</span>
-          <Input
-            value={siteOgImage}
-            placeholder="https://..."
-            onChange={(e) => setSiteOgImage(e.target.value)}
-          />
-          <span className={styles.fieldHelp}>1200 × 630 권장. 각 글에 og 이미지가 없을 때 이 값을 사용합니다.</span>
-        </label>
+        <ManagedSettingsImageField
+          label="사이트 로고"
+          value={siteLogo}
+          previewLabel="로고 미리보기"
+          placeholder="기본 OROT 로고 사용"
+          help="공개 헤더 로고에 사용됩니다. PNG, JPG, WebP, GIF 파일을 업로드할 수 있습니다."
+          uploading={uploadingMediaKey === 'site_logo'}
+          onSelect={(file) => handleMediaUpload('site_logo', file)}
+          onClear={() => setSiteLogo('')}
+        />
+        <ManagedSettingsImageField
+          label="기본 OpenGraph 이미지"
+          value={siteOgImage}
+          previewLabel="OG 이미지 미리보기"
+          placeholder="기본 OROT 이미지 사용"
+          help="1200 x 630 권장. 각 글에 OG 이미지가 없을 때 이 값을 사용합니다."
+          variant="wide"
+          uploading={uploadingMediaKey === 'site_og_image'}
+          onSelect={(file) => handleMediaUpload('site_og_image', file)}
+          onClear={() => setSiteOgImage('')}
+        />
+        {mediaUploadNotice && (
+          <div className={styles.fieldWide}>
+            <Alert type="success" message={mediaUploadNotice} />
+          </div>
+        )}
+        {mediaUploadError && (
+          <div className={styles.fieldWide}>
+            <Alert type="error" message={mediaUploadError} />
+          </div>
+        )}
         <div className={`${styles.field} ${styles.fieldWide}`}>
           <span className={styles.fieldLabel}>메인 화면 배경 사진</span>
           <span className={styles.fieldHelp}>
@@ -395,13 +445,88 @@ function SiteInfoSection({ settings, onSave }: SectionProps) {
   );
 }
 
+function ManagedSettingsImageField({
+  label,
+  value,
+  previewLabel,
+  placeholder,
+  help,
+  variant = 'logo',
+  uploading,
+  onSelect,
+  onClear,
+}: {
+  label: string;
+  value: string;
+  previewLabel: string;
+  placeholder: string;
+  help: string;
+  variant?: 'logo' | 'wide';
+  uploading: boolean;
+  onSelect: (file: File | null) => void;
+  onClear: () => void;
+}) {
+  const previewUrl = resolveAssetUrl(value?.trim());
+
+  return (
+    <div className={`${styles.field} ${styles.fieldWide}`}>
+      <span className={styles.fieldLabel}>{label}</span>
+      <div className={styles.settingsMediaRow}>
+        <div
+          className={[
+            styles.settingsMediaPreview,
+            variant === 'wide' ? styles.settingsMediaPreviewWide : '',
+          ]
+            .filter(Boolean)
+            .join(' ')}
+        >
+          {previewUrl ? (
+            <div
+              className={styles.settingsMediaImage}
+              role="img"
+              aria-label={previewLabel}
+              style={{ backgroundImage: `url("${previewUrl}")` }}
+            />
+          ) : (
+            <div className={styles.settingsMediaFallback}>{placeholder}</div>
+          )}
+        </div>
+        <div className={styles.settingsMediaActions}>
+          <div className={styles.uploadRow}>
+            <label className={styles.uploadButton}>
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                className={styles.hiddenInput}
+                onChange={(event) => {
+                  onSelect(event.target.files?.[0] ?? null);
+                  event.currentTarget.value = '';
+                }}
+              />
+              <span>{uploading ? '업로드 중…' : '이미지 선택'}</span>
+            </label>
+            <Button
+              size="sm"
+              variant="outlined"
+              onClick={onClear}
+              disabled={uploading || !value}
+            >
+              기본값 사용
+            </Button>
+          </div>
+          <span className={styles.fieldHelp}>{help}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Section: About ───────────────────────────────────────────────────────────
 
 function AboutSection({ settings, onSave, onSettingsChange }: SectionProps) {
   const [aboutContent, setAboutContent] = useState(settings.about_content ?? '');
   const [aboutStack, setAboutStack] = useState(settings.about_stack ?? '');
   const [aboutResume, setAboutResume] = useState(settings.about_resume ?? '');
-  const [aboutLinks, setAboutLinks] = useState(settings.about_links ?? '');
   const [aboutNametagImage, setAboutNametagImage] = useState(
     settings.about_nametag_image ?? '',
   );
@@ -465,7 +590,6 @@ function AboutSection({ settings, onSave, onSettingsChange }: SectionProps) {
           about_content: aboutContent,
           about_stack: aboutStack,
           about_resume: aboutResume,
-          about_links: aboutLinks,
           about_nametag_image: aboutNametagImage.trim(),
         }),
       );
@@ -478,7 +602,7 @@ function AboutSection({ settings, onSave, onSettingsChange }: SectionProps) {
     <>
       <SettingsSectionShell
         title="About 관리"
-        description="About 페이지에 노출되는 소개글과 기술 스택, Resume, 외부 링크 목록을 편집합니다."
+        description="About 페이지에 노출되는 소개글과 기술 스택, Resume, 네임텍 이미지를 편집합니다. 외부 링크는 전역 링크 설정을 함께 사용합니다."
         footer={<SettingsSubmitButton onClick={submit} loading={saving} />}
       >
         <div className={styles.fieldGrid}>
@@ -561,16 +685,6 @@ function AboutSection({ settings, onSave, onSettingsChange }: SectionProps) {
               onChange={(e) => setAboutResume(e.target.value)}
             />
             <span className={styles.fieldHelp}>경력·학력 등 이력 정보. 마크다운을 지원합니다.</span>
-          </label>
-          <label className={`${styles.field} ${styles.fieldWide}`}>
-            <span className={styles.fieldLabel}>링크 목록</span>
-            <textarea
-              className={styles.textarea}
-              value={aboutLinks}
-              onChange={(e) => setAboutLinks(e.target.value)}
-              placeholder={'GitHub|https://github.com/orot\nEmail|mailto:hi@orot.dev'}
-            />
-            <span className={styles.fieldHelp}>한 줄에 하나씩 <code>레이블|URL</code> 형식으로 입력합니다.</span>
           </label>
         </div>
       </SettingsSectionShell>
@@ -825,12 +939,12 @@ function ThemeSection({ settings, onSave }: SectionProps) {
   );
 }
 
-// ─── Section: 소셜 링크 ───────────────────────────────────────────────────────
+// ─── Section: 전역 링크 ───────────────────────────────────────────────────────
 
-function SocialLinksSection({ settings, onSave }: SectionProps) {
+function GlobalLinksSection({ settings, onSave }: SectionProps) {
   const initial = useMemo(
-    () => safeParseJsonArray<SocialLinkItem>(settings.social_links, []),
-    [settings.social_links],
+    () => parseGlobalLinks(settings),
+    [settings],
   );
   const [items, setItems] = useState<SocialLinkItem[]>(initial);
   const { saving, runSaving } = useSavingAction();
@@ -850,9 +964,18 @@ function SocialLinksSection({ settings, onSave }: SectionProps) {
   const submit = async () => {
     try {
       const cleaned = items
-        .map((item) => ({ label: item.label.trim(), url: item.url.trim() }))
+        .map((item) => ({
+          label: item.label.trim(),
+          url: item.url.trim(),
+          icon: item.icon?.trim() || undefined,
+        }))
         .filter((item) => item.label && item.url);
-      await runSaving(() => onSave({ social_links: JSON.stringify(cleaned) }));
+      await runSaving(() =>
+        onSave({
+          social_links: JSON.stringify(cleaned),
+          about_links: '',
+        }),
+      );
       setItems(cleaned);
     } catch {
       // handled upstream
@@ -861,13 +984,13 @@ function SocialLinksSection({ settings, onSave }: SectionProps) {
 
   return (
     <SettingsSectionShell
-      title="소셜 링크"
-      description="푸터 및 About 영역에 노출되는 외부 링크 목록입니다."
+      title="전역 링크"
+      description="홈, About, 푸터에 공통으로 노출되는 외부 링크 목록입니다. 기존 About 전용 링크도 저장 시 이 목록으로 통합됩니다."
       footer={<SettingsSubmitButton onClick={submit} loading={saving} />}
     >
       <SettingsListEditor
         hasItems={items.length > 0}
-        emptyMessage="등록된 소셜 링크가 없습니다."
+        emptyMessage="등록된 전역 링크가 없습니다."
         addLabel="+ 링크 추가"
         onAdd={add}
       >

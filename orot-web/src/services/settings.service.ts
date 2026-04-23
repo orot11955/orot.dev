@@ -7,6 +7,10 @@ import { createAreaRoutes } from './api-routes';
 import type { PublicSettings, StudioSettings, UpdateSettingsPayload } from '@/types';
 
 const settingsRoutes = createAreaRoutes('settings');
+export type ManagedSettingsMediaKey =
+  | 'site_logo'
+  | 'site_og_image'
+  | 'about_nametag_image';
 
 // ─── Public ───────────────────────────────────────────────────────────────────
 
@@ -36,7 +40,7 @@ export const studioSettingsService = {
   },
 
   async uploadMedia(
-    key: 'about_nametag_image',
+    key: ManagedSettingsMediaKey,
     file: File,
   ): Promise<StudioSettings> {
     return uploadImageResource<StudioSettings>(

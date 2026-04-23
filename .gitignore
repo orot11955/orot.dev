@@ -3,6 +3,7 @@
 .env.local
 .env.development
 .env.production
+.env.demo
 .env.development.local
 .env.production.local
 .env.test.local

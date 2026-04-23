@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" role="img" aria-labelledby="title desc">
+  <title id="title">OROT.DEV demo cover</title>
+  <desc id="desc">Editorial cover artwork for demo posts.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#1f2933"/>
+      <stop offset="0.55" stop-color="#0f766e"/>
+      <stop offset="1" stop-color="#f59e0b"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="760" fill="url(#bg)"/>
+  <rect x="86" y="86" width="1028" height="588" rx="34" fill="#ffffff" opacity="0.9"/>
+  <rect x="152" y="158" width="272" height="26" rx="13" fill="#102a43"/>
+  <rect x="152" y="220" width="600" height="18" rx="9" fill="#486581"/>
+  <rect x="152" y="262" width="510" height="18" rx="9" fill="#829ab1"/>
+  <rect x="152" y="348" width="250" height="170" rx="24" fill="#0f766e"/>
+  <rect x="460" y="348" width="250" height="170" rx="24" fill="#f59e0b"/>
+  <rect x="768" y="348" width="250" height="170" rx="24" fill="#1f2933"/>
+  <circle cx="278" cy="434" r="44" fill="#d7fff1"/>
+  <path d="M506 476l58-78 48 52 44-36 38 62z" fill="#fff7ed"/>
+  <path d="M818 406h150M818 454h112" stroke="#f8fafc" stroke-width="24" stroke-linecap="round"/>
+  <text x="152" y="604" fill="#102a43" font-family="Inter, Arial, sans-serif" font-size="46" font-weight="800">Post Cover</text>
+  <text x="152" y="650" fill="#486581" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="600">Writing, review, publish</text>
+</svg>

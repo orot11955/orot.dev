@@ -132,6 +132,42 @@ Compose로 올라가는 서비스:
 - `orot-web`: Next.js 앱
 - `nginx`: 외부 진입 리버스 프록시
 
+### Web-only 데모
+
+포트폴리오용 데모는 API/DB 없이 Next.js 웹 컨테이너 하나만 띄울 수 있습니다.
+기본 도메인 구도는 아래와 같습니다.
+
+- 운영: `https://orot.dev`
+- 데모: `https://demo.orot.dev`
+
+데모 모드는 정적 초기 데이터와 브라우저 `localStorage`를 사용합니다.
+에디터/스튜디오에서 글 수정, 상태 전환, 댓글 승인, 사진 공개 토글을 눌러도 운영 API나 DB에는 닿지 않습니다.
+
+```bash
+cp .env.demo.example .env.demo
+yarn docker:demo-web:up
+```
+
+`.env.demo.example`의 기본 포트는 `DEMO_WEB_PORT=3001`입니다.
+호스트의 앞단 프록시에서 `demo.orot.dev`를 이 포트로 넘기면 외부에는 표준 도메인만 보입니다.
+
+도메인은 고정값이 아니며 `.env.demo`에서 바꿀 수 있습니다.
+바꿀 때는 `SITE_URL`, `NEXT_PUBLIC_SITE_URL`, `WEB_IMAGE_REMOTE_PATTERNS`를 함께 맞춥니다.
+
+데모 로그인 기본값:
+
+```text
+demo / demo1234
+```
+
+자주 쓰는 데모 명령:
+
+```bash
+yarn docker:demo-web:up
+yarn docker:demo-web:logs
+yarn docker:demo-web:down
+```
+
 ## 환경변수
 
 환경변수는 이제 루트에서만 관리합니다. 앱 폴더 안의 env 파일은 더 이상 기준 경로가 아닙니다.
@@ -177,6 +213,8 @@ Compose로 올라가는 서비스:
 - API: `API_DATABASE_URL`, `API_HTTP_LOGGING`, `API_LOG_LEVEL`, `API_LOG_PRETTY`, `API_REQUEST_BODY_LIMIT`, `API_SLOW_QUERY_MS`, `API_STUDIO_*`, `API_JWT_*`, `API_COOKIE_*`, `API_PORT`
 - `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`, `MARIADB_ROOT_PASSWORD`: MariaDB 및 API 연결 정보
 - `DB_SEED_ON_DEPLOY`: 배포 시 `prisma db seed` 실행 여부
+- `NEXT_PUBLIC_DEMO_MODE`: web-only 데모 데이터/localStorage 모드 활성화 여부
+- `DEMO_WEB_PORT`: web-only 데모 컨테이너의 호스트 노출 포트
 - `DB_AUTO_BASELINE_LEGACY`: 기존 Prisma 이력 없는 운영 DB를 첫 배포 때 자동 baseline 할지 여부
 - `HTTP_PORT`: nginx 외부 노출 포트
 

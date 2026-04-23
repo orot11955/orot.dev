@@ -8,7 +8,16 @@ export const DARK_COLOR_SCHEME_THEMES: Theme[] = ['dark', 'forest', 'ocean'];
 const serializedThemes = JSON.stringify(THEMES);
 const serializedDarkThemes = JSON.stringify(DARK_COLOR_SCHEME_THEMES);
 
-export const THEME_INIT_SCRIPT = `
+export function isTheme(value: unknown): value is Theme {
+  return typeof value === 'string' && THEMES.includes(value as Theme);
+}
+
+export function resolveTheme(value?: string | null): Theme {
+  return isTheme(value) ? value : DEFAULT_THEME;
+}
+
+export function createThemeInitScript(defaultTheme: Theme = DEFAULT_THEME): string {
+  return `
 (function () {
   try {
     var themes = ${serializedThemes};
@@ -20,14 +29,17 @@ export const THEME_INIT_SCRIPT = `
     if (!theme) {
       theme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
         ? 'dark'
-        : '${DEFAULT_THEME}';
+        : '${defaultTheme}';
     }
 
     root.setAttribute('data-orot-theme', theme);
     root.style.colorScheme = darkThemes.indexOf(theme) >= 0 ? 'dark' : 'light';
   } catch (_) {
-    document.documentElement.setAttribute('data-orot-theme', '${DEFAULT_THEME}');
+    document.documentElement.setAttribute('data-orot-theme', '${defaultTheme}');
     document.documentElement.style.colorScheme = 'light';
   }
 })();
 `.trim();
+}
+
+export const THEME_INIT_SCRIPT = createThemeInitScript(DEFAULT_THEME);

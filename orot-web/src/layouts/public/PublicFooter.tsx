@@ -1,10 +1,12 @@
 import Link from 'next/link';
+import type { PublicMenuItem, SocialLinkItem } from '@/types';
 import styles from './PublicFooter.module.css';
 
 interface PublicFooterProps {
   siteName: string;
   description?: string;
-  social: Array<{ label: string; url: string; icon?: string }>;
+  nav: PublicMenuItem[];
+  social: SocialLinkItem[];
 }
 
 function ArrowUpRightIcon({ className }: { className?: string }) {
@@ -30,8 +32,11 @@ function ArrowUpRightIcon({ className }: { className?: string }) {
 export function PublicFooter({
   siteName,
   description,
+  nav,
   social,
 }: PublicFooterProps) {
+  const footerNav = nav.filter((item) => item.enabled !== false);
+
   return (
     <footer className={styles.footer}>
       <div className={styles.inner}>
@@ -41,20 +46,22 @@ export function PublicFooter({
         </div>
 
         <div className={styles.columns}>
-          <div className={styles.column}>
-            <div className={styles.columnTitle}>Explore</div>
-            <div className={styles.exploreLinks}>
-              <Link href="/posts" className={styles.columnLink}>
-                Posts
-              </Link>
-              <Link href="/photos" className={styles.columnLink}>
-                Photos
-              </Link>
-              <Link href="/about" className={styles.columnLink}>
-                About
-              </Link>
+          {footerNav.length > 0 && (
+            <div className={styles.column}>
+              <div className={styles.columnTitle}>Explore</div>
+              <div className={styles.exploreLinks}>
+                {footerNav.map((item) => (
+                  <Link
+                    key={item.key}
+                    href={item.href}
+                    className={styles.columnLink}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {social.length > 0 && (
             <div className={styles.column}>

@@ -12,6 +12,7 @@ import type { Theme } from '@/types';
 import {
   DARK_COLOR_SCHEME_THEMES,
   DEFAULT_THEME,
+  isTheme,
   THEMES,
   THEME_STORAGE_KEY,
 } from '@/utils/theme-init';
@@ -28,14 +29,20 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 // ─── Provider ─────────────────────────────────────────────────────────────────
 
-export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>(DEFAULT_THEME);
+export function ThemeProvider({
+  children,
+  defaultTheme = DEFAULT_THEME,
+}: {
+  children: ReactNode;
+  defaultTheme?: Theme;
+}) {
+  const [theme, setThemeState] = useState<Theme>(defaultTheme);
 
   useLayoutEffect(() => {
-    const initial = resolveInitialTheme();
+    const initial = resolveInitialTheme(defaultTheme);
     applyTheme(initial);
     setThemeState(initial);
-  }, []);
+  }, [defaultTheme]);
 
   const setTheme = useCallback((next: Theme) => {
     applyTheme(next);
@@ -60,7 +67,7 @@ function applyTheme(theme: Theme) {
     : 'light';
 }
 
-function resolveInitialTheme(): Theme {
+function resolveInitialTheme(defaultTheme: Theme): Theme {
   const current = document.documentElement.getAttribute('data-orot-theme');
   if (isTheme(current)) {
     return current;
@@ -73,11 +80,7 @@ function resolveInitialTheme(): Theme {
 
   return window.matchMedia('(prefers-color-scheme: dark)').matches
     ? 'dark'
-    : DEFAULT_THEME;
-}
-
-function isTheme(value: unknown): value is Theme {
-  return typeof value === 'string' && THEMES.includes(value as Theme);
+    : defaultTheme;
 }
 
 function readStoredTheme(): string | null {

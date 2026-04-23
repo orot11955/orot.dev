@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState, type FormEvent } from 'react';
@@ -18,7 +19,9 @@ import styles from './PublicHeader.module.css';
 
 interface PublicHeaderProps {
   siteName: string;
+  siteLogo?: string;
   nav: PublicMenuItem[];
+  allowThemeSwitch: boolean;
 }
 
 function isActive(pathname: string, href: string): boolean {
@@ -26,11 +29,34 @@ function isActive(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export default function LogoImage() {
+function LogoImage({
+  siteLogo,
+}: {
+  siteLogo?: string;
+}) {
+  if (siteLogo) {
+    return (
+      <Image
+        src={siteLogo}
+        alt=""
+        width={140}
+        height={42}
+        unoptimized
+        className={styles.logoImage}
+        aria-hidden="true"
+      />
+    );
+  }
+
   return <span className={styles.logoMark} aria-hidden="true" />;
 }
 
-export function PublicHeader({ siteName, nav }: PublicHeaderProps) {
+export function PublicHeader({
+  siteName,
+  siteLogo,
+  nav,
+  allowThemeSwitch,
+}: PublicHeaderProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [searchOpen, setSearchOpen] = useState(false);
@@ -45,8 +71,6 @@ export function PublicHeader({ siteName, nav }: PublicHeaderProps) {
     setMobileOpen(false);
     setSearchOpen(false);
   }, [pathname]);
-
-
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -70,7 +94,7 @@ export function PublicHeader({ siteName, nav }: PublicHeaderProps) {
             <MenuIcon size={20} />
           </button>
           <Link href="/" className={styles.brand} aria-label={`${siteName} 홈`}>
-            <LogoImage />
+            <LogoImage siteLogo={siteLogo} />
           </Link>
         </div>
 
@@ -135,7 +159,7 @@ export function PublicHeader({ siteName, nav }: PublicHeaderProps) {
             )}
           </form>
 
-          <ThemeSwitcher className={styles.themeBtn} />
+          {allowThemeSwitch && <ThemeSwitcher className={styles.themeBtn} />}
 
           <Button
             variant="outlined"

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import styles from './HomePage.module.css';
 
@@ -21,11 +21,13 @@ export function HomeHeroImage({
   alt,
   objectPosition,
 }: HomeHeroImageProps) {
+  const originalImageRef = useRef<HTMLImageElement>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const hasPreview = Boolean(previewSrc && previewSrc !== src);
 
   useEffect(() => {
-    setIsLoaded(false);
+    const originalImage = originalImageRef.current;
+    setIsLoaded(Boolean(originalImage?.complete && originalImage.naturalWidth > 0));
   }, [src]);
 
   return (
@@ -48,6 +50,7 @@ export function HomeHeroImage({
       ) : null}
       <Image
         key={src}
+        ref={originalImageRef}
         src={src}
         alt={alt}
         fill

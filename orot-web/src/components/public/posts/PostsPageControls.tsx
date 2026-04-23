@@ -1,14 +1,27 @@
 'use client';
 
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { Button, Input, Search, Select, X } from 'orot-ui';
-import { useFilterParams } from '@/hooks';
-import type { Category, PostSort, Series } from '@/types';
+import Link from 'next/link';
 import {
-  PublicFilterChip,
-  PublicFilterGroup,
-  PublicFilterPanel,
-} from '../shared/PublicFilterPanel';
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useTransition,
+  type ChangeEvent,
+  type FormEvent,
+} from 'react';
+import { useRouter } from 'next/navigation';
+import {
+  Folder,
+  Hash,
+  Layers,
+  Search,
+  SlidersHorizontal,
+  SortDesc,
+  Tags,
+  X,
+} from 'orot-ui';
+import type { Category, PostSort, Series } from '@/types';
 import styles from './PostsPage.module.css';
 
 interface PostsPageControlsProps {
@@ -20,6 +33,62 @@ interface PostsPageControlsProps {
   currentSeries: string;
   currentCategory: string;
   currentSort: PostSort;
+  filteredTotal: number;
+}
+
+type QueryPatch = {
+  search?: string | null;
+  tag?: string | null;
+  seriesId?: string | null;
+  categorySlug?: string | null;
+  sort?: PostSort | null;
+};
+
+interface FilterToken {
+  key: string;
+  label: string;
+  href: string;
+}
+
+function cx(...classNames: Array<string | false | null | undefined>) {
+  return classNames.filter(Boolean).join(' ');
+}
+
+function clean(value: string | null | undefined) {
+  return value?.trim() ?? '';
+}
+
+function buildPostsHref(
+  state: {
+    search: string;
+    tag: string;
+    seriesId: string;
+    categorySlug: string;
+    sort: PostSort;
+  },
+  patch: QueryPatch = {},
+) {
+  const next = {
+    search: patch.search === undefined ? state.search : clean(patch.search),
+    tag: patch.tag === undefined ? state.tag : clean(patch.tag),
+    seriesId:
+      patch.seriesId === undefined ? state.seriesId : clean(patch.seriesId),
+    categorySlug:
+      patch.categorySlug === undefined
+        ? state.categorySlug
+        : clean(patch.categorySlug),
+    sort: patch.sort === undefined ? state.sort : (patch.sort ?? 'latest'),
+  };
+  const params = new URLSearchParams();
+
+  if (next.search) params.set('search', next.search);
+  if (next.tag) params.set('tag', next.tag);
+  if (next.seriesId) params.set('seriesId', next.seriesId);
+  if (next.categorySlug) params.set('categorySlug', next.categorySlug);
+  if (next.sort !== 'latest') params.set('sort', next.sort);
+
+  const query = params.toString();
+  return query ? `/posts?${query}` : '/posts';
 }
 
 export function PostsPageControls({
@@ -31,143 +100,305 @@ export function PostsPageControls({
   currentSeries,
   currentCategory,
   currentSort,
+  filteredTotal,
 }: PostsPageControlsProps) {
-  const { updateParams, resetParams } = useFilterParams('/posts');
+  const router = useRouter();
   const [keyword, setKeyword] = useState(currentSearch);
+  const [isPending, startTransition] = useTransition();
+
+  const queryState = useMemo(
+    () => ({
+      search: clean(currentSearch),
+      tag: clean(currentTag),
+      seriesId: clean(currentSeries),
+      categorySlug: clean(currentCategory),
+      sort: currentSort,
+    }),
+    [currentSearch, currentTag, currentSeries, currentCategory, currentSort],
+  );
 
   useEffect(() => {
     setKeyword(currentSearch);
   }, [currentSearch]);
 
   const activeSeries = useMemo(
-    () => series.find((item) => String(item.id) === currentSeries),
-    [series, currentSeries],
+    () => series.find((item) => String(item.id) === queryState.seriesId),
+    [series, queryState.seriesId],
+  );
+
+  const activeCategory = useMemo(
+    () => categories.find((item) => item.slug === queryState.categorySlug),
+    [categories, queryState.categorySlug],
   );
 
   const hasResettableFilters = Boolean(
-    currentSearch ||
-      currentTag ||
-      currentSeries ||
-      currentCategory ||
-      currentSort !== 'latest',
+    queryState.search ||
+      queryState.tag ||
+      queryState.seriesId ||
+      queryState.categorySlug ||
+      queryState.sort !== 'latest',
   );
 
-  const sortOptions: Array<{ label: string; value: PostSort }> = [
-    { label: '최신순', value: 'latest' },
-    { label: '인기순', value: 'popular' },
-  ];
+  const navigate = useCallback(
+    (patch: QueryPatch) => {
+      const href = buildPostsHref(queryState, patch);
+      startTransition(() => {
+        router.push(href);
+      });
+    },
+    [queryState, router],
+  );
 
-  const seriesOptions = [
-    { label: '모든 시리즈', value: '' },
-    ...series.map((item) => ({ label: item.title, value: String(item.id) })),
-  ];
+  const createHref = useCallback(
+    (patch: QueryPatch = {}) => buildPostsHref(queryState, patch),
+    [queryState],
+  );
 
-  const categoryOptions = [
-    { label: '모든 카테고리', value: '' },
-    ...categories.map((item) => ({ label: item.name, value: item.slug })),
-  ];
+  const tokens = useMemo<FilterToken[]>(() => {
+    const activeTokens: FilterToken[] = [];
 
-  const handleSearchSubmit = (event: FormEvent) => {
+    if (queryState.search) {
+      activeTokens.push({
+        key: 'search',
+        label: `"${queryState.search}"`,
+        href: createHref({ search: null }),
+      });
+    }
+
+    if (queryState.tag) {
+      activeTokens.push({
+        key: 'tag',
+        label: `#${queryState.tag}`,
+        href: createHref({ tag: null }),
+      });
+    }
+
+    if (activeCategory) {
+      activeTokens.push({
+        key: 'category',
+        label: activeCategory.name,
+        href: createHref({ categorySlug: null }),
+      });
+    }
+
+    if (activeSeries) {
+      activeTokens.push({
+        key: 'series',
+        label: activeSeries.title,
+        href: createHref({ seriesId: null }),
+      });
+    }
+
+    if (queryState.sort === 'popular') {
+      activeTokens.push({
+        key: 'sort',
+        label: '인기순',
+        href: createHref({ sort: null }),
+      });
+    }
+
+    return activeTokens;
+  }, [activeCategory, activeSeries, createHref, queryState]);
+
+  const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    updateParams({ search: keyword.trim() || null });
+    navigate({ search: keyword.trim() || null });
+  };
+
+  const handleSelect =
+    (key: 'categorySlug' | 'seriesId') =>
+    (event: ChangeEvent<HTMLSelectElement>) => {
+      navigate({ [key]: event.target.value || null });
+    };
+
+  const handleSort = (sort: PostSort) => {
+    navigate({ sort: sort === 'latest' ? null : sort });
+  };
+
+  const handleClearDraft = () => {
+    setKeyword('');
+    if (queryState.search) {
+      navigate({ search: null });
+    }
   };
 
   return (
-    <>
-      <PublicFilterPanel
-        hasResettableFilters={hasResettableFilters}
-        onReset={resetParams}
-        search={
-          <form onSubmit={handleSearchSubmit} className={styles.searchForm}>
-            <Input
-              type="search"
-              size="md"
-              prefix={<Search size={14} />}
-              placeholder="제목, 내용, 태그로 검색"
-              value={keyword}
-              onChange={(event) => {
-                const nextKeyword = event.target.value;
-                setKeyword(nextKeyword);
-
-                if (nextKeyword === '' && currentSearch) {
-                  updateParams({ search: null });
-                }
-              }}
-              allowClear
-              className={styles.search}
-            />
-            <Button
-              type="submit"
-              size="md"
-              variant="solid"
-              className={styles.searchButton}
-            >
-              검색
-            </Button>
-          </form>
-        }
-        controls={
-          <>
-            <Select
-              size="md"
-              value={currentCategory}
-              onChange={(value) =>
-                updateParams({
-                  categorySlug:
-                    value == null || value === '' ? null : String(value),
-                })
-              }
-              options={categoryOptions}
-              placeholder="카테고리"
-              className={styles.select}
-            />
-            <Select
-              size="md"
-              value={currentSeries}
-              onChange={(value) =>
-                updateParams({
-                  seriesId: value == null || value === '' ? null : String(value),
-                })
-              }
-              options={seriesOptions}
-              placeholder="시리즈"
-              className={styles.select}
-            />
-            <Select
-              size="md"
-              value={currentSort}
-              onChange={(value) =>
-                updateParams({
-                  sort: value === 'latest' ? null : String(value),
-                })
-              }
-              options={sortOptions}
-              placeholder="정렬"
-              className={styles.select}
-            />
-          </>
-        }
+    <section
+      className={styles.filterShell}
+      data-pending={isPending ? 'true' : 'false'}
+      aria-label="글 검색 및 필터"
+    >
+      <form
+        action="/posts"
+        method="get"
+        role="search"
+        className={styles.searchBar}
+        onSubmit={handleSearchSubmit}
       >
-        {tags.length > 0 && (
-          <PublicFilterGroup label="태그">
-            <PublicFilterChip
-              active={!currentTag}
-              onClick={() => updateParams({ tag: null })}
-            >
-              전체 태그
-            </PublicFilterChip>
-            {tags.map((tag) => (
-              <PublicFilterChip
-                key={tag}
-                active={currentTag === tag}
-                onClick={() => updateParams({ tag })}
-              >
-                #{tag}
-              </PublicFilterChip>
-            ))}
-          </PublicFilterGroup>
+        {queryState.tag && (
+          <input type="hidden" name="tag" value={queryState.tag} />
         )}
-      </PublicFilterPanel>
+        {queryState.seriesId && (
+          <input type="hidden" name="seriesId" value={queryState.seriesId} />
+        )}
+        {queryState.categorySlug && (
+          <input
+            type="hidden"
+            name="categorySlug"
+            value={queryState.categorySlug}
+          />
+        )}
+        {queryState.sort !== 'latest' && (
+          <input type="hidden" name="sort" value={queryState.sort} />
+        )}
+
+        <div className={styles.searchInputWrap}>
+          <Search size={16} aria-hidden="true" />
+          <input
+            type="search"
+            name="search"
+            value={keyword}
+            placeholder="제목, 내용, 태그로 검색"
+            autoComplete="off"
+            className={styles.searchInput}
+            onChange={(event) => setKeyword(event.target.value)}
+          />
+          {keyword || queryState.search ? (
+            <button
+              type="button"
+              className={styles.iconButton}
+              aria-label="검색어 지우기"
+              onClick={handleClearDraft}
+            >
+              <X size={14} aria-hidden="true" />
+            </button>
+          ) : null}
+        </div>
+
+        <button type="submit" className={styles.searchSubmit}>
+          <Search size={15} aria-hidden="true" />
+          <span>검색</span>
+        </button>
+      </form>
+
+      <div className={styles.filterGrid}>
+        <label className={styles.selectControl}>
+          <span className={styles.controlIcon}>
+            <Folder size={14} aria-hidden="true" />
+          </span>
+          <select
+            value={queryState.categorySlug}
+            aria-label="카테고리"
+            onChange={handleSelect('categorySlug')}
+          >
+            <option value="">모든 카테고리</option>
+            {categories.map((category) => (
+              <option key={category.id} value={category.slug}>
+                {category.name}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className={styles.selectControl}>
+          <span className={styles.controlIcon}>
+            <Layers size={14} aria-hidden="true" />
+          </span>
+          <select
+            value={queryState.seriesId}
+            aria-label="시리즈"
+            onChange={handleSelect('seriesId')}
+          >
+            <option value="">모든 시리즈</option>
+            {series.map((item) => (
+              <option key={item.id} value={String(item.id)}>
+                {item.title}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <div className={styles.sortGroup} aria-label="정렬">
+          <SortDesc size={14} aria-hidden="true" />
+          <button
+            type="button"
+            className={styles.sortButton}
+            aria-pressed={queryState.sort === 'latest'}
+            onClick={() => handleSort('latest')}
+          >
+            최신순
+          </button>
+          <button
+            type="button"
+            className={styles.sortButton}
+            aria-pressed={queryState.sort === 'popular'}
+            onClick={() => handleSort('popular')}
+          >
+            인기순
+          </button>
+        </div>
+      </div>
+
+      {tags.length > 0 && (
+        <div className={styles.tagRail} aria-label="태그">
+          <span className={styles.tagRailLabel}>
+            <Tags size={13} aria-hidden="true" />
+            TAGS
+          </span>
+          <div className={styles.tagScroller}>
+            <Link
+              href={createHref({ tag: null })}
+              prefetch={false}
+              className={cx(
+                styles.tagChip,
+                !queryState.tag && styles.tagChipActive,
+              )}
+              aria-current={!queryState.tag ? 'true' : undefined}
+            >
+              전체
+            </Link>
+            {tags.map((tag) => (
+              <Link
+                key={tag}
+                href={createHref({ tag })}
+                prefetch={false}
+                className={cx(
+                  styles.tagChip,
+                  queryState.tag === tag && styles.tagChipActive,
+                )}
+                aria-current={queryState.tag === tag ? 'true' : undefined}
+              >
+                <Hash size={12} aria-hidden="true" />
+                {tag}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className={styles.activeFilterRow}>
+        <span className={styles.resultBadge}>
+          <SlidersHorizontal size={13} aria-hidden="true" />
+          결과 {filteredTotal}편
+        </span>
+        {tokens.map((token) => (
+          <Link
+            key={token.key}
+            href={token.href}
+            prefetch={false}
+            className={styles.activeToken}
+          >
+            {token.label}
+            <X size={12} aria-hidden="true" />
+          </Link>
+        ))}
+        {hasResettableFilters && (
+          <Link href="/posts" prefetch={false} className={styles.resetFilters}>
+            <X size={12} aria-hidden="true" />
+            필터 초기화
+          </Link>
+        )}
+      </div>
 
       {activeSeries && (
         <div className={styles.seriesBanner}>
@@ -178,16 +409,16 @@ export function PostsPageControls({
               <p className={styles.seriesBannerDesc}>{activeSeries.description}</p>
             )}
           </div>
-          <button
-            type="button"
+          <Link
+            href={createHref({ seriesId: null })}
+            prefetch={false}
             className={styles.seriesBannerClose}
-            onClick={() => updateParams({ seriesId: null })}
           >
-            <X size={14} />
+            <X size={14} aria-hidden="true" />
             <span>시리즈 해제</span>
-          </button>
+          </Link>
         </div>
       )}
-    </>
+    </section>
   );
 }

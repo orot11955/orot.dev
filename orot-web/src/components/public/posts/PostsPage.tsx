@@ -61,6 +61,7 @@ export function PostsPage({
           currentSeries={currentSeries}
           currentCategory={currentCategory}
           currentSort={currentSort}
+          filteredTotal={postList.total}
         />
 
         {postList.data.length > 0 ? (

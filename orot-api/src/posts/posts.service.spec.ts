@@ -49,6 +49,55 @@ describe('PostsService', () => {
     expect(prisma.post.delete).toHaveBeenCalledWith({ where: { id: 12 } });
   });
 
+  it('sets publishedAt on first publish', async () => {
+    prisma.post.findUnique.mockResolvedValue({
+      id: 31,
+      status: PostStatus.REVIEW,
+      publishedAt: null,
+    });
+    prisma.post.update.mockResolvedValue({
+      id: 31,
+      status: PostStatus.PUBLISHED,
+    });
+
+    await service.transition(31, { status: PostStatus.PUBLISHED }, 'studio');
+
+    expect(prisma.post.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 31 },
+        data: expect.objectContaining({
+          status: PostStatus.PUBLISHED,
+          publishedAt: expect.any(Date),
+          scheduledAt: null,
+        }),
+      }),
+    );
+  });
+
+  it('preserves publishedAt when publishing an edited post again', async () => {
+    const publishedAt = new Date('2026-04-22T10:00:00.000Z');
+    prisma.post.findUnique.mockResolvedValue({
+      id: 32,
+      status: PostStatus.REVIEW,
+      publishedAt,
+    });
+    prisma.post.update.mockResolvedValue({
+      id: 32,
+      status: PostStatus.PUBLISHED,
+      publishedAt,
+    });
+
+    await service.transition(32, { status: PostStatus.PUBLISHED }, 'studio');
+
+    const updateArg = prisma.post.update.mock.calls[0][0];
+    expect(updateArg).toEqual(
+      expect.objectContaining({
+        where: { id: 32 },
+      }),
+    );
+    expect(updateArg.data).not.toHaveProperty('publishedAt');
+  });
+
   it('finds global neighboring posts with targeted queries', async () => {
     const publishedAt = new Date('2026-04-22T10:00:00.000Z');
     const updatedAt = new Date('2026-04-22T10:30:00.000Z');

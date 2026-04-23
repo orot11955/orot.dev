@@ -54,6 +54,26 @@ const DEFAULT_LIMIT = 10;
 
 type SortValue = 'latest' | 'popular';
 
+function getPostTitleLink(post: PostListItem) {
+  if (post.status === 'UPDATED') {
+    return {
+      href: `/editor/posts/${post.id}`,
+      target: undefined,
+      rel: undefined,
+    };
+  }
+
+  if (post.status === 'REVIEW' || post.status === 'PUBLISHED') {
+    return {
+      href: `/posts/${post.slug}`,
+      target: '_blank',
+      rel: 'noopener noreferrer',
+    };
+  }
+
+  return null;
+}
+
 function toLocalInputValue(date: Date): string {
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
@@ -221,11 +241,21 @@ export function PostsManagementPage() {
         title: '글',
         render: (_value, post) => {
           const tags = splitTags(post.tags);
+          const titleLink = getPostTitleLink(post);
           return (
             <div className={styles.titleCell}>
-              <Link href={`/posts/${post.slug}`} className={styles.titleLink} target="_blank">
-                {post.title}
-              </Link>
+              {titleLink ? (
+                <Link
+                  href={titleLink.href}
+                  className={styles.titleLink}
+                  target={titleLink.target}
+                  rel={titleLink.rel}
+                >
+                  {post.title}
+                </Link>
+              ) : (
+                <span className={styles.titleText}>{post.title}</span>
+              )}
               <div className={styles.titleMeta}>
                 {post.category ? `[${post.category.name}] ` : ''}
                 {post.series ? `${post.series.title} · ` : ''}
@@ -285,11 +315,10 @@ export function PostsManagementPage() {
       {
         key: 'actions',
         title: '관리',
-        width: 340,
+        width: 300,
         align: 'left',
         render: (_value, post) => {
           const busy = mutatingId === post.id;
-          const editHref = `/editor/posts/${post.id}`;
           const canPublish = post.status === 'REVIEW' || post.status === 'SCHEDULED';
           const canSchedule = post.status === 'REVIEW';
           const canArchive = post.status === 'PUBLISHED';
@@ -357,14 +386,6 @@ export function PostsManagementPage() {
               onClick: () => handleTransition(post, 'REVIEW'),
             });
           }
-
-          actions.push({
-            key: 'edit',
-            label: '수정',
-            variant: 'text',
-            disabled: busy,
-            href: editHref,
-          });
 
           actions.push({
             key: 'delete',

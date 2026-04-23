@@ -36,7 +36,7 @@ export class SchedulerService {
             status: PostStatus.SCHEDULED,
             scheduledAt: { lte: now },
           },
-          select: { id: true, title: true },
+          select: { id: true, title: true, publishedAt: true },
         });
 
         if (due.length === 0) {
@@ -56,7 +56,7 @@ export class SchedulerService {
               where: { id: post.id },
               data: {
                 status: PostStatus.PUBLISHED,
-                publishedAt: now,
+                publishedAt: post.publishedAt ?? now,
                 scheduledAt: null,
               },
             });

@@ -69,14 +69,18 @@
   min-width: 0;
 }
 
-.titleLink {
+.titleLink,
+.titleText {
   font-size: var(--orot-font-size-sm);
   font-weight: var(--orot-font-weight-medium);
   color: var(--orot-color-text);
-  text-decoration: none;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.titleLink {
+  text-decoration: none;
 }
 
 .titleLink:hover {
@@ -106,10 +110,37 @@
 }
 
 .actions {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(74px, 1fr) minmax(86px, 1fr) minmax(52px, max-content);
+  align-items: center;
   gap: var(--orot-space-1);
-  justify-content: flex-start;
-  flex-wrap: wrap;
+  width: 100%;
+  max-width: 280px;
+}
+
+.actions > * {
+  min-width: 0;
+}
+
+.actions > *:not([data-action-key='delete']) button {
+  width: 100%;
+}
+
+.actions > [data-action-key='publish'],
+.actions > [data-action-key='restart'],
+.actions > [data-action-key='review'] {
+  grid-column: 1;
+}
+
+.actions > [data-action-key='schedule'],
+.actions > [data-action-key='cancel-schedule'],
+.actions > [data-action-key='archive'] {
+  grid-column: 2;
+}
+
+.actions > [data-action-key='delete'] {
+  grid-column: 3;
+  justify-self: end;
 }
 
 .scheduleField {
@@ -256,7 +287,7 @@
   }
 
   .actions {
-    justify-content: flex-start;
+    max-width: 320px;
   }
 }
 
@@ -276,10 +307,6 @@
     align-items: center;
     gap: var(--orot-space-3);
     width: 100%;
-  }
-
-  .actions {
-    justify-content: flex-start;
   }
 
   .tableCard {

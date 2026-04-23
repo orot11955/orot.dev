@@ -516,7 +516,9 @@ export class PostsService implements OnModuleInit {
     }
 
     if (dto.status === PostStatus.PUBLISHED) {
-      data.publishedAt = new Date();
+      if (!post.publishedAt) {
+        data.publishedAt = new Date();
+      }
       data.scheduledAt = null;
     }
 

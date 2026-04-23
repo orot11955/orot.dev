@@ -57,11 +57,11 @@ function renderButton(action: ActionItem) {
 
 function renderAction(action: ActionItem) {
   const button = renderButton(action);
+  let actionNode: ReactNode;
 
   if (action.confirm) {
-    return (
+    actionNode = (
       <Popconfirm
-        key={action.key}
         title={action.confirm.title}
         description={action.confirm.description}
         okText={action.confirm.okText}
@@ -73,12 +73,9 @@ function renderAction(action: ActionItem) {
         {button}
       </Popconfirm>
     );
-  }
-
-  if (action.href && !action.disabled) {
-    return (
+  } else if (action.href && !action.disabled) {
+    actionNode = (
       <Link
-        key={action.key}
         href={action.href}
         target={action.target}
         rel={action.rel}
@@ -86,11 +83,13 @@ function renderAction(action: ActionItem) {
         {button}
       </Link>
     );
+  } else {
+    actionNode = button;
   }
 
   return (
-    <span key={action.key}>
-      {button}
+    <span key={action.key} data-action-key={action.key}>
+      {actionNode}
     </span>
   );
 }

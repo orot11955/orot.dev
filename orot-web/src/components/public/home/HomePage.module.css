@@ -112,11 +112,62 @@
 
 .heroTitle {
   margin: 0;
-  font-size: clamp(2.5rem, 6vw, 4.5rem);
-  font-weight: var(--orot-font-weight-extrabold);
-  letter-spacing: -0.04em;
-  line-height: 1.02;
+  line-height: 1;
   color: inherit;
+}
+
+.heroTitleLogoStack {
+  display: grid;
+  align-items: center;
+  justify-items: start;
+  width: min(100%, clamp(180px, 40vw, 360px));
+  max-width: 360px;
+}
+
+.heroTitleLogoVariant {
+  grid-area: 1 / 1;
+  opacity: 1;
+  visibility: visible;
+}
+
+.heroTitleLogoVariantDark {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.heroTitleLogoImage {
+  display: block;
+  width: 100%;
+  max-width: 360px;
+  max-height: 88px;
+  height: auto;
+  object-fit: contain;
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+:global([data-orot-theme='dark']) .heroTitleLogoVariantLight,
+:global([data-orot-theme='forest']) .heroTitleLogoVariantLight,
+:global([data-orot-theme='ocean']) .heroTitleLogoVariantLight {
+  opacity: 0;
+  visibility: hidden;
+}
+
+:global([data-orot-theme='dark']) .heroTitleLogoVariantDark,
+:global([data-orot-theme='forest']) .heroTitleLogoVariantDark,
+:global([data-orot-theme='ocean']) .heroTitleLogoVariantDark {
+  opacity: 1;
+  visibility: visible;
 }
 
 .heroDesc {
@@ -454,7 +505,11 @@
     padding-bottom: var(--orot-space-8);
   }
 
-  .heroTitle {
-    font-size: clamp(2rem, 9vw, 3rem);
+  .heroTitleLogoStack {
+    width: min(100%, clamp(170px, 58vw, 280px));
+  }
+
+  .heroTitleLogoImage {
+    max-height: 68px;
   }
 }

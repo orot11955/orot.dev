@@ -957,12 +957,17 @@ export async function demoUploadImage<T>(
   if (scope === 'studio' && resource === 'settings' && idOrAction === 'media') {
     const key = action ?? 'about_nametag_image';
     const value =
-      key === 'site_logo' ||
-      key === 'site_logo_light' ||
-      key === 'site_logo_dark' ||
-      key === 'site_og_image'
-        ? '/demo-media/demo-hero.svg'
-        : '/demo-media/demo-nametag.svg';
+      key === 'site_logo' || key === 'site_logo_light'
+        ? '/full_orot_black.png'
+        : key === 'site_logo_dark'
+          ? '/full_orot_white.png'
+          : key === 'home_hero_logo_light'
+            ? '/font_orot_black.png'
+            : key === 'home_hero_logo_dark'
+              ? '/font_orot_white.png'
+              : key === 'site_og_image'
+                ? '/demo-media/demo-hero.svg'
+                : '/demo-media/demo-nametag.svg';
 
     return demoPatch<T>(
       '/studio/settings',

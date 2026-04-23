@@ -1,5 +1,6 @@
 "use client";
 
+import Image from 'next/image';
 import Link from 'next/link';
 import {
   ArrowUpRight,
@@ -20,6 +21,9 @@ import { HomeHeroImage } from './HomeHeroImage';
 import { HomePostCard } from './HomePostCard';
 import styles from './HomePage.module.css';
 
+const HERO_LOGO_LIGHT_FALLBACK_SRC = '/font_orot_black.png';
+const HERO_LOGO_DARK_FALLBACK_SRC = '/font_orot_white.png';
+
 interface HomePageProps {
   posts: PostListItem[];
   photos: GalleryItem[];
@@ -28,6 +32,47 @@ interface HomePageProps {
   tags: string[];
   settings: PublicSettings | null;
   configuredHeroPhoto: GalleryItem | null;
+}
+
+function HeroTitleLogo({
+  siteName,
+  lightSrc,
+  darkSrc,
+}: {
+  siteName: string;
+  lightSrc: string;
+  darkSrc: string;
+}) {
+  const renderVariant = (src: string, variant: 'light' | 'dark') => {
+    const variantClass =
+      variant === 'dark'
+        ? styles.heroTitleLogoVariantDark
+        : styles.heroTitleLogoVariantLight;
+
+    return (
+      <Image
+        src={src}
+        alt=""
+        width={936}
+        height={224}
+        priority
+        unoptimized
+        className={`${styles.heroTitleLogoImage} ${styles.heroTitleLogoVariant} ${variantClass}`}
+        sizes="(max-width: 620px) 54vw, (max-width: 960px) 42vw, 360px"
+        aria-hidden="true"
+      />
+    );
+  };
+
+  return (
+    <h1 className={styles.heroTitle}>
+      <span className={styles.visuallyHidden}>{siteName}</span>
+      <span className={styles.heroTitleLogoStack} aria-hidden="true">
+        {renderVariant(lightSrc, 'light')}
+        {renderVariant(darkSrc, 'dark')}
+      </span>
+    </h1>
+  );
 }
 
 export function HomePage({
@@ -56,6 +101,10 @@ export function HomePage({
     heroPhoto?.title ||
     (configuredHeroUrl ? `${siteName} 메인 이미지` : `${siteName} 대표 이미지`);
   const heroY = settings?.home_hero_image_position_y || '50%';
+  const heroLogoLightSrc =
+    resolveAssetUrl(settings?.home_hero_logo_light) || HERO_LOGO_LIGHT_FALLBACK_SRC;
+  const heroLogoDarkSrc =
+    resolveAssetUrl(settings?.home_hero_logo_dark) || HERO_LOGO_DARK_FALLBACK_SRC;
 
   const ongoingSeries = series.slice(0, 4);
   const topTags = tags.slice(0, 18);
@@ -79,8 +128,12 @@ export function HomePage({
           <div className={styles.heroOverlay} />
         </div>
         <div className={styles.heroContent}>
-          <span className={styles.heroEyebrow}>WELCOME</span>
-          <h1 className={styles.heroTitle}>{siteName}</h1>
+          <span className={styles.heroEyebrow}>Hi there</span>
+          <HeroTitleLogo
+            siteName={siteName}
+            lightSrc={heroLogoLightSrc}
+            darkSrc={heroLogoDarkSrc}
+          />
           <p className={styles.heroDesc}>{siteDesc}</p>
           <HomeHeroActions />
         </div>

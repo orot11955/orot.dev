@@ -312,6 +312,8 @@ export interface PublicSettings {
   site_logo_dark: string;
   seo_home_title: string;
   seo_home_description: string;
+  home_hero_logo_light: string;
+  home_hero_logo_dark: string;
   home_hero_image: string;
   home_hero_image_position_y: string;
   about_content: string;

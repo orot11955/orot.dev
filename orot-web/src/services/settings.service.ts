@@ -11,6 +11,8 @@ export type ManagedSettingsMediaKey =
   | 'site_logo'
   | 'site_logo_light'
   | 'site_logo_dark'
+  | 'home_hero_logo_light'
+  | 'home_hero_logo_dark'
   | 'site_og_image'
   | 'about_nametag_image';
 

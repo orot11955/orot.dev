@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   Alert,
   Button,
@@ -235,6 +235,12 @@ function SiteInfoSection({ settings, onSave, onSettingsChange }: SectionProps) {
     settings.site_logo_light ?? settings.site_logo ?? '',
   );
   const [siteLogoDark, setSiteLogoDark] = useState(settings.site_logo_dark ?? '');
+  const [homeHeroLogoLight, setHomeHeroLogoLight] = useState(
+    settings.home_hero_logo_light ?? '',
+  );
+  const [homeHeroLogoDark, setHomeHeroLogoDark] = useState(
+    settings.home_hero_logo_dark ?? '',
+  );
   const [siteOgImage, setSiteOgImage] = useState(settings.site_og_image ?? '');
   const [homeHeroImage, setHomeHeroImage] = useState(settings.home_hero_image ?? '');
   const [heroCandidates, setHeroCandidates] = useState<GalleryItem[]>([]);
@@ -290,6 +296,8 @@ function SiteInfoSection({ settings, onSave, onSettingsChange }: SectionProps) {
         const next = await studioSettingsService.uploadMedia(key, file);
         setSiteLogoLight(next.site_logo_light ?? next.site_logo ?? '');
         setSiteLogoDark(next.site_logo_dark ?? '');
+        setHomeHeroLogoLight(next.home_hero_logo_light ?? '');
+        setHomeHeroLogoDark(next.home_hero_logo_dark ?? '');
         setSiteOgImage(next.site_og_image ?? '');
         onSettingsChange?.(next);
         setMediaUploadNotice('이미지가 업로드되었습니다.');
@@ -311,6 +319,8 @@ function SiteInfoSection({ settings, onSave, onSettingsChange }: SectionProps) {
           site_logo: '',
           site_logo_light: siteLogoLight.trim(),
           site_logo_dark: siteLogoDark.trim(),
+          home_hero_logo_light: homeHeroLogoLight.trim(),
+          home_hero_logo_dark: homeHeroLogoDark.trim(),
           site_og_image: siteOgImage.trim(),
           home_hero_image: homeHeroImage.trim(),
           home_hero_image_position_y: homeHeroImagePositionY,
@@ -324,142 +334,219 @@ function SiteInfoSection({ settings, onSave, onSettingsChange }: SectionProps) {
   return (
     <SettingsSectionShell
       title="사이트 정보"
-      description="사이트 이름, 설명, 로고, 기본 OpenGraph 이미지를 설정합니다."
+      description="사이트 기본 정보와 공개 헤더 로고, 홈 hero 브랜드, 대표 공유 이미지를 한 곳에서 관리합니다."
       footer={<SettingsSubmitButton onClick={submit} loading={saving} />}
     >
-      <div className={styles.fieldGrid}>
-        <label className={styles.field}>
-          <span className={styles.fieldLabel}>사이트 이름</span>
-          <Input value={siteName} onChange={(e) => setSiteName(e.target.value)} />
-        </label>
-        <label className={`${styles.field} ${styles.fieldWide}`}>
-          <span className={styles.fieldLabel}>사이트 설명</span>
-          <textarea
-            className={styles.textarea}
-            value={siteDescription}
-            onChange={(e) => setSiteDescription(e.target.value)}
-          />
-          <span className={styles.fieldHelp}>홈 hero 및 SEO 메타 description에 사용됩니다.</span>
-        </label>
-        <ManagedSettingsImageField
-          label="라이트 모드 로고"
-          value={siteLogoLight}
-          previewLabel="라이트 모드 로고 미리보기"
-          placeholder="기본 블랙 OROT 로고 사용"
-          help="Light, Sepia처럼 밝은 배경 테마의 공개 헤더에 사용됩니다."
-          previewTone="light"
-          uploading={uploadingMediaKey === 'site_logo_light'}
-          onSelect={(file) => handleMediaUpload('site_logo_light', file)}
-          onClear={() => setSiteLogoLight('')}
-        />
-        <ManagedSettingsImageField
-          label="다크 모드 로고"
-          value={siteLogoDark}
-          previewLabel="다크 모드 로고 미리보기"
-          placeholder="기본 화이트 OROT 로고 사용"
-          help="Dark, Forest, Ocean처럼 어두운 배경 테마의 공개 헤더에 사용됩니다."
-          previewTone="dark"
-          uploading={uploadingMediaKey === 'site_logo_dark'}
-          onSelect={(file) => handleMediaUpload('site_logo_dark', file)}
-          onClear={() => setSiteLogoDark('')}
-        />
-        <ManagedSettingsImageField
-          label="기본 OpenGraph 이미지"
-          value={siteOgImage}
-          previewLabel="OG 이미지 미리보기"
-          placeholder="기본 OROT 이미지 사용"
-          help="1200 x 630 권장. 각 글에 OG 이미지가 없을 때 이 값을 사용합니다."
-          variant="wide"
-          uploading={uploadingMediaKey === 'site_og_image'}
-          onSelect={(file) => handleMediaUpload('site_og_image', file)}
-          onClear={() => setSiteOgImage('')}
-        />
+      <div className={styles.settingsStack}>
         {mediaUploadNotice && (
-          <div className={styles.fieldWide}>
+          <div>
             <Alert type="success" message={mediaUploadNotice} />
           </div>
         )}
         {mediaUploadError && (
-          <div className={styles.fieldWide}>
+          <div>
             <Alert type="error" message={mediaUploadError} />
           </div>
         )}
-        <div className={`${styles.field} ${styles.fieldWide}`}>
-          <span className={styles.fieldLabel}>메인 화면 배경 사진</span>
-          <span className={styles.fieldHelp}>
-            업로드된 사진 중 하나를 선택하면 홈 상단 hero에 우선 노출됩니다. 선택하지 않으면 첫 번째 공개 사진, 그다음 기본 OG 이미지를 사용합니다.
-          </span>
-          {heroLoading ? (
-            <div className={styles.inlineStatus}>
-              <Spin size="sm" />
-              <span className={styles.fieldHelp}>사진 목록을 불러오는 중입니다.</span>
-            </div>
-          ) : heroLoadError ? (
-            <Alert
-              type="error"
-              message="사진 목록을 불러오지 못했습니다."
-              description={heroLoadError}
-            />
-          ) : (
-            <>
-              <div className={styles.mediaPickerToolbar}>
-                <Button
-                  size="sm"
-                  variant={homeHeroImage ? 'outlined' : 'solid'}
-                  onClick={() => setHomeHeroImage('')}
-                >
-                  자동 선택 사용
-                </Button>
-                <span className={styles.fieldHelp}>
-                  현재 {homeHeroImage ? '수동 선택 사용 중' : '자동 선택 사용 중'}
-                </span>
-              </div>
-              <div className={styles.mediaPickerScroller}>
-                <div className={styles.mediaPickerGrid}>
-                  {heroCandidates.map((photo) => {
-                    const previewUrl = resolveAssetUrl(
-                      photo.thumbnailUrl ?? photo.imageUrl,
-                    );
-                    const selected = homeHeroImage === photo.imageUrl;
+        <SettingsGroup
+          title="기본 정보"
+          description="사이트 이름과 설명을 먼저 잡아두면 홈 hero 소개 문구와 SEO 기본값이 함께 정리됩니다."
+        >
+          <div className={styles.fieldGrid}>
+            <label className={styles.field}>
+              <span className={styles.fieldLabel}>사이트 이름</span>
+              <Input value={siteName} onChange={(e) => setSiteName(e.target.value)} />
+            </label>
+            <label className={`${styles.field} ${styles.fieldWide}`}>
+              <span className={styles.fieldLabel}>사이트 설명</span>
+              <textarea
+                className={styles.textarea}
+                value={siteDescription}
+                onChange={(e) => setSiteDescription(e.target.value)}
+              />
+              <span className={styles.fieldHelp}>홈 hero 및 SEO 메타 description에 사용됩니다.</span>
+            </label>
+          </div>
+        </SettingsGroup>
 
-                    return (
-                      <button
-                        key={photo.id}
-                        type="button"
-                        className={`${styles.mediaPickerCard}${selected ? ` ${styles.mediaPickerCardActive}` : ''}`}
-                        onClick={() => setHomeHeroImage(photo.imageUrl)}
-                      >
-                        <div
-                          className={styles.mediaPickerThumb}
-                          style={{ backgroundImage: `url("${previewUrl}")` }}
-                        />
-                        <div className={styles.mediaPickerMeta}>
-                          <span className={styles.mediaPickerTitle}>
-                            {photo.title?.trim() || `사진 #${photo.id}`}
-                          </span>
-                          <span className={styles.mediaPickerHint}>
-                            {photo.isPublished ? '공개' : '비공개'}
-                          </span>
-                        </div>
-                      </button>
-                    );
-                  })}
+        <SettingsGroup
+          title="상단 헤더 로고"
+          description="공개 사이트 상단 고정 헤더에 노출되는 로고입니다."
+        >
+          <div className={styles.fieldGrid}>
+            <ManagedSettingsImageField
+              label="라이트 모드 로고"
+              value={siteLogoLight}
+              previewLabel="라이트 모드 헤더 로고 미리보기"
+              placeholder="기본 블랙 OROT 로고 사용"
+              help="Light, Sepia처럼 밝은 배경 테마의 공개 헤더에 사용됩니다."
+              previewTone="light"
+              fullWidth={false}
+              uploading={uploadingMediaKey === 'site_logo_light'}
+              onSelect={(file) => handleMediaUpload('site_logo_light', file)}
+              onClear={() => setSiteLogoLight('')}
+            />
+            <ManagedSettingsImageField
+              label="다크 모드 로고"
+              value={siteLogoDark}
+              previewLabel="다크 모드 헤더 로고 미리보기"
+              placeholder="기본 화이트 OROT 로고 사용"
+              help="Dark, Forest, Ocean처럼 어두운 배경 테마의 공개 헤더에 사용됩니다."
+              previewTone="dark"
+              fullWidth={false}
+              uploading={uploadingMediaKey === 'site_logo_dark'}
+              onSelect={(file) => handleMediaUpload('site_logo_dark', file)}
+              onClear={() => setSiteLogoDark('')}
+            />
+          </div>
+        </SettingsGroup>
+
+        <SettingsGroup
+          title="홈 Hero"
+          description="홈 상단 hero에 들어가는 브랜드 로고와 배경 사진을 함께 관리합니다."
+        >
+          <div className={styles.fieldGrid}>
+            <ManagedSettingsImageField
+              label="라이트 모드 hero 로고"
+              value={homeHeroLogoLight}
+              previewLabel="라이트 모드 hero 로고 미리보기"
+              placeholder="기본 블랙 hero 워드마크 사용"
+              help="밝은 테마에서 OROT.DEV 텍스트 대신 노출됩니다."
+              previewTone="light"
+              fullWidth={false}
+              uploading={uploadingMediaKey === 'home_hero_logo_light'}
+              onSelect={(file) => handleMediaUpload('home_hero_logo_light', file)}
+              onClear={() => setHomeHeroLogoLight('')}
+            />
+            <ManagedSettingsImageField
+              label="다크 모드 hero 로고"
+              value={homeHeroLogoDark}
+              previewLabel="다크 모드 hero 로고 미리보기"
+              placeholder="기본 화이트 hero 워드마크 사용"
+              help="Dark, Forest, Ocean 테마 hero에서 노출됩니다."
+              previewTone="dark"
+              fullWidth={false}
+              uploading={uploadingMediaKey === 'home_hero_logo_dark'}
+              onSelect={(file) => handleMediaUpload('home_hero_logo_dark', file)}
+              onClear={() => setHomeHeroLogoDark('')}
+            />
+            <div className={`${styles.field} ${styles.fieldWide}`}>
+              <span className={styles.fieldLabel}>메인 화면 배경 사진</span>
+              <span className={styles.fieldHelp}>
+                업로드된 사진 중 하나를 선택하면 홈 상단 hero에 우선 노출됩니다. 선택하지 않으면 첫 번째 공개 사진, 그다음 기본 OG 이미지를 사용합니다.
+              </span>
+              {heroLoading ? (
+                <div className={styles.inlineStatus}>
+                  <Spin size="sm" />
+                  <span className={styles.fieldHelp}>사진 목록을 불러오는 중입니다.</span>
                 </div>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-      <div className={styles.previewGrid}>
-        <MediaPreviewCard
-          label="메인 화면 미리보기"
-          imageUrl={homeHeroImage}
-          imagePositionY={homeHeroImagePositionY}
-          onChangeImagePositionY={setHomeHeroImagePositionY}
-          placeholder="자동 선택 사용 시 공개 사진 또는 OG 이미지가 대신 사용됩니다."
-        />
+              ) : heroLoadError ? (
+                <Alert
+                  type="error"
+                  message="사진 목록을 불러오지 못했습니다."
+                  description={heroLoadError}
+                />
+              ) : (
+                <>
+                  <div className={styles.mediaPickerToolbar}>
+                    <Button
+                      size="sm"
+                      variant={homeHeroImage ? 'outlined' : 'solid'}
+                      onClick={() => setHomeHeroImage('')}
+                    >
+                      자동 선택 사용
+                    </Button>
+                    <span className={styles.fieldHelp}>
+                      현재 {homeHeroImage ? '수동 선택 사용 중' : '자동 선택 사용 중'}
+                    </span>
+                  </div>
+                  <div className={styles.mediaPickerScroller}>
+                    <div className={styles.mediaPickerGrid}>
+                      {heroCandidates.map((photo) => {
+                        const previewUrl = resolveAssetUrl(
+                          photo.thumbnailUrl ?? photo.imageUrl,
+                        );
+                        const selected = homeHeroImage === photo.imageUrl;
+
+                        return (
+                          <button
+                            key={photo.id}
+                            type="button"
+                            className={`${styles.mediaPickerCard}${selected ? ` ${styles.mediaPickerCardActive}` : ''}`}
+                            onClick={() => setHomeHeroImage(photo.imageUrl)}
+                          >
+                            <div
+                              className={styles.mediaPickerThumb}
+                              style={{ backgroundImage: `url("${previewUrl}")` }}
+                            />
+                            <div className={styles.mediaPickerMeta}>
+                              <span className={styles.mediaPickerTitle}>
+                                {photo.title?.trim() || `사진 #${photo.id}`}
+                              </span>
+                              <span className={styles.mediaPickerHint}>
+                                {photo.isPublished ? '공개' : '비공개'}
+                              </span>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+          <div className={styles.previewGrid}>
+            <MediaPreviewCard
+              label="메인 화면 미리보기"
+              imageUrl={homeHeroImage}
+              imagePositionY={homeHeroImagePositionY}
+              onChangeImagePositionY={setHomeHeroImagePositionY}
+              placeholder="자동 선택 사용 시 공개 사진 또는 OG 이미지가 대신 사용됩니다."
+            />
+          </div>
+        </SettingsGroup>
+
+        <SettingsGroup
+          title="공유 이미지"
+          description="기본 OpenGraph 이미지는 홈 공유 카드와 개별 글 OG 이미지 fallback에 사용됩니다."
+        >
+          <div className={styles.fieldGrid}>
+            <ManagedSettingsImageField
+              label="기본 OpenGraph 이미지"
+              value={siteOgImage}
+              previewLabel="OG 이미지 미리보기"
+              placeholder="기본 OROT 이미지 사용"
+              help="1200 x 630 권장. 각 글에 OG 이미지가 없을 때 이 값을 사용합니다."
+              variant="wide"
+              uploading={uploadingMediaKey === 'site_og_image'}
+              onSelect={(file) => handleMediaUpload('site_og_image', file)}
+              onClear={() => setSiteOgImage('')}
+            />
+          </div>
+        </SettingsGroup>
       </div>
     </SettingsSectionShell>
+  );
+}
+
+function SettingsGroup({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className={styles.settingsGroup}>
+      <div className={styles.settingsGroupHeader}>
+        <h4 className={styles.settingsGroupTitle}>{title}</h4>
+        <p className={styles.settingsGroupDesc}>{description}</p>
+      </div>
+      {children}
+    </section>
   );
 }
 
@@ -471,6 +558,7 @@ function ManagedSettingsImageField({
   help,
   variant = 'logo',
   previewTone = 'neutral',
+  fullWidth = true,
   uploading,
   onSelect,
   onClear,
@@ -482,6 +570,7 @@ function ManagedSettingsImageField({
   help: string;
   variant?: 'logo' | 'wide';
   previewTone?: 'neutral' | 'light' | 'dark';
+  fullWidth?: boolean;
   uploading: boolean;
   onSelect: (file: File | null) => void;
   onClear: () => void;
@@ -495,7 +584,7 @@ function ManagedSettingsImageField({
         : '';
 
   return (
-    <div className={`${styles.field} ${styles.fieldWide}`}>
+    <div className={`${styles.field}${fullWidth ? ` ${styles.fieldWide}` : ''}`}>
       <span className={styles.fieldLabel}>{label}</span>
       <div className={styles.settingsMediaRow}>
         <div

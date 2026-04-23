@@ -52,8 +52,7 @@ export function PhotosPage({ photoList, currentSort }: PhotosPageProps) {
 }
 
 function PhotoTile({ photo }: { photo: GalleryItem }) {
-  const src =
-    resolveAssetUrl(photo.thumbnailUrl) || resolveAssetUrl(photo.imageUrl);
+  const src = resolveAssetUrl(photo.thumbnailUrl);
   const alt = photo.altText || photo.title || `photo-${photo.id}`;
   const ratio =
     photo.width && photo.height
@@ -61,7 +60,7 @@ function PhotoTile({ photo }: { photo: GalleryItem }) {
       : '4 / 5';
 
   return (
-    <Link href={`/photos/${photo.id}`} className={styles.tile}>
+    <Link href={`/photos/${photo.id}`} prefetch={false} className={styles.tile}>
       <div className={styles.tileMedia} style={{ aspectRatio: ratio }}>
         {src ? (
           <Image

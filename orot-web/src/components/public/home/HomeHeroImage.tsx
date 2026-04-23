@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import styles from './HomePage.module.css';
 
@@ -27,7 +27,7 @@ export function HomeHeroImage({
   const hasPreview = Boolean(previewSrc && previewSrc !== src);
   const [isLoaded, setIsLoaded] = useState(() => loadedHeroSources.has(src));
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const originalImage = originalImageRef.current;
     const isAlreadyLoaded = Boolean(
       originalImage?.complete && originalImage.naturalWidth > 0,

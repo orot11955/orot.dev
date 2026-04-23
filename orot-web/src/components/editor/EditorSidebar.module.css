@@ -31,37 +31,71 @@
   border-bottom: 1px solid var(--orot-color-border);
 }
 
+.filterHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--orot-space-2);
+  padding: var(--orot-space-3) var(--orot-space-4) 0;
+}
+
+.filterLabel {
+  color: var(--orot-color-text-muted);
+  font-size: var(--orot-font-size-xs);
+  font-weight: var(--orot-font-weight-medium);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.filterReset {
+  appearance: none;
+  border: 0;
+  padding: 2px var(--orot-space-2);
+  border-radius: var(--orot-radius-sm);
+  background: transparent;
+  color: var(--orot-color-text-muted);
+  font-size: var(--orot-font-size-xs);
+  cursor: pointer;
+}
+
+.filterReset:hover {
+  background: var(--orot-color-bg-hover);
+  color: var(--orot-color-text);
+}
+
 .filters {
   display: flex;
   flex-wrap: wrap;
   gap: var(--orot-space-1);
-  padding: var(--orot-space-2) var(--orot-space-3);
+  padding: var(--orot-space-2) var(--orot-space-3) var(--orot-space-3);
   border-bottom: 1px solid var(--orot-color-border);
 }
 
 .filterButton {
   appearance: none;
-  border: 0;
+  border: 1px solid var(--orot-color-border);
   padding: 4px var(--orot-space-3);
   border-radius: 999px;
   font-size: var(--orot-font-size-xs);
   font-weight: var(--orot-font-weight-medium);
-  background: transparent;
+  background: var(--orot-color-bg);
   color: var(--orot-color-text-muted);
   cursor: pointer;
   transition:
     background-color var(--orot-transition-base),
+    border-color var(--orot-transition-base),
     color var(--orot-transition-base);
 }
 
 .filterButton:hover {
-  background: var(--orot-color-bg-hover);
+  border-color: var(--public-panel-border);
   color: var(--orot-color-text);
 }
 
 .filterButton[data-active='true'] {
-  background: var(--orot-color-bg-active);
-  color: var(--orot-color-text);
+  background: var(--orot-color-text);
+  border-color: var(--orot-color-text);
+  color: var(--orot-color-bg);
 }
 
 .list {

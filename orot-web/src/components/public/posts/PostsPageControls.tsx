@@ -1,9 +1,14 @@
 'use client';
 
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { Input, Search, Segmented, Select, X } from 'orot-ui';
+import { Input, Search, Select, X } from 'orot-ui';
+import { useFilterParams } from '@/hooks';
 import type { Category, PostSort, Series } from '@/types';
+import {
+  PublicFilterChip,
+  PublicFilterGroup,
+  PublicFilterPanel,
+} from '../shared/PublicFilterPanel';
 import styles from './PostsPage.module.css';
 
 interface PostsPageControlsProps {
@@ -27,8 +32,7 @@ export function PostsPageControls({
   currentCategory,
   currentSort,
 }: PostsPageControlsProps) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const { updateParams, resetParams } = useFilterParams('/posts');
   const [keyword, setKeyword] = useState(currentSearch);
 
   useEffect(() => {
@@ -41,7 +45,11 @@ export function PostsPageControls({
   );
 
   const hasResettableFilters = Boolean(
-    currentSearch || currentTag || currentSeries || currentCategory,
+    currentSearch ||
+      currentTag ||
+      currentSeries ||
+      currentCategory ||
+      currentSort !== 'latest',
   );
 
   const sortOptions: Array<{ label: string; value: PostSort }> = [
@@ -59,24 +67,6 @@ export function PostsPageControls({
     ...categories.map((item) => ({ label: item.name, value: item.slug })),
   ];
 
-  const updateParams = (patch: Record<string, string | null>) => {
-    const next = new URLSearchParams(searchParams.toString());
-
-    Object.entries(patch).forEach(([key, value]) => {
-      if (!value) {
-        next.delete(key);
-        return;
-      }
-
-      next.set(key, value);
-    });
-
-    next.delete('page');
-
-    const queryString = next.toString();
-    router.push(queryString ? `/posts?${queryString}` : '/posts');
-  };
-
   const handleSearchSubmit = (event: FormEvent) => {
     event.preventDefault();
     updateParams({ search: keyword.trim() || null });
@@ -84,145 +74,92 @@ export function PostsPageControls({
 
   return (
     <>
-      <div className={styles.toolbar}>
-        <form onSubmit={handleSearchSubmit} className={styles.searchForm}>
-          <Input
-            type="search"
-            size="md"
-            prefix={<Search size={14} />}
-            placeholder="제목, 내용으로 검색"
-            value={keyword}
-            onChange={(event) => {
-              const nextKeyword = event.target.value;
-              setKeyword(nextKeyword);
+      <PublicFilterPanel
+        hasResettableFilters={hasResettableFilters}
+        onReset={resetParams}
+        search={
+          <form onSubmit={handleSearchSubmit} className={styles.searchForm}>
+            <Input
+              type="search"
+              size="md"
+              prefix={<Search size={14} />}
+              placeholder="제목, 내용으로 검색"
+              value={keyword}
+              onChange={(event) => {
+                const nextKeyword = event.target.value;
+                setKeyword(nextKeyword);
 
-              if (nextKeyword === '' && currentSearch) {
-                updateParams({ search: null });
+                if (nextKeyword === '' && currentSearch) {
+                  updateParams({ search: null });
+                }
+              }}
+              allowClear
+              className={styles.search}
+            />
+          </form>
+        }
+        controls={
+          <>
+            <Select
+              size="md"
+              value={currentCategory}
+              onChange={(value) =>
+                updateParams({
+                  categorySlug:
+                    value == null || value === '' ? null : String(value),
+                })
               }
-            }}
-            allowClear
-            className={styles.search}
-          />
-        </form>
-
-        <div className={styles.toolbarControls}>
-          <Select
-            size="md"
-            value={currentCategory}
-            onChange={(value) =>
-              updateParams({
-                categorySlug: value == null || value === '' ? null : String(value),
-              })
-            }
-            options={categoryOptions}
-            placeholder="카테고리"
-            className={styles.select}
-          />
-          <Select
-            size="md"
-            value={currentSeries}
-            onChange={(value) =>
-              updateParams({
-                seriesId: value == null || value === '' ? null : String(value),
-              })
-            }
-            options={seriesOptions}
-            placeholder="시리즈"
-            className={styles.select}
-          />
-          <div className={styles.sortWrap}>
-            <Segmented
-              size="sm"
+              options={categoryOptions}
+              placeholder="카테고리"
+              className={styles.select}
+            />
+            <Select
+              size="md"
+              value={currentSeries}
+              onChange={(value) =>
+                updateParams({
+                  seriesId: value == null || value === '' ? null : String(value),
+                })
+              }
+              options={seriesOptions}
+              placeholder="시리즈"
+              className={styles.select}
+            />
+            <Select
+              size="md"
               value={currentSort}
               onChange={(value) =>
-                updateParams({ sort: value === 'latest' ? null : String(value) })
+                updateParams({
+                  sort: value === 'latest' ? null : String(value),
+                })
               }
               options={sortOptions}
+              placeholder="정렬"
+              className={styles.select}
             />
-          </div>
-        </div>
-      </div>
-
-      {categories.length > 0 && (
-        <div className={styles.tagRow}>
-          <div className={styles.tagScroll}>
-            <button
-              type="button"
-              onClick={() => updateParams({ categorySlug: null })}
-              className={[
-                styles.tagChip,
-                !currentCategory ? styles.tagChipActive : '',
-              ].join(' ')}
-            >
-              전체 카테고리
-            </button>
-            {categories.map((category) => (
-              <button
-                key={category.id}
-                type="button"
-                onClick={() => updateParams({ categorySlug: category.slug })}
-                className={[
-                  styles.tagChip,
-                  currentCategory === category.slug ? styles.tagChipActive : '',
-                ].join(' ')}
-              >
-                {category.name}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {tags.length > 0 && (
-        <div className={styles.tagRow}>
-          <div className={styles.tagScroll}>
-            <button
-              type="button"
+          </>
+        }
+      >
+        {tags.length > 0 && (
+          <PublicFilterGroup label="태그">
+            <PublicFilterChip
+              active={!currentTag}
               onClick={() => updateParams({ tag: null })}
-              className={[
-                styles.tagChip,
-                !currentTag ? styles.tagChipActive : '',
-              ].join(' ')}
             >
-              전체
-            </button>
+              전체 태그
+            </PublicFilterChip>
             {tags.map((tag) => (
-              <button
+              <PublicFilterChip
                 key={tag}
-                type="button"
+                active={currentTag === tag}
                 onClick={() => updateParams({ tag })}
-                className={[
-                  styles.tagChip,
-                  currentTag === tag ? styles.tagChipActive : '',
-                ].join(' ')}
               >
                 #{tag}
-              </button>
+              </PublicFilterChip>
             ))}
-          </div>
-          {hasResettableFilters && (
-            <button
-              type="button"
-              className={styles.reset}
-              onClick={() => router.push('/posts')}
-            >
-              <X size={12} /> 필터 초기화
-            </button>
-          )}
-        </div>
-      )}
-
-      {tags.length === 0 && hasResettableFilters && (
-        <div className={styles.resetRow}>
-          <button
-            type="button"
-            className={styles.reset}
-            onClick={() => router.push('/posts')}
-          >
-            <X size={12} /> 필터 초기화
-          </button>
-        </div>
-      )}
+          </PublicFilterGroup>
+        )}
+      </PublicFilterPanel>
 
       {activeSeries && (
         <div className={styles.seriesBanner}>

@@ -1,4 +1,4 @@
-import { IsOptional, IsInt, Min, Max, IsEnum } from 'class-validator';
+import { IsOptional, IsInt, Min, Max, IsEnum, IsString } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { CommentStatus } from '@prisma/client';
@@ -14,6 +14,11 @@ export class QueryCommentDto {
   @IsOptional()
   @IsEnum(CommentStatus)
   status?: CommentStatus;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  search?: string;
 
   @ApiProperty({ required: false, default: 1 })
   @IsOptional()

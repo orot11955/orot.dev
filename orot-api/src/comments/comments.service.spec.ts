@@ -14,6 +14,7 @@ function createPrismaMock() {
     comment: {
       findUnique: jest.fn(),
       create: jest.fn(),
+      count: jest.fn(),
       findMany: jest.fn(),
       update: jest.fn(),
     },
@@ -133,5 +134,36 @@ describe('CommentsService', () => {
     expect(result[0].replies[0].id).toBe(2);
     expect(result[0].replies[0].replies).toHaveLength(1);
     expect(result[0].replies[0].replies[0].id).toBe(3);
+  });
+
+  it('applies studio search before pagination', async () => {
+    prisma.comment.count.mockResolvedValue(0);
+    prisma.comment.findMany.mockResolvedValue([]);
+
+    await service.findAll({
+      search: 'hello',
+      page: 2,
+      limit: 5,
+    });
+
+    const expectedWhere = {
+      OR: [
+        { content: { contains: 'hello' } },
+        { authorName: { contains: 'hello' } },
+        { authorEmail: { contains: 'hello' } },
+        { post: { title: { contains: 'hello' } } },
+      ],
+    };
+
+    expect(prisma.comment.count).toHaveBeenCalledWith({
+      where: expectedWhere,
+    });
+    expect(prisma.comment.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expectedWhere,
+        skip: 5,
+        take: 5,
+      }),
+    );
   });
 });

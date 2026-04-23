@@ -98,6 +98,13 @@ export function PostsManagementPage() {
     title: '요청을 처리하지 못했습니다.',
   });
 
+  const resetFilters = useCallback(() => {
+    setStatus('all');
+    setSort('latest');
+    setCategoryId('all');
+    resetSearch();
+  }, [resetSearch]);
+
   const load = useCallback(async () => {
     const result = await runLatest(async () => {
       const query: PostQuery = {
@@ -403,13 +410,11 @@ export function PostsManagementPage() {
       />
 
       <ManagementToolbar
-        className={styles.toolbar}
-        actionsClassName={styles.toolbarActions}
         searchValue={pendingSearch}
         searchPlaceholder="제목·내용·요약 검색"
         onSearchChange={setPendingSearch}
         onSearchSubmit={submitSearch}
-        onSearchReset={resetSearch}
+        onSearchReset={resetFilters}
       >
         <Select
           options={STATUS_OPTIONS}

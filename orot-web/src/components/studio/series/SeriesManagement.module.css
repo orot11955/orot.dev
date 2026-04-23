@@ -55,27 +55,6 @@
   color: var(--orot-color-text-muted);
 }
 
-.toolbar {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: var(--orot-space-3);
-  align-items: center;
-  padding: var(--orot-space-4);
-  border: 1px solid var(--public-panel-border);
-  border-radius: var(--orot-radius-lg);
-  background: var(--public-panel-bg);
-}
-
-.toolbarActions {
-  display: flex;
-  gap: var(--orot-space-2);
-  justify-content: flex-end;
-}
-
-.toolbar > * {
-  min-width: 0;
-}
-
 .tableCard {
   padding: var(--orot-space-4);
   border: 1px solid var(--public-panel-border);
@@ -337,16 +316,6 @@
 }
 
 @media (max-width: 1180px) {
-  .toolbar {
-    grid-template-columns: 1fr;
-  }
-  .toolbarActions {
-    justify-content: flex-end;
-    flex-wrap: wrap;
-  }
-  .toolbarActions > * {
-    flex: 1 1 auto;
-  }
   .formGrid {
     grid-template-columns: 1fr;
   }
@@ -381,14 +350,6 @@
 }
 
 @media (max-width: 1180px) {
-  .toolbarActions {
-    width: 100%;
-  }
-
-  .toolbarActions > * {
-    flex: 1 1 0;
-  }
-
   .tableCard {
     padding: var(--orot-space-2);
   }

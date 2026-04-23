@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { CommentStatus, PostStatus } from '@prisma/client';
+import { CommentStatus, PostStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { SETTING_KEYS } from '../settings/settings.constants';
 import { CreateCommentDto } from './dto/create-comment.dto';
@@ -88,15 +88,21 @@ export class CommentsService {
   }
 
   async findAll(query: QueryCommentDto) {
-    const { page = 1, limit = 20, postId, status } = query;
+    const { page = 1, limit = 20, postId, status, search } = query;
     const skip = (page - 1) * limit;
+    const normalizedSearch = search?.trim();
 
-    const where: {
-      postId?: number;
-      status?: CommentStatus;
-    } = {};
+    const where: Prisma.CommentWhereInput = {};
     if (postId !== undefined) where.postId = postId;
     if (status !== undefined) where.status = status;
+    if (normalizedSearch) {
+      where.OR = [
+        { content: { contains: normalizedSearch } },
+        { authorName: { contains: normalizedSearch } },
+        { authorEmail: { contains: normalizedSearch } },
+        { post: { title: { contains: normalizedSearch } } },
+      ];
+    }
 
     const [total, items] = await Promise.all([
       this.prisma.comment.count({ where }),

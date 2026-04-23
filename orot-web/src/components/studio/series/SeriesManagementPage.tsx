@@ -504,8 +504,6 @@ export function SeriesManagementPage() {
       />
 
       <ManagementToolbar
-        className={styles.toolbar}
-        actionsClassName={styles.toolbarActions}
         searchValue={pendingSearch}
         searchPlaceholder="제목·슬러그·설명 검색"
         onSearchChange={setPendingSearch}

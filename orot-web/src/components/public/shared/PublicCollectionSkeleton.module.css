@@ -75,6 +75,15 @@
   border-radius: 999px;
 }
 
+.filterPanel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--orot-space-3, 12px);
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
 .toolbar {
   display: flex;
   align-items: center;
@@ -96,10 +105,6 @@
   flex-shrink: 0;
 }
 
-.toolbarSpacer {
-  flex: 1 1 auto;
-}
-
 .toolbarSelect,
 .photoToolbarSelect {
   width: 200px;
@@ -108,26 +113,39 @@
 }
 
 .photoToolbarSelect {
-  width: 150px;
+  width: 220px;
 }
 
 .toolbarSort {
   width: 132px;
   height: 42px;
-  border-radius: 999px;
+  border-radius: var(--orot-radius-md, 12px);
+}
+
+.toolbarReset {
+  width: 94px;
+  height: 36px;
+  border-radius: var(--orot-radius-md, 12px);
 }
 
 .chipRows {
   display: flex;
   flex-direction: column;
   gap: var(--orot-space-2, 8px);
-  max-width: 640px;
 }
 
 .chipRow {
-  display: flex;
+  display: grid;
+  grid-template-columns: 64px repeat(4, max-content);
+  align-items: center;
   gap: var(--orot-space-2, 8px);
   overflow: hidden;
+}
+
+.chipLabel {
+  width: 52px;
+  height: 12px;
+  border-radius: 999px;
 }
 
 .chip,
@@ -296,8 +314,13 @@
 
   .toolbarSelect,
   .toolbarSort,
+  .toolbarReset,
   .photoToolbarSelect {
     width: 100%;
+  }
+
+  .chipRow {
+    grid-template-columns: 1fr;
   }
 }
 

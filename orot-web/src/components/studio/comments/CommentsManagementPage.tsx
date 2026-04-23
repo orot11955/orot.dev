@@ -90,6 +90,11 @@ export function CommentsManagementPage() {
     title: '요청을 처리하지 못했습니다.',
   });
 
+  const resetFilters = useCallback(() => {
+    setStatus('PENDING');
+    resetSearch();
+  }, [resetSearch]);
+
   const load = useCallback(async () => {
     const result = await runLatest(async () => {
       const query: CommentQuery = {
@@ -97,6 +102,7 @@ export function CommentsManagementPage() {
         limit: DEFAULT_LIMIT,
       };
       if (status !== 'ALL') query.status = status;
+      if (search) query.search = search;
 
       return studioCommentsService.getAll(query);
     });
@@ -105,22 +111,7 @@ export function CommentsManagementPage() {
       return;
     }
 
-    const normalizedQuery = search.trim().toLowerCase();
-    const filtered = normalizedQuery
-      ? result.data.filter((comment) => {
-          const haystack = [
-            comment.content,
-            comment.authorName,
-            comment.authorEmail,
-            comment.post?.title ?? '',
-          ]
-            .join(' ')
-            .toLowerCase();
-          return haystack.includes(normalizedQuery);
-        })
-      : result.data;
-
-    setComments(filtered);
+    setComments(result.data);
     setTotal(result.total);
   }, [page, status, search, runLatest]);
 
@@ -301,19 +292,17 @@ export function CommentsManagementPage() {
       />
 
       <ManagementToolbar
-        className={styles.toolbar}
-        actionsClassName={styles.toolbarActions}
         searchValue={pendingSearch}
         searchPlaceholder="내용·작성자·글 제목 검색"
         onSearchChange={setPendingSearch}
         onSearchSubmit={submitSearch}
-        onSearchReset={resetSearch}
+        onSearchReset={resetFilters}
       >
         <Select
           options={STATUS_OPTIONS}
           value={status}
           onChange={(value) => {
-            setStatus((value as StatusValue) ?? 'FILTERED');
+            setStatus((value as StatusValue) ?? 'PENDING');
             setPage(1);
           }}
         />

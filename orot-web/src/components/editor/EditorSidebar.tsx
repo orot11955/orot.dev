@@ -80,6 +80,13 @@ export function EditorSidebar({
     setPage(1);
   }, [pendingSearch]);
 
+  const resetFilters = useCallback(() => {
+    setFilter('all');
+    setPendingSearch('');
+    setSearch('');
+    setPage(1);
+  }, []);
+
   const handleCreate = useCallback(async () => {
     if (creating) return;
     setCreating(true);
@@ -107,6 +114,8 @@ export function EditorSidebar({
   );
 
   const items = useMemo(() => posts, [posts]);
+  const hasActiveFilters =
+    filter !== 'all' || Boolean(search) || Boolean(pendingSearch);
 
   return (
     <div className={styles.sidebar}>
@@ -128,15 +137,36 @@ export function EditorSidebar({
         <Input
           value={pendingSearch}
           placeholder="제목·내용 검색"
-          onChange={(event) => setPendingSearch(event.target.value)}
+          onChange={(event) => {
+            const nextSearch = event.target.value;
+            setPendingSearch(nextSearch);
+            if (!nextSearch && search) {
+              setSearch('');
+              setPage(1);
+            }
+          }}
           onKeyDown={(event) => {
             if (event.key === 'Enter') submitSearch();
           }}
           onBlur={submitSearch}
+          allowClear
         />
       </div>
 
-      <div className={styles.filters}>
+      <div className={styles.filterHeader}>
+        <span className={styles.filterLabel}>상태 필터</span>
+        {hasActiveFilters && (
+          <button
+            type="button"
+            className={styles.filterReset}
+            onClick={resetFilters}
+          >
+            필터 초기화
+          </button>
+        )}
+      </div>
+
+      <div className={styles.filters} role="group" aria-label="글 상태 필터">
         {EDITOR_FILTERS.map((item) => (
           <button
             type="button"

@@ -1,8 +1,9 @@
 'use client';
 
-import { useRouter, useSearchParams } from 'next/navigation';
 import { Select } from 'orot-ui';
+import { useFilterParams } from '@/hooks';
 import type { GallerySort } from '@/types';
+import { PublicFilterPanel } from '../shared/PublicFilterPanel';
 import styles from './PhotosPage.module.css';
 
 interface PhotosPageControlsProps {
@@ -27,34 +28,28 @@ function normalizeSort(value?: string | null): GallerySort {
 export function PhotosPageControls({
   currentSort,
 }: PhotosPageControlsProps) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const { updateParams } = useFilterParams('/photos');
+  const hasResettableFilters = currentSort !== 'manual';
 
   const handleSort = (value: string | number | null) => {
-    const next = new URLSearchParams(searchParams.toString());
     const sort = normalizeSort(value != null ? String(value) : undefined);
 
-    if (sort === 'manual') {
-      next.delete('sort');
-    } else {
-      next.set('sort', sort);
-    }
-
-    next.delete('page');
-
-    const queryString = next.toString();
-    router.push(queryString ? `/photos?${queryString}` : '/photos');
+    updateParams({ sort: sort === 'manual' ? null : sort });
   };
 
   return (
-    <div className={styles.toolbar}>
-      <Select
-        size="md"
-        value={currentSort}
-        options={SORT_OPTIONS}
-        className={styles.sortSelect}
-        onChange={(value) => handleSort(value as string | number | null)}
-      />
-    </div>
+    <PublicFilterPanel
+      hasResettableFilters={hasResettableFilters}
+      onReset={() => updateParams({ sort: null })}
+      controls={
+        <Select
+          size="md"
+          value={currentSort}
+          options={SORT_OPTIONS}
+          className={styles.sortSelect}
+          onChange={(value) => handleSort(value as string | number | null)}
+        />
+      }
+    />
   );
 }

@@ -101,6 +101,11 @@ export function PhotosManagementPage() {
     title: '요청을 처리하지 못했습니다.',
   });
 
+  const resetFilters = useCallback(() => {
+    setFilter('all');
+    resetSearch();
+  }, [resetSearch]);
+
   const load = useCallback(async () => {
     const result = await runLatest(async () => {
       const query: GalleryQuery = { page, limit: PAGE_SIZE };
@@ -370,13 +375,11 @@ export function PhotosManagementPage() {
       />
 
       <ManagementToolbar
-        className={styles.toolbar}
-        actionsClassName={styles.toolbarActions}
         searchValue={pendingSearch}
         searchPlaceholder="제목·설명·대체 텍스트 검색"
         onSearchChange={setPendingSearch}
         onSearchSubmit={submitSearch}
-        onSearchReset={resetSearch}
+        onSearchReset={resetFilters}
       >
         <Select
           options={FILTER_OPTIONS}

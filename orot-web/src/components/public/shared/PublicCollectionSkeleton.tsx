@@ -53,29 +53,31 @@ function PostsCollectionSkeleton() {
       <span className={styles.srOnly}>Loading posts</span>
       <SkeletonHeader />
 
-      <div className={styles.toolbar}>
-        <SkeletonBlock className={styles.toolbarSearch} />
-        <div className={styles.toolbarControls}>
-          <SkeletonBlock className={styles.toolbarSelect} />
-          <SkeletonBlock className={styles.toolbarSelect} />
-          <SkeletonBlock className={styles.toolbarSort} />
+      <div className={styles.filterPanel}>
+        <div className={styles.toolbar}>
+          <SkeletonBlock className={styles.toolbarSearch} />
+          <div className={styles.toolbarControls}>
+            <SkeletonBlock className={styles.toolbarSelect} />
+            <SkeletonBlock className={styles.toolbarSort} />
+            <SkeletonBlock className={styles.toolbarReset} />
+          </div>
         </div>
-      </div>
 
-      <div className={styles.chipRows} aria-hidden="true">
-        <div className={styles.chipRow}>
-          <SkeletonBlock className={styles.chipWide} />
-          <SkeletonBlock className={styles.chip} />
-          <SkeletonBlock className={styles.chipWide} />
-          <SkeletonBlock className={styles.chip} />
-          <SkeletonBlock className={styles.chipWide} />
-        </div>
-        <div className={styles.chipRow}>
-          <SkeletonBlock className={styles.chip} />
-          <SkeletonBlock className={styles.chipWide} />
-          <SkeletonBlock className={styles.chip} />
-          <SkeletonBlock className={styles.chipWide} />
-          <SkeletonBlock className={styles.chip} />
+        <div className={styles.chipRows} aria-hidden="true">
+          <div className={styles.chipRow}>
+            <SkeletonBlock className={styles.chipLabel} />
+            <SkeletonBlock className={styles.chipWide} />
+            <SkeletonBlock className={styles.chip} />
+            <SkeletonBlock className={styles.chipWide} />
+            <SkeletonBlock className={styles.chip} />
+          </div>
+          <div className={styles.chipRow}>
+            <SkeletonBlock className={styles.chipLabel} />
+            <SkeletonBlock className={styles.chip} />
+            <SkeletonBlock className={styles.chipWide} />
+            <SkeletonBlock className={styles.chip} />
+            <SkeletonBlock className={styles.chipWide} />
+          </div>
         </div>
       </div>
 
@@ -111,10 +113,11 @@ function PhotosCollectionSkeleton() {
       <span className={styles.srOnly}>Loading photos</span>
       <SkeletonHeader />
 
-      <div className={styles.toolbar}>
-        <div className={styles.toolbarSpacer} />
-        <div className={styles.toolbarControls}>
-          <SkeletonBlock className={styles.photoToolbarSelect} />
+      <div className={styles.filterPanel}>
+        <div className={styles.toolbar}>
+          <div className={styles.toolbarControls}>
+            <SkeletonBlock className={styles.photoToolbarSelect} />
+          </div>
         </div>
       </div>
 

@@ -228,6 +228,7 @@ export interface CommentQuery {
   limit?: number;
   status?: 'APPROVED' | 'PENDING' | 'FILTERED';
   postId?: number;
+  search?: string;
 }
 
 export interface CommentListResponse {

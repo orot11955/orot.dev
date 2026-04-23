@@ -30,6 +30,7 @@ interface EditorWorkspaceProps {
 }
 
 const AUTOSAVE_DELAY_MS = 1200;
+const TRANSIENT_IMAGE_URL_PATTERN = /(?:!\[[^\]]*]\(|src=["'])blob:/i;
 
 function getSaveLabel(state: SaveState, savedAt: Date | null): string {
   if (state === 'saving') return '저장 중…';
@@ -171,11 +172,30 @@ export function EditorWorkspace({ postId }: EditorWorkspaceProps) {
   // Controlled field handlers — queue a save when user actually changes a value
   const onTitleChange = (value: string) => {
     setTitle(value);
-    if (hydratedRef.current) queueSave({ title: value });
+
+    const nextSlug = slugify(value);
+    setSlug(nextSlug);
+
+    if (hydratedRef.current) {
+      queueSave({
+        title: value,
+        slug: nextSlug,
+      });
+
+    }
   };
   const onContentChange = (value: string) => {
     setContent(value);
-    if (hydratedRef.current) queueSave({ content: value });
+    if (!hydratedRef.current) {
+      return;
+    }
+
+    if (TRANSIENT_IMAGE_URL_PATTERN.test(value)) {
+      setSaveState('dirty');
+      return;
+    }
+
+    queueSave({ content: value });
   };
   const onExcerptChange = (value: string) => {
     setExcerpt(value);
@@ -249,6 +269,23 @@ export function EditorWorkspace({ postId }: EditorWorkspaceProps) {
       setCoverAction('idle');
     }
   }, [coverImage, postId, refreshSidebar]);
+
+  const handleContentImageUpload = useCallback(
+    async (file: File) => {
+      setSaveState('saving');
+      setSaveError(null);
+
+      try {
+        const uploaded = await editorPostsService.uploadContentImage(postId, file);
+        return uploaded.url;
+      } catch (err) {
+        setSaveState('error');
+        setSaveError(getErrorMessage(err));
+        throw err;
+      }
+    },
+    [postId],
+  );
 
   const handleTransition = useCallback(
     async (target: PostStatus) => {
@@ -355,6 +392,7 @@ export function EditorWorkspace({ postId }: EditorWorkspaceProps) {
             <MarkdownEditor
               value={content}
               onChange={onContentChange}
+              onImageUpload={handleContentImageUpload}
               placeholder="여기에 내용을 작성하세요"
               showToolbar
               showWordCount
@@ -530,4 +568,13 @@ function renderTransitionButtons(
     default:
       return null;
   }
+}
+
+function slugify(value: string) {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-_가-힣]/g, '')
+    .replace(/-+/g, '-');
 }

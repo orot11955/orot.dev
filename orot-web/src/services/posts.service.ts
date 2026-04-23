@@ -21,6 +21,10 @@ import { normalizeSlugParam } from '@/utils/slug';
 
 const postRoutes = createAreaRoutes('posts');
 
+interface ContentImageUploadResult {
+  url: string;
+}
+
 // ─── Public ───────────────────────────────────────────────────────────────────
 
 export const publicPostsService = {
@@ -70,6 +74,16 @@ export const editorPostsService = {
 
   async uploadCoverImage(id: number, file: File): Promise<Post> {
     return uploadImageResource<Post>(postRoutes.editor(id, 'cover-image'), file);
+  },
+
+  async uploadContentImage(
+    id: number,
+    file: File,
+  ): Promise<ContentImageUploadResult> {
+    return uploadImageResource<ContentImageUploadResult>(
+      postRoutes.editor(id, 'content-image'),
+      file,
+    );
   },
 
   async removeCoverImage(id: number): Promise<Post> {

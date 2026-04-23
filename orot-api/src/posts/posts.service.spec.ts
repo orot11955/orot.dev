@@ -1,7 +1,7 @@
 import { NotFoundException } from '@nestjs/common';
 import { PostStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { PostsService } from './posts.service';
+import { createPostSearchText, PostsService } from './posts.service';
 
 function createPrismaMock() {
   return {
@@ -142,7 +142,7 @@ describe('PostsService', () => {
       OR: [
         { title: { contains: 'react' } },
         { slug: { contains: 'react' } },
-        { content: { contains: 'react' } },
+        { searchText: { contains: 'react' } },
         { excerpt: { contains: 'react' } },
         { tags: { contains: 'react' } },
         { series: { is: { title: { contains: 'react' } } } },
@@ -156,5 +156,22 @@ describe('PostsService', () => {
     expect(prisma.post.findMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: expectedWhere }),
     );
+  });
+
+  it('builds searchable post text without embedded image payloads', () => {
+    const searchText = createPostSearchText(
+      [
+        'Intro react text',
+        '![Architecture](data:image/png;base64,AAAagsBBB==)',
+        '<img src="data:image/png;base64,CCCagsDDD==" alt="Inline diagram" />',
+        '[Docs](https://example.com/ags)',
+      ].join('\n'),
+    );
+
+    expect(searchText).toBe(
+      'Intro react text Architecture Inline diagram Docs',
+    );
+    expect(searchText).not.toContain('ags');
+    expect(searchText).not.toContain('data:image');
   });
 });

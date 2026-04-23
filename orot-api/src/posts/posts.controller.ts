@@ -31,6 +31,7 @@ import {
   createImageUploadOptions,
   removeManagedUpload,
   replaceManagedUpload,
+  safeRemoveFile,
   safeRemoveUploadedAsset,
   toUploadsPublicUrl,
 } from '../common/uploads';
@@ -61,6 +62,16 @@ function normalizeSlugParam(slug: string): string {
 const postCoverMulterOptions = createImageUploadOptions({
   directory: ['posts'],
   maxFileSizeBytes: 50 * 1024 * 1024,
+});
+
+const postContentImageMulterOptions = createImageUploadOptions({
+  directory: ['posts', 'content'],
+  maxFileSizeBytes: 50 * 1024 * 1024,
+  filenamePrefix: (req) => {
+    const rawId = req.params.id;
+    const id = Array.isArray(rawId) ? rawId[0] : rawId;
+    return `post-${id ?? 'unknown'}`;
+  },
 });
 
 @ApiTags('Public / Posts')
@@ -210,6 +221,27 @@ export class EditorPostsController {
       update: (coverImage) =>
         this.postsService.update(id, { coverImage }, 'editor'),
     });
+  }
+
+  @Post(':id/content-image')
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Upload editor post content image' })
+  @UseInterceptors(FileInterceptor('image', postContentImageMulterOptions))
+  async uploadContentImage(
+    @Param('id', ParseIntPipe) id: number,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    if (!file) {
+      throw new BadRequestException('Image file is required');
+    }
+
+    try {
+      await this.postsService.findOneForArea(id, 'editor');
+      return { url: toUploadsPublicUrl('posts', 'content', file.filename) };
+    } catch (error) {
+      safeRemoveFile(file.path);
+      throw error;
+    }
   }
 
   @Delete(':id/cover-image')

@@ -2,9 +2,19 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  OnModuleInit,
 } from '@nestjs/common';
 import { PostStatus } from '@prisma/client';
+import { randomUUID } from 'crypto';
+import { mkdirSync, writeFileSync } from 'fs';
+import { join } from 'path';
 import { ensureUniqueSlug, resolveBaseSlug } from '../common/slug';
+import {
+  ALLOWED_IMAGE_MIME,
+  resolveUploadsDiskPath,
+  safeRemoveUploadedAsset,
+  toUploadsPublicUrl,
+} from '../common/uploads';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { QueryPostDto } from './dto/query-post.dto';
@@ -72,12 +82,26 @@ const AREA_TRANSITIONS: Record<
 
 const DEFAULT_POST_SLUG = 'post';
 const PUBLIC_TAG_CACHE_TTL_MS = 60_000;
+const POST_CONTENT_IMAGE_UPLOAD_PREFIX = '/uploads/posts/content/';
+const MAX_POST_CONTENT_IMAGE_BYTES = 50 * 1024 * 1024;
+const DATA_IMAGE_URL_PATTERN =
+  /data:(image\/(?:jpeg|jpg|png|webp|gif));base64,([a-z0-9+/=\r\n]+)(?=[)\s"'<>]|$)/gi;
+const MARKDOWN_IMAGE_PATTERN = /!\[([^\]]*)\]\(([^)]*)\)/g;
+const HTML_IMAGE_WITH_ALT_PATTERN =
+  /<img\b(?=[^>]*\balt=(["'])(.*?)\1)[^>]*>/gi;
+const HTML_IMAGE_PATTERN = /<img\b[^>]*>/gi;
+const MARKDOWN_LINK_PATTERN = /\[([^\]]+)\]\(([^)]*)\)/g;
+
+type PreparedPostContent = {
+  content: string;
+  uploadedPaths: string[];
+};
 
 function createPostSearchFilters(search: string) {
   return [
     { title: { contains: search } },
     { slug: { contains: search } },
-    { content: { contains: search } },
+    { searchText: { contains: search } },
     { excerpt: { contains: search } },
     { tags: { contains: search } },
     { series: { is: { title: { contains: search } } } },
@@ -87,42 +111,137 @@ function createPostSearchFilters(search: string) {
   ];
 }
 
+function normalizeSearchWhitespace(value: string): string {
+  return value.replace(/\s+/g, ' ').trim();
+}
+
+export function createPostSearchText(content: string): string {
+  return normalizeSearchWhitespace(
+    content
+      .replace(MARKDOWN_IMAGE_PATTERN, (_match, alt) => ` ${alt ?? ''} `)
+      .replace(
+        HTML_IMAGE_WITH_ALT_PATTERN,
+        (_match, _quote, alt) => ` ${alt ?? ''} `,
+      )
+      .replace(HTML_IMAGE_PATTERN, ' ')
+      .replace(DATA_IMAGE_URL_PATTERN, ' ')
+      .replace(MARKDOWN_LINK_PATTERN, (_match, label) => ` ${label ?? ''} `)
+      .replace(/[`*_>#~|[\](){}.!,:;"'\\/=-]+/g, ' '),
+  );
+}
+
+function normalizeImageMime(mime: string): (typeof ALLOWED_IMAGE_MIME)[number] {
+  return mime.toLowerCase() === 'image/jpg'
+    ? 'image/jpeg'
+    : (mime.toLowerCase() as (typeof ALLOWED_IMAGE_MIME)[number]);
+}
+
+function extensionForImageMime(mime: (typeof ALLOWED_IMAGE_MIME)[number]) {
+  switch (mime) {
+    case 'image/jpeg':
+      return 'jpg';
+    case 'image/png':
+      return 'png';
+    case 'image/webp':
+      return 'webp';
+    case 'image/gif':
+      return 'gif';
+  }
+}
+
+function normalizeManagedContentImagePath(value: string): string | null {
+  const trimmed = value.trim();
+  const pathname = (() => {
+    if (/^https?:\/\//i.test(trimmed)) {
+      try {
+        return new URL(trimmed).pathname;
+      } catch {
+        return '';
+      }
+    }
+
+    return trimmed;
+  })();
+
+  return pathname.startsWith(POST_CONTENT_IMAGE_UPLOAD_PREFIX)
+    ? pathname
+    : null;
+}
+
+function extractManagedContentImagePaths(content?: string | null): string[] {
+  if (!content) {
+    return [];
+  }
+
+  const paths = new Set<string>();
+
+  for (const match of content.matchAll(MARKDOWN_IMAGE_PATTERN)) {
+    const path = normalizeManagedContentImagePath(match[2] ?? '');
+    if (path) paths.add(path);
+  }
+
+  const htmlImageSourcePattern = /<img\b[^>]*\bsrc=(["'])(.*?)\1[^>]*>/gi;
+  for (const match of content.matchAll(htmlImageSourcePattern)) {
+    const path = normalizeManagedContentImagePath(match[2] ?? '');
+    if (path) paths.add(path);
+  }
+
+  return Array.from(paths);
+}
+
+function removeUploadedPaths(paths: Iterable<string>) {
+  for (const path of paths) {
+    safeRemoveUploadedAsset(path, POST_CONTENT_IMAGE_UPLOAD_PREFIX);
+  }
+}
+
 @Injectable()
-export class PostsService {
+export class PostsService implements OnModuleInit {
   private cachedTags: CachedTags | null = null;
 
   constructor(private readonly prisma: PrismaService) {}
 
+  async onModuleInit() {
+    await this.backfillSearchTextAndInlineImages();
+  }
+
   async create(dto: CreatePostDto) {
     const slug = this.resolveBaseSlug(dto.slug, dto.title);
     const uniqueSlug = await this.ensureUniqueSlug(slug);
+    const preparedContent = this.preparePostContentForStorage(dto.content);
 
     if (dto.categoryId != null) {
       await this.assertCategoryExists(dto.categoryId);
     }
 
-    const created = await this.prisma.post.create({
-      data: {
-        title: dto.title,
-        slug: uniqueSlug,
-        content: dto.content,
-        excerpt: dto.excerpt,
-        coverImage: dto.coverImage,
-        status: dto.status ?? PostStatus.DRAFT,
-        metaTitle: dto.metaTitle,
-        metaDesc: dto.metaDesc,
-        tags: dto.tags,
-        scheduledAt: dto.scheduledAt ? new Date(dto.scheduledAt) : undefined,
-        categoryId: dto.categoryId ?? null,
-      },
-      include: {
-        series: { select: { id: true, title: true, slug: true } },
-        category: { select: { id: true, name: true, slug: true } },
-      },
-    });
+    try {
+      const created = await this.prisma.post.create({
+        data: {
+          title: dto.title,
+          slug: uniqueSlug,
+          content: preparedContent.content,
+          searchText: createPostSearchText(preparedContent.content),
+          excerpt: dto.excerpt,
+          coverImage: dto.coverImage,
+          status: dto.status ?? PostStatus.DRAFT,
+          metaTitle: dto.metaTitle,
+          metaDesc: dto.metaDesc,
+          tags: dto.tags,
+          scheduledAt: dto.scheduledAt ? new Date(dto.scheduledAt) : undefined,
+          categoryId: dto.categoryId ?? null,
+        },
+        include: {
+          series: { select: { id: true, title: true, slug: true } },
+          category: { select: { id: true, name: true, slug: true } },
+        },
+      });
 
-    this.invalidatePublicTagCache();
-    return created;
+      this.invalidatePublicTagCache();
+      return created;
+    } catch (error) {
+      removeUploadedPaths(preparedContent.uploadedPaths);
+      throw error;
+    }
   }
 
   async findAll(query: QueryPostDto, area: PostArea) {
@@ -320,8 +439,19 @@ export class PostsService {
   }
 
   async update(id: number, dto: UpdatePostDto, area: InternalArea) {
-    await this.findOneForArea(id, area);
+    const currentPost = await this.findOneForArea(id, area);
     const data: Record<string, unknown> = { ...dto };
+    let preparedContent: PreparedPostContent | null = null;
+
+    if (dto.content !== undefined) {
+      preparedContent = this.preparePostContentForStorage(
+        dto.content,
+        `post-${id}`,
+      );
+      data.content = preparedContent.content;
+      data.searchText = createPostSearchText(preparedContent.content);
+    }
+
     if (dto.slug !== undefined) {
       const slug = this.resolveBaseSlug(dto.slug);
       data.slug = await this.ensureUniqueSlug(slug, id);
@@ -336,17 +466,29 @@ export class PostsService {
       }
     }
 
-    const updated = await this.prisma.post.update({
-      where: { id },
-      data,
-      include: {
-        series: { select: { id: true, title: true, slug: true } },
-        category: { select: { id: true, name: true, slug: true } },
-      },
-    });
+    try {
+      const updated = await this.prisma.post.update({
+        where: { id },
+        data,
+        include: {
+          series: { select: { id: true, title: true, slug: true } },
+          category: { select: { id: true, name: true, slug: true } },
+        },
+      });
 
-    this.invalidatePublicTagCache();
-    return updated;
+      if (preparedContent) {
+        this.removeUnreferencedContentImages(
+          currentPost.content,
+          preparedContent.content,
+        );
+      }
+
+      this.invalidatePublicTagCache();
+      return updated;
+    } catch (error) {
+      removeUploadedPaths(preparedContent?.uploadedPaths ?? []);
+      throw error;
+    }
   }
 
   async transition(id: number, dto: TransitionPostDto, area: InternalArea) {
@@ -396,8 +538,9 @@ export class PostsService {
   }
 
   async remove(id: number) {
-    await this.findOneForArea(id, 'studio');
+    const post = await this.findOneForArea(id, 'studio');
     await this.prisma.post.delete({ where: { id } });
+    removeUploadedPaths(extractManagedContentImagePaths(post.content));
     this.invalidatePublicTagCache();
     return { message: 'Post deleted' };
   }
@@ -457,6 +600,92 @@ export class PostsService {
     };
 
     return value;
+  }
+
+  private async backfillSearchTextAndInlineImages() {
+    const posts = await this.prisma.post.findMany({
+      where: {
+        OR: [{ searchText: null }, { content: { contains: 'data:image/' } }],
+      },
+      select: { id: true, content: true },
+    });
+
+    for (const post of posts) {
+      const preparedContent = this.preparePostContentForStorage(
+        post.content,
+        `post-${post.id}`,
+      );
+
+      try {
+        await this.prisma.post.update({
+          where: { id: post.id },
+          data: {
+            ...(preparedContent.content !== post.content
+              ? { content: preparedContent.content }
+              : {}),
+            searchText: createPostSearchText(preparedContent.content),
+          },
+        });
+      } catch (error) {
+        removeUploadedPaths(preparedContent.uploadedPaths);
+        throw error;
+      }
+    }
+  }
+
+  private preparePostContentForStorage(
+    content: string,
+    filenamePrefix = 'post-content',
+  ): PreparedPostContent {
+    const uploadedPaths: string[] = [];
+    const uploadDir = resolveUploadsDiskPath('posts', 'content');
+    mkdirSync(uploadDir, { recursive: true });
+
+    try {
+      const nextContent = content.replace(
+        DATA_IMAGE_URL_PATTERN,
+        (match, rawMime: string, rawBase64: string) => {
+          const mime = normalizeImageMime(rawMime);
+          if (!ALLOWED_IMAGE_MIME.includes(mime)) {
+            return match;
+          }
+
+          const buffer = Buffer.from(rawBase64.replace(/\s/g, ''), 'base64');
+          if (buffer.length <= 0) {
+            return match;
+          }
+
+          if (buffer.length > MAX_POST_CONTENT_IMAGE_BYTES) {
+            throw new BadRequestException('Post content image is too large');
+          }
+
+          const filename = `${filenamePrefix}-${Date.now()}-${randomUUID()}.${extensionForImageMime(mime)}`;
+          const filePath = join(uploadDir, filename);
+          writeFileSync(filePath, buffer);
+
+          const publicPath = toUploadsPublicUrl('posts', 'content', filename);
+          uploadedPaths.push(publicPath);
+          return publicPath;
+        },
+      );
+
+      return { content: nextContent, uploadedPaths };
+    } catch (error) {
+      removeUploadedPaths(uploadedPaths);
+      throw error;
+    }
+  }
+
+  private removeUnreferencedContentImages(
+    previousContent: string,
+    nextContent: string,
+  ) {
+    const nextPaths = new Set(extractManagedContentImagePaths(nextContent));
+    const stalePaths = extractManagedContentImagePaths(previousContent).filter(
+      (path) => !nextPaths.has(path),
+    );
+
+    removeUploadedPaths(stalePaths);
   }
 
   private async getPublicNeighbors(

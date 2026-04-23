@@ -35,6 +35,7 @@ model Post {
   title       String     @db.VarChar(255)
   slug        String     @unique @db.VarChar(255)
   content     String     @db.LongText
+  searchText  String?    @db.LongText
   excerpt     String?    @db.VarChar(500)
   coverImage  String?    @db.VarChar(500)
   status      PostStatus @default(DRAFT)

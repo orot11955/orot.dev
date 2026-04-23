@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { PageErrorState } from '@/components/PageErrorState';
 import { webClientLogger } from '@/logging/client';
+import { THEME_INIT_SCRIPT } from '@/utils/theme-init';
 import '@/styles/globals.css';
 
 interface GlobalErrorPageProps {
@@ -24,6 +25,7 @@ export default function GlobalErrorPage({
   return (
     <html lang="ko" suppressHydrationWarning>
       <body style={{ background: 'var(--orot-color-bg, var(--background))' }}>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <ThemeProvider>
           <PageErrorState
             status="App Error"

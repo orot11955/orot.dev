@@ -14,6 +14,13 @@ const SENSITIVE_KEY_FRAGMENTS = [
 
 export type WebLogLevel = (typeof LOG_LEVELS)[number];
 
+export interface SerializedError {
+  name: string;
+  message: string;
+  stack?: string;
+  cause?: SerializedError;
+}
+
 function fallbackId(): string {
   return `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`;
 }
@@ -50,12 +57,15 @@ export function normalizeLogLevel(value?: string | null): WebLogLevel {
   return process.env.NODE_ENV === 'production' ? 'info' : 'debug';
 }
 
-export function serializeError(error: unknown) {
+export function serializeError(error: unknown): SerializedError | undefined {
   if (error instanceof Error) {
+    const cause = (error as Error & { cause?: unknown }).cause;
+
     return {
       name: error.name,
       message: truncateString(error.message),
       stack: error.stack ? truncateString(error.stack) : undefined,
+      cause: cause ? serializeError(cause) : undefined,
     };
   }
 

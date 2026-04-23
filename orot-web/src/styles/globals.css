@@ -56,6 +56,8 @@ html,
 body {
   max-width: 100vw;
   overflow-x: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
   font-family: 'Manrope', 'Noto Sans KR', var(--orot-font-family-sans);
   font-size: var(--orot-font-size-md);
   line-height: var(--orot-line-height-base);
@@ -68,6 +70,13 @@ body {
 body {
   min-height: 100dvh;
   background: var(--orot-color-bg, var(--background));
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
 }
 
 *,

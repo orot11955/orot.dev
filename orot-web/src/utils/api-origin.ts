@@ -53,6 +53,42 @@ function normalizeDevAbsoluteUrl(url: string): string {
   }
 }
 
+function resolveConfiguredSiteOrigin(): string | null {
+  const rawSiteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL?.trim() || process.env.SITE_URL?.trim();
+
+  if (!rawSiteUrl || !isAbsoluteUrl(rawSiteUrl)) {
+    return null;
+  }
+
+  try {
+    return new URL(rawSiteUrl).origin;
+  } catch {
+    return null;
+  }
+}
+
+function resolveAbsolutePublicApiBaseUrl(): string | null {
+  const configuredApiUrl = normalizeDevAbsoluteUrl(
+    process.env.NEXT_PUBLIC_API_URL?.trim() ?? '',
+  );
+
+  if (configuredApiUrl && isAbsoluteUrl(configuredApiUrl)) {
+    return normalizeAbsoluteApiBase(configuredApiUrl);
+  }
+
+  const siteOrigin = resolveConfiguredSiteOrigin();
+  if (!siteOrigin) {
+    return null;
+  }
+
+  const relativeApiBase = configuredApiUrl
+    ? normalizeRelativeApiBase(configuredApiUrl)
+    : DEFAULT_PUBLIC_API_BASE;
+
+  return new URL(relativeApiBase, siteOrigin).toString().replace(/\/+$/, '');
+}
+
 export function resolvePublicApiOrigin(): string {
   const configuredApiUrl = normalizeDevAbsoluteUrl(
     process.env.NEXT_PUBLIC_API_URL?.trim() ?? '',
@@ -97,4 +133,17 @@ export function resolveServerApiBaseUrl(): string {
   }
 
   return `${resolveDefaultServerApiOrigin()}/api`;
+}
+
+export function resolveServerApiBaseUrls(): string[] {
+  const bases = [resolveServerApiBaseUrl()];
+
+  if (process.env.NODE_ENV === 'production') {
+    const publicApiBase = resolveAbsolutePublicApiBaseUrl();
+    if (publicApiBase) {
+      bases.push(publicApiBase);
+    }
+  }
+
+  return Array.from(new Set(bases));
 }

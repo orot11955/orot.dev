@@ -1,0 +1,51 @@
+.gauge {
+  position: fixed;
+  top: clamp(72px, 9vh, 112px);
+  right: 5px;
+  bottom: clamp(28px, 5vh, 56px);
+  z-index: var(--orot-z-fixed);
+  width: 2px;
+  overflow: hidden;
+  pointer-events: none;
+  border-radius: 999px;
+  opacity: 0;
+  background: color-mix(in srgb, var(--orot-color-border) 42%, transparent);
+  transition: opacity var(--orot-transition-base);
+}
+
+.gauge[data-visible='true'] {
+  opacity: 1;
+}
+
+.fill {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  background: color-mix(
+    in srgb,
+    var(--orot-color-primary) 76%,
+    var(--orot-color-text) 24%
+  );
+  box-shadow: 0 0 10px color-mix(in srgb, var(--orot-color-primary) 58%, transparent);
+  transform: scaleY(0);
+  transform-origin: top;
+}
+
+@media (max-width: 640px) {
+  .gauge {
+    top: 68px;
+    right: 3px;
+    bottom: 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gauge {
+    transition: none;
+  }
+
+  .fill {
+    box-shadow: none;
+  }
+}

@@ -2,7 +2,7 @@ import type { ApiEnvelope } from '@/types';
 import { headers } from 'next/headers';
 import { webServerLogger } from '@/logging/server';
 import { createRequestId } from '@/logging/shared';
-import { resolveServerApiBaseUrl } from './api-origin';
+import { resolveServerApiBaseUrls } from './api-origin';
 
 interface ServerGetOptions extends Omit<RequestInit, 'next'> {
   revalidate?: number | false;
@@ -11,7 +11,11 @@ interface ServerGetOptions extends Omit<RequestInit, 'next'> {
 const DEFAULT_SERVER_API_TIMEOUT_MS = 3_000;
 
 function getApiBase(): string {
-  return resolveServerApiBaseUrl();
+  return resolveServerApiBaseUrls()[0];
+}
+
+function getApiBases(): string[] {
+  return resolveServerApiBaseUrls();
 }
 
 function resolveServerApiTimeoutMs(): number {
@@ -84,6 +88,54 @@ function mergeRequestHeaders(
   return requestHeaders;
 }
 
+function createFetchUrl(
+  base: string,
+  path: string,
+  params?: Record<string, string | number>,
+): URL {
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  const url = new URL(`${base}${normalizedPath}`);
+
+  if (params) {
+    Object.entries(params).forEach(([k, v]) =>
+      url.searchParams.set(k, String(v)),
+    );
+  }
+
+  return url;
+}
+
+function createFetchOptions(
+  requestOptions: Omit<RequestInit, 'next'>,
+  requestId: string,
+  timeoutMs: number,
+): RequestInit & {
+  next?: {
+    revalidate: number;
+  };
+} {
+  const safeRequestOptions = { ...requestOptions } as RequestInit & {
+    next?: unknown;
+  };
+  delete safeRequestOptions.next;
+
+  return {
+    ...safeRequestOptions,
+    headers: mergeRequestHeaders(requestOptions.headers, requestId),
+    signal: mergeAbortSignals(requestOptions.signal, timeoutMs),
+  };
+}
+
+function isTimeoutError(
+  error: unknown,
+  requestSignal: AbortSignal | null | undefined,
+): boolean {
+  return error instanceof Error &&
+    (error.name === 'TimeoutError' ||
+      (error.name === 'AbortError' &&
+        fetchWasAbortedByTimeout(requestSignal)));
+}
+
 export async function serverGet<T>(
   path: string,
   params?: Record<string, string | number>,
@@ -94,80 +146,102 @@ export async function serverGet<T>(
   const shouldUseRevalidate =
     revalidate !== false && requestOptions.cache !== 'no-store';
   const timeoutMs = resolveServerApiTimeoutMs();
+  const apiBases = getApiBases();
+  const attempts: Array<{
+    apiBase: string;
+    errorName?: string;
+    errorMessage?: string;
+  }> = [];
 
-  try {
-    const base = getApiBase();
-    const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-    const url = new URL(`${base}${normalizedPath}`);
-
-    if (params) {
-      Object.entries(params).forEach(([k, v]) =>
-        url.searchParams.set(k, String(v)),
-      );
-    }
-
-    const fetchOptions: RequestInit & {
-      next?: {
-        revalidate: number;
-      };
-    } = {
-      ...requestOptions,
-      headers: mergeRequestHeaders(requestOptions.headers, requestId),
-      signal: mergeAbortSignals(requestOptions.signal, timeoutMs),
-    };
-
-    if (shouldUseRevalidate) {
-      fetchOptions.next = { revalidate };
-    }
-
-    const res = await fetch(url.toString(), fetchOptions);
-
-    if (!res.ok) {
-      webServerLogger.warn('server.fetch.failed', {
-        requestId,
-        method: requestOptions.method ?? 'GET',
-        url: url.toString(),
-        statusCode: res.status,
-        apiRequestId: res.headers.get('x-request-id') ?? undefined,
-      });
-      return null;
-    }
+  for (const [index, base] of apiBases.entries()) {
+    const hasFallback = index < apiBases.length - 1;
 
     try {
-      const json: ApiEnvelope<T> = await res.json();
-      return json.data;
-    } catch (error) {
-      webServerLogger.error('server.fetch.invalid_json', error, {
+      const url = createFetchUrl(base, path, params);
+      const fetchOptions = createFetchOptions(
+        requestOptions,
         requestId,
-        method: requestOptions.method ?? 'GET',
-        url: url.toString(),
-        statusCode: res.status,
+        timeoutMs,
+      );
+
+      if (shouldUseRevalidate) {
+        fetchOptions.next = { revalidate };
+      }
+
+      const res = await fetch(url.toString(), fetchOptions);
+
+      if (!res.ok) {
+        webServerLogger.warn('server.fetch.failed', {
+          requestId,
+          method: requestOptions.method ?? 'GET',
+          path,
+          apiBase: base,
+          url: url.toString(),
+          statusCode: res.status,
+          apiRequestId: res.headers.get('x-request-id') ?? undefined,
+        });
+        return null;
+      }
+
+      try {
+        const json: ApiEnvelope<T> = await res.json();
+        return json.data;
+      } catch (error) {
+        webServerLogger.error('server.fetch.invalid_json', error, {
+          requestId,
+          method: requestOptions.method ?? 'GET',
+          path,
+          apiBase: base,
+          url: url.toString(),
+          statusCode: res.status,
+        });
+        return null;
+      }
+    } catch (error) {
+      attempts.push({
+        apiBase: base,
+        errorName: error instanceof Error ? error.name : undefined,
+        errorMessage: error instanceof Error ? error.message : String(error),
       });
-      return null;
-    }
-  } catch (error) {
-    if (
-      error instanceof Error &&
-      (error.name === 'TimeoutError' ||
-        (error.name === 'AbortError' &&
-          fetchWasAbortedByTimeout(requestOptions.signal)))
-    ) {
-      webServerLogger.warn('server.fetch.timeout', {
+
+      const meta = {
         requestId,
         method: requestOptions.method ?? 'GET',
         path,
+        apiBase: base,
         timeoutMs,
-      });
+        attempts,
+      };
+
+      if (hasFallback) {
+        webServerLogger.warn(
+          isTimeoutError(error, requestOptions.signal)
+            ? 'server.fetch.timeout_retry'
+            : 'server.fetch.error_retry',
+          meta,
+          error,
+        );
+        continue;
+      }
+
+      if (isTimeoutError(error, requestOptions.signal)) {
+        webServerLogger.warn('server.fetch.timeout', meta, error);
+        return null;
+      }
+
+      webServerLogger.error('server.fetch.error', error, meta);
       return null;
     }
-
-    webServerLogger.error('server.fetch.error', error, {
-      requestId,
-      method: requestOptions.method ?? 'GET',
-      path,
-    });
-    return null;
   }
+
+  webServerLogger.error('server.fetch.error', undefined, {
+    requestId,
+    method: requestOptions.method ?? 'GET',
+    path,
+    apiBase: getApiBase(),
+    attempts,
+  });
+  return null;
 }
 
 export { toPaginatedResponse } from './pagination';

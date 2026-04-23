@@ -41,6 +41,22 @@
   transform: translateY(-1px);
 }
 
+.logoMark {
+  display: block;
+  width: 106px;
+  height: 50px;
+  background-image: url('/full_orot_black.png');
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+}
+
+:global([data-orot-theme='dark']) .logoMark,
+:global([data-orot-theme='forest']) .logoMark,
+:global([data-orot-theme='ocean']) .logoMark {
+  background-image: url('/full_orot_white.png');
+}
+
 .mobileTrigger {
   display: none;
   width: 36px;

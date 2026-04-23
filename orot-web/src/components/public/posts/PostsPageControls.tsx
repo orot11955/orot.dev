@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { Input, Search, Select, X } from 'orot-ui';
+import { Button, Input, Search, Select, X } from 'orot-ui';
 import { useFilterParams } from '@/hooks';
 import type { Category, PostSort, Series } from '@/types';
 import {
@@ -83,7 +83,7 @@ export function PostsPageControls({
               type="search"
               size="md"
               prefix={<Search size={14} />}
-              placeholder="제목, 내용으로 검색"
+              placeholder="제목, 내용, 태그로 검색"
               value={keyword}
               onChange={(event) => {
                 const nextKeyword = event.target.value;
@@ -96,6 +96,14 @@ export function PostsPageControls({
               allowClear
               className={styles.search}
             />
+            <Button
+              type="submit"
+              size="md"
+              variant="solid"
+              className={styles.searchButton}
+            >
+              검색
+            </Button>
           </form>
         }
         controls={

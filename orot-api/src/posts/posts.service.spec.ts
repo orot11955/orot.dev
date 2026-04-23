@@ -6,6 +6,7 @@ import { PostsService } from './posts.service';
 function createPrismaMock() {
   return {
     post: {
+      count: jest.fn(),
       findUnique: jest.fn(),
       findFirst: jest.fn(),
       findMany: jest.fn(),
@@ -128,5 +129,32 @@ describe('PostsService', () => {
 
     await expect(service.getAllTags()).resolves.toEqual(['alpha', 'beta']);
     expect(prisma.post.findMany).toHaveBeenCalledTimes(2);
+  });
+
+  it('searches posts across visible card metadata', async () => {
+    prisma.post.count.mockResolvedValue(0);
+    prisma.post.findMany.mockResolvedValue([]);
+
+    await service.findAll({ search: ' react ' }, 'public');
+
+    const expectedWhere = {
+      status: PostStatus.PUBLISHED,
+      OR: [
+        { title: { contains: 'react' } },
+        { slug: { contains: 'react' } },
+        { content: { contains: 'react' } },
+        { excerpt: { contains: 'react' } },
+        { tags: { contains: 'react' } },
+        { series: { is: { title: { contains: 'react' } } } },
+        { series: { is: { slug: { contains: 'react' } } } },
+        { category: { is: { name: { contains: 'react' } } } },
+        { category: { is: { slug: { contains: 'react' } } } },
+      ],
+    };
+
+    expect(prisma.post.count).toHaveBeenCalledWith({ where: expectedWhere });
+    expect(prisma.post.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expectedWhere }),
+    );
   });
 });

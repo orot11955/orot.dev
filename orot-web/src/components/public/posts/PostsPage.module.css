@@ -52,12 +52,21 @@
 }
 
 .searchForm {
+  display: flex;
+  align-items: center;
+  gap: var(--orot-space-2);
   width: 100%;
   min-width: 0;
 }
 
 .search {
+  flex: 1 1 auto;
   width: 100%;
+  min-width: 0;
+}
+
+.searchButton {
+  flex: 0 0 auto;
 }
 
 .select {
@@ -161,6 +170,13 @@
 }
 
 @media (max-width: 480px) {
+  .searchForm {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .searchButton {
+    width: 100%;
+  }
   .select {
     flex: 1 1 100%;
   }

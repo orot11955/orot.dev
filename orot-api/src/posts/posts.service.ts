@@ -73,6 +73,20 @@ const AREA_TRANSITIONS: Record<
 const DEFAULT_POST_SLUG = 'post';
 const PUBLIC_TAG_CACHE_TTL_MS = 60_000;
 
+function createPostSearchFilters(search: string) {
+  return [
+    { title: { contains: search } },
+    { slug: { contains: search } },
+    { content: { contains: search } },
+    { excerpt: { contains: search } },
+    { tags: { contains: search } },
+    { series: { is: { title: { contains: search } } } },
+    { series: { is: { slug: { contains: search } } } },
+    { category: { is: { name: { contains: search } } } },
+    { category: { is: { slug: { contains: search } } } },
+  ];
+}
+
 @Injectable()
 export class PostsService {
   private cachedTags: CachedTags | null = null;
@@ -148,12 +162,9 @@ export class PostsService {
       where.status = { in: AREA_VISIBLE_STATUSES[area] };
     }
 
-    if (search) {
-      where.OR = [
-        { title: { contains: search } },
-        { content: { contains: search } },
-        { excerpt: { contains: search } },
-      ];
+    const normalizedSearch = search?.trim();
+    if (normalizedSearch) {
+      where.OR = createPostSearchFilters(normalizedSearch);
     }
 
     if (tag) {

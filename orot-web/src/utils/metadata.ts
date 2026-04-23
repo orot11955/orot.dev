@@ -18,6 +18,7 @@ interface PublicMetadataOptions {
   publishedTime?: string;
   modifiedTime?: string;
   tags?: string[];
+  robots?: Metadata['robots'];
 }
 
 interface RestrictedMetadataOptions {
@@ -39,6 +40,20 @@ function normalizeList(values?: string[]): string[] | undefined {
   return normalized && normalized.length > 0 ? normalized : undefined;
 }
 
+function createRobotsDirectives(index: boolean, follow: boolean): Metadata['robots'] {
+  return {
+    index,
+    follow,
+    googleBot: {
+      index,
+      follow,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+      'max-video-preview': -1,
+    },
+  };
+}
+
 function resolveRobots(settings?: PublicSettings | null): Metadata['robots'] | undefined {
   const raw = normalizeText(settings?.seo_robots)?.toLowerCase();
   if (!raw) {
@@ -55,14 +70,7 @@ function resolveRobots(settings?: PublicSettings | null): Metadata['robots'] | u
   const index = !directives.has('noindex');
   const follow = !directives.has('nofollow');
 
-  return {
-    index,
-    follow,
-    googleBot: {
-      index,
-      follow,
-    },
-  };
+  return createRobotsDirectives(index, follow);
 }
 
 function resolveMetadataImage(
@@ -82,12 +90,44 @@ function resolveMetadataImage(
   return DEFAULT_OG_IMAGE;
 }
 
+function resolveMetadataLogo(settings?: PublicSettings | null): string | undefined {
+  const logo =
+    normalizeText(settings?.site_logo_light) ??
+    normalizeText(settings?.site_logo_dark) ??
+    normalizeText(settings?.site_logo);
+
+  if (logo) {
+    return resolveAssetUrl(logo) || logo;
+  }
+
+  return undefined;
+}
+
 export function resolveSiteName(settings?: PublicSettings | null): string {
   return normalizeText(settings?.site_name) ?? DEFAULT_SITE_NAME;
 }
 
 export function resolveSiteDescription(settings?: PublicSettings | null): string {
   return normalizeText(settings?.site_description) ?? DEFAULT_SITE_DESCRIPTION;
+}
+
+export function resolveSiteImage(
+  settings?: PublicSettings | null,
+  image?: string | null,
+): string | undefined {
+  return resolveMetadataImage(settings, image);
+}
+
+export function resolveSiteLogo(settings?: PublicSettings | null): string | undefined {
+  return resolveMetadataLogo(settings);
+}
+
+export function resolveSiteIcon(settings?: PublicSettings | null): string | undefined {
+  return resolveMetadataLogo(settings) ?? resolveMetadataImage(settings);
+}
+
+export function createNoIndexRobots(follow = true): Metadata['robots'] {
+  return createRobotsDirectives(false, follow);
 }
 
 export function createPublicMetadata({
@@ -102,6 +142,7 @@ export function createPublicMetadata({
   publishedTime,
   modifiedTime,
   tags,
+  robots,
 }: PublicMetadataOptions): Metadata {
   const siteName = resolveSiteName(settings);
   const pageTitle = normalizeText(title);
@@ -119,7 +160,7 @@ export function createPublicMetadata({
     description: pageDescription,
     keywords: normalizedKeywords,
     alternates: path ? { canonical: path } : undefined,
-    robots: resolveRobots(settings),
+    robots: robots ?? resolveRobots(settings),
     twitter: {
       card: imageUrl ? 'summary_large_image' : 'summary',
       title: socialTitle,
@@ -156,6 +197,23 @@ export function createPublicMetadata({
       images: imageUrl ? [{ url: imageUrl, alt: socialTitle }] : undefined,
     },
   };
+}
+
+export function createPublicNotFoundMetadata({
+  title = '페이지를 찾을 수 없음',
+  description = '요청한 페이지를 찾을 수 없습니다.',
+  settings,
+}: {
+  title?: string;
+  description?: string;
+  settings?: PublicSettings | null;
+}): Metadata {
+  return createPublicMetadata({
+    title,
+    description,
+    settings,
+    robots: createNoIndexRobots(),
+  });
 }
 
 export function createRestrictedMetadata({

@@ -12,13 +12,33 @@ import type {
   GallerySort,
 } from '@/types';
 
-export async function generateMetadata(): Promise<Metadata> {
+function buildPhotosCanonicalPath(params: SearchParams): string {
+  const normalizedPage = normalizePage(params.page);
+  const normalizedSort = normalizeSort(params.sort);
+  const query = new URLSearchParams();
+
+  if (normalizedPage > 1) {
+    query.set('page', String(normalizedPage));
+  }
+
+  if (normalizedSort !== 'manual') {
+    query.set('sort', normalizedSort);
+  }
+
+  const queryString = query.toString();
+  return queryString ? `/photos?${queryString}` : '/photos';
+}
+
+export async function generateMetadata(
+  { searchParams }: PhotosRouteProps,
+): Promise<Metadata> {
+  const resolvedSearchParams = await searchParams;
   const settings = await getPublicSettings();
 
   return createPublicMetadata({
     title: '사진',
     description: '빛과 거리감이 남는 장면들을 모아 둔 퍼블릭 사진 갤러리',
-    path: '/photos',
+    path: buildPhotosCanonicalPath(resolvedSearchParams),
     settings,
     keywords: ['사진', '갤러리', '포트폴리오'],
   });

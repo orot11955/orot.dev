@@ -136,6 +136,19 @@ export function PostsPageControls({
   }, [currentSearch]);
 
   useEffect(() => {
+    const latestHref = buildPostsHref(queryState, { sort: null });
+    const popularHref = buildPostsHref(queryState, { sort: 'popular' });
+
+    if (latestHref !== currentHref) {
+      router.prefetch(latestHref);
+    }
+
+    if (popularHref !== currentHref) {
+      router.prefetch(popularHref);
+    }
+  }, [currentHref, queryState, router]);
+
+  useEffect(() => {
     const scroller = tagScrollerRef.current;
 
     if (!scroller || tags.length === 0) {

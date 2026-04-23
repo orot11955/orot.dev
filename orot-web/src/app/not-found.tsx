@@ -1,6 +1,12 @@
-'use client';
-
+import type { Metadata } from 'next';
 import { PageErrorState } from '@/components/PageErrorState';
+import { createNoIndexRobots } from '@/utils/metadata';
+
+export const metadata: Metadata = {
+  title: '페이지를 찾을 수 없습니다 | orot.dev',
+  description: '요청한 페이지를 찾을 수 없습니다.',
+  robots: createNoIndexRobots(),
+};
 
 export default function NotFoundPage() {
   return (

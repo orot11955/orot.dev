@@ -1,7 +1,10 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { serverGet, toPaginatedResponse } from '@/utils/server-api';
-import { createPublicMetadata } from '@/utils/metadata';
+import {
+  createNoIndexRobots,
+  createPublicMetadata,
+} from '@/utils/metadata';
 import { getPublicSettings } from '@/utils/public-settings';
 import { PostsPage } from '@/components/public/posts/PostsPage';
 import { PublicCollectionSkeleton } from '@/components/public/shared/PublicCollectionSkeleton';
@@ -17,15 +20,59 @@ import { normalizePostQuery } from '@/utils/post-query';
 
 export const revalidate = 60;
 
-export async function generateMetadata(): Promise<Metadata> {
+function buildPostsCanonicalPath(params: SearchParams): string {
+  const normalized = normalizePostQuery({
+    page: params.page,
+    search: params.search,
+    tag: params.tag,
+    seriesId: params.seriesId,
+    categorySlug: params.categorySlug,
+    sort: params.sort,
+  });
+  const query = new URLSearchParams();
+
+  if (normalized.page && normalized.page > 1) {
+    query.set('page', String(normalized.page));
+  }
+
+  if (normalized.search) {
+    query.set('search', normalized.search);
+  }
+
+  if (normalized.tag) {
+    query.set('tag', normalized.tag);
+  }
+
+  if (normalized.seriesId) {
+    query.set('seriesId', String(normalized.seriesId));
+  }
+
+  if (normalized.categorySlug) {
+    query.set('categorySlug', normalized.categorySlug);
+  }
+
+  if (normalized.sort && normalized.sort !== 'latest') {
+    query.set('sort', normalized.sort);
+  }
+
+  const queryString = query.toString();
+  return queryString ? `/posts?${queryString}` : '/posts';
+}
+
+export async function generateMetadata(
+  { searchParams }: PostsRouteProps,
+): Promise<Metadata> {
+  const resolvedSearchParams = await searchParams;
   const settings = await getPublicSettings();
+  const canonicalPath = buildPostsCanonicalPath(resolvedSearchParams);
 
   return createPublicMetadata({
     title: '글',
     description: '개발, 사진, 그리고 기록을 주제별로 모아둔 글 목록',
-    path: '/posts',
+    path: canonicalPath,
     settings,
     keywords: ['개발', '사진', '기록', '블로그 글'],
+    robots: resolvedSearchParams.search ? createNoIndexRobots() : undefined,
   });
 }
 

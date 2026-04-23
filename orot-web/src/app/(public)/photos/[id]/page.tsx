@@ -3,7 +3,10 @@ import { cache } from 'react';
 import { notFound } from 'next/navigation';
 import { PhotoDetailPage } from '@/components/public/photos/PhotoDetailPage';
 import { serverGet } from '@/utils/server-api';
-import { createPublicMetadata } from '@/utils/metadata';
+import {
+  createPublicMetadata,
+  createPublicNotFoundMetadata,
+} from '@/utils/metadata';
 import { getPublicSettings } from '@/utils/public-settings';
 import type { GalleryItem } from '@/types';
 
@@ -32,7 +35,7 @@ export async function generateMetadata(
   ]);
 
   if (!photo) {
-    return createPublicMetadata({
+    return createPublicNotFoundMetadata({
       title: '사진을 찾을 수 없음',
       description: '요청한 사진을 찾을 수 없습니다.',
       settings,

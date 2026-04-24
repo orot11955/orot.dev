@@ -1101,7 +1101,7 @@ function GlobalLinksSection({ settings, onSave }: SectionProps) {
   return (
     <SettingsSectionShell
       title="전역 링크"
-      description="홈, About, 푸터에 공통으로 노출되는 외부 링크 목록입니다. 기존 About 전용 링크도 저장 시 이 목록으로 통합됩니다."
+      description="홈, About, 푸터에 공통으로 노출되는 외부 링크 목록입니다."
       footer={<SettingsSubmitButton onClick={submit} loading={saving} />}
     >
       <SettingsListEditor

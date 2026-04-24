@@ -21,7 +21,6 @@ x-orot-api-env: &orot-api-env
   COOKIE_DOMAIN: ${API_COOKIE_DOMAIN:-}
   COOKIE_SECURE: ${API_COOKIE_SECURE:-false}
   DB_SEED_ON_DEPLOY: ${DB_SEED_ON_DEPLOY:-true}
-  DB_AUTO_BASELINE_LEGACY: ${DB_AUTO_BASELINE_LEGACY:-true}
 
 services:
   db:

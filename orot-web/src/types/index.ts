@@ -319,7 +319,7 @@ export interface PublicSettings {
   about_content: string;
   about_stack: string;  // 쉼표(,)로 구분된 기술 스택
   about_resume: string;
-  about_links: string;  // legacy: 전역 링크(social_links)로 통합됨
+  about_links: string;
   about_nametag_image: string;
   public_menu: string;  // JSON 문자열: PublicMenuItem[]
   default_theme: string;

@@ -22,8 +22,12 @@ pipeline {
       steps {
         sh '''
           set -eu
-          corepack yarn@1.22.22 --cwd orot-api install --frozen-lockfile
-          corepack yarn@1.22.22 --cwd orot-web install --frozen-lockfile
+          command -v node
+          command -v yarn
+          node --version
+          yarn --version
+          yarn --cwd orot-api install --frozen-lockfile
+          yarn --cwd orot-web install --frozen-lockfile
         '''
       }
     }
@@ -32,7 +36,7 @@ pipeline {
       steps {
         sh '''
           set -eu
-          corepack yarn@1.22.22 test:ci
+          yarn test:ci
         '''
       }
     }
@@ -44,38 +48,24 @@ pipeline {
         }
       }
       steps {
-        script {
-          def missingEnv = ''
-
-          if (!env.DEPLOY_BRANCH?.trim()) {
-            missingEnv = "${missingEnv} DEPLOY_BRANCH"
-          }
-          if (!env.DEPLOY_TARGET?.trim()) {
-            missingEnv = "${missingEnv} DEPLOY_TARGET"
-          }
-          if (!env.DEPLOY_PATH?.trim()) {
-            missingEnv = "${missingEnv} DEPLOY_PATH"
-          }
-          if (!env.DEPLOY_SSH_CREDENTIALS_ID?.trim()) {
-            missingEnv = "${missingEnv} DEPLOY_SSH_CREDENTIALS_ID"
-          }
-
-          if (missingEnv.trim()) {
-            error "Missing Jenkins environment variables:${missingEnv}"
-          }
-        }
-
         sshagent(credentials: [env.DEPLOY_SSH_CREDENTIALS_ID]) {
           sh '''
             set -eu
+            : "${DEPLOY_BRANCH:?Missing Jenkins environment variable: DEPLOY_BRANCH}"
+            : "${DEPLOY_TARGET:?Missing Jenkins environment variable: DEPLOY_TARGET}"
+            : "${DEPLOY_PATH:?Missing Jenkins environment variable: DEPLOY_PATH}"
+            : "${DEPLOY_SSH_CREDENTIALS_ID:?Missing Jenkins environment variable: DEPLOY_SSH_CREDENTIALS_ID}"
+
             ssh -o StrictHostKeyChecking=accept-new "$DEPLOY_TARGET" "
               set -eu
               cd '${DEPLOY_PATH}'
               git fetch origin '${DEPLOY_BRANCH}'
               git checkout '${DEPLOY_BRANCH}'
               git pull --ff-only origin '${DEPLOY_BRANCH}'
-              corepack yarn@1.22.22 docker:check
-              corepack yarn@1.22.22 docker:all:up
+              command -v yarn
+              yarn --version
+              yarn docker:check
+              yarn docker:all:up
             "
           '''
         }

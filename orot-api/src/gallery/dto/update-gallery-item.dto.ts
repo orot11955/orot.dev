@@ -12,7 +12,7 @@ import {
 export class UpdateGalleryItemDto {
   @ApiPropertyOptional({ nullable: true })
   @IsOptional()
-  @Transform(({ value }) => (value === '' ? null : value))
+  @Transform(({ value }: { value: unknown }) => (value === '' ? null : value))
   @ValidateIf((_object, value) => value !== null && value !== undefined)
   @IsDateString()
   takenAt?: string | null;

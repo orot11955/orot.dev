@@ -9,12 +9,6 @@ pipeline {
 
   environment {
     YARN_CACHE_FOLDER = "${WORKSPACE}/.yarn-cache"
-
-    DEPLOY_BRANCH = 'main'
-    DEPLOY_HOST = 'pulse.home'
-    DEPLOY_USER = 'deploy'
-    DEPLOY_PATH = '/home/deploy/deploy/orot.dev'
-    DEPLOY_SSH_CREDENTIALS_ID = 'deploy-ssh-key'
   }
 
   stages {
@@ -52,10 +46,24 @@ pipeline {
         }
       }
       steps {
-        sshagent(credentials: ["${DEPLOY_SSH_CREDENTIALS_ID}"]) {
+        script {
+          def requiredEnv = [
+            'DEPLOY_BRANCH',
+            'DEPLOY_TARGET',
+            'DEPLOY_PATH',
+            'DEPLOY_SSH_CREDENTIALS_ID',
+          ]
+          def missingEnv = requiredEnv.findAll { !env[it]?.trim() }
+
+          if (missingEnv) {
+            error "Missing Jenkins environment variables: ${missingEnv.join(', ')}"
+          }
+        }
+
+        sshagent(credentials: [env.DEPLOY_SSH_CREDENTIALS_ID]) {
           sh '''
             set -eu
-            ssh -o StrictHostKeyChecking=accept-new "${DEPLOY_USER}@${DEPLOY_HOST}" "
+            ssh -o StrictHostKeyChecking=accept-new "$DEPLOY_TARGET" "
               set -eu
               cd '${DEPLOY_PATH}'
               git fetch origin '${DEPLOY_BRANCH}'

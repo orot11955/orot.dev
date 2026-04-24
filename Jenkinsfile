@@ -47,16 +47,23 @@ pipeline {
       }
       steps {
         script {
-          def requiredEnv = [
-            'DEPLOY_BRANCH',
-            'DEPLOY_TARGET',
-            'DEPLOY_PATH',
-            'DEPLOY_SSH_CREDENTIALS_ID',
-          ]
-          def missingEnv = requiredEnv.findAll { !env[it]?.trim() }
+          def missingEnv = ''
 
-          if (missingEnv) {
-            error "Missing Jenkins environment variables: ${missingEnv.join(', ')}"
+          if (!env.DEPLOY_BRANCH?.trim()) {
+            missingEnv = "${missingEnv} DEPLOY_BRANCH"
+          }
+          if (!env.DEPLOY_TARGET?.trim()) {
+            missingEnv = "${missingEnv} DEPLOY_TARGET"
+          }
+          if (!env.DEPLOY_PATH?.trim()) {
+            missingEnv = "${missingEnv} DEPLOY_PATH"
+          }
+          if (!env.DEPLOY_SSH_CREDENTIALS_ID?.trim()) {
+            missingEnv = "${missingEnv} DEPLOY_SSH_CREDENTIALS_ID"
+          }
+
+          if (missingEnv.trim()) {
+            error "Missing Jenkins environment variables:${missingEnv}"
           }
         }
 

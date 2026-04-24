@@ -134,3 +134,28 @@ p {
 .orot-modal {
   max-width: calc(100vw - var(--orot-space-4) * 2);
 }
+
+@media (max-width: 600px) {
+  .orot-modal {
+    max-width: calc(100vw - var(--orot-space-3) * 2);
+    max-height: calc(100dvh - var(--orot-space-6));
+  }
+
+  .orot-modal__header,
+  .orot-modal__body,
+  .orot-modal__footer {
+    padding-left: var(--orot-space-4);
+    padding-right: var(--orot-space-4);
+  }
+
+  .orot-modal__title {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .orot-modal__footer {
+    flex-wrap: wrap;
+  }
+}

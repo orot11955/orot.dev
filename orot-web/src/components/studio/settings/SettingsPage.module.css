@@ -498,10 +498,12 @@
   align-items: center;
   flex-wrap: wrap;
   gap: var(--orot-space-1);
+  min-width: 0;
 }
 
 .listItemButtons {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--orot-space-1);
 }
 
@@ -601,12 +603,13 @@
 
   .listItemActions {
     width: 100%;
-    justify-content: space-between;
+    justify-content: flex-start;
+    gap: var(--orot-space-2);
   }
 
   .listItemButtons {
     flex-wrap: wrap;
-    justify-content: flex-end;
+    justify-content: flex-start;
   }
 
   .nametagMediaRow {

@@ -219,7 +219,7 @@
 
 .rankItem {
   display: grid;
-  grid-template-columns: 24px 1fr auto;
+  grid-template-columns: 24px minmax(0, 1fr) auto;
   gap: var(--orot-space-3);
   align-items: center;
 }
@@ -255,6 +255,7 @@
   font-size: var(--orot-font-size-xs);
   color: var(--orot-color-text-muted);
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 /* ── Pipeline list (review/scheduled) ────────────────── */
@@ -430,11 +431,13 @@
 
   .rankItem {
     grid-template-columns: 24px minmax(0, 1fr);
+    align-items: start;
   }
 
   .rankMeta {
-    width: 100%;
-    padding-left: calc(24px + var(--orot-space-3));
+    grid-column: 2;
+    width: auto;
+    padding-left: 0;
   }
 
   .pipelineItem {

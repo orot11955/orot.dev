@@ -208,14 +208,16 @@
 
 .assignLayout {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: var(--orot-space-4);
+  min-width: 0;
 }
 
 .assignColumn {
   display: flex;
   flex-direction: column;
   gap: var(--orot-space-2);
+  min-width: 0;
   min-height: 320px;
 }
 
@@ -259,6 +261,7 @@
   border-radius: var(--orot-radius-md);
   background: var(--public-panel-bg);
   font-size: var(--orot-font-size-sm);
+  min-width: 0;
 }
 
 .assignItemBody {
@@ -280,12 +283,17 @@
 .assignItemMeta {
   font-size: var(--orot-font-size-xs);
   color: var(--orot-color-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .assignItemActions {
   display: flex;
   gap: 2px;
   flex-shrink: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .orderBadge {
@@ -346,6 +354,31 @@
 @media (max-width: 600px) {
   .headerActions > span {
     flex: 1;
+  }
+
+  .assignColumn {
+    min-height: 0;
+  }
+
+  .assignList {
+    max-height: 280px;
+  }
+
+  .assignItem {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .assignItemBody {
+    flex-basis: calc(100% - 34px);
+  }
+
+  .assignItemActions {
+    width: 100%;
+  }
+
+  .orderBadge + .assignItemBody {
+    flex-basis: calc(100% - 30px);
   }
 }
 

@@ -13,7 +13,7 @@ pipeline {
     DEPLOY_BRANCH = 'main'
     DEPLOY_HOST = 'pulse.home'
     DEPLOY_USER = 'deploy'
-    DEPLOY_PATH = '/home/orot/orot.dev'
+    DEPLOY_PATH = '/home/deploy/deploy/orot.dev'
     DEPLOY_SSH_CREDENTIALS_ID = 'deploy-ssh-key'
   }
 

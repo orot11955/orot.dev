@@ -11,7 +11,7 @@ pipeline {
     YARN_CACHE_FOLDER = "${WORKSPACE}/.yarn-cache"
 
     DEPLOY_BRANCH = 'main'
-    DEPLOY_HOST = 'orot.dev'
+    DEPLOY_HOST = 'pulse.home'
     DEPLOY_USER = 'deploy'
     DEPLOY_PATH = '/home/orot/orot.dev'
     DEPLOY_SSH_CREDENTIALS_ID = 'deploy-ssh-key'

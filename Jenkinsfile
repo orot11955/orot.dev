@@ -22,12 +22,8 @@ pipeline {
       steps {
         sh '''
           set -eu
-          mkdir -p "$WORKSPACE/.corepack-bin"
-          corepack enable --install-directory "$WORKSPACE/.corepack-bin"
-          export PATH="$WORKSPACE/.corepack-bin:$PATH"
-          corepack prepare yarn@1.22.22 --activate
-          yarn --cwd orot-api install --frozen-lockfile
-          yarn --cwd orot-web install --frozen-lockfile
+          corepack yarn@1.22.22 --cwd orot-api install --frozen-lockfile
+          corepack yarn@1.22.22 --cwd orot-web install --frozen-lockfile
         '''
       }
     }
@@ -36,8 +32,7 @@ pipeline {
       steps {
         sh '''
           set -eu
-          export PATH="$WORKSPACE/.corepack-bin:$PATH"
-          yarn test:ci
+          corepack yarn@1.22.22 test:ci
         '''
       }
     }
@@ -79,12 +74,8 @@ pipeline {
               git fetch origin '${DEPLOY_BRANCH}'
               git checkout '${DEPLOY_BRANCH}'
               git pull --ff-only origin '${DEPLOY_BRANCH}'
-              mkdir -p .corepack-bin
-              corepack enable --install-directory \"\$PWD/.corepack-bin\"
-              export PATH=\"\$PWD/.corepack-bin:\$PATH\"
-              corepack prepare yarn@1.22.22 --activate
-              yarn docker:check
-              yarn docker:all:up
+              corepack yarn@1.22.22 docker:check
+              corepack yarn@1.22.22 docker:all:up
             "
           '''
         }

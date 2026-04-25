@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import Link from 'next/link';
 import {
+  useCallback,
   useEffect,
   useLayoutEffect,
   useMemo,
@@ -19,12 +20,14 @@ import {
   Eye,
   Hash,
   MarkdownEditor,
+  MessageSquare,
 } from 'orot-ui';
 import type { PostDetail, PostStatus, Series, SeriesPostSummary } from '@/types';
 import { publicSeriesService } from '@/services/series.service';
 import { formatDate, resolveAssetUrl, splitTags } from '@/utils/content';
 import { SeriesPanel } from './SeriesPanel';
 import styles from './PostDetailPage.module.css';
+import { publicCommentsService } from '@/services';
 
 interface PostDetailPageProps {
   post: PostDetail;
@@ -170,6 +173,14 @@ function Article({ post, cover, published, headings, tags, articleRef }: Article
   const bodyRef = useRef<HTMLDivElement>(null);
   const isPreview = post.status !== 'PUBLISHED';
   const statusLabel = STATUS_LABELS[post.status];
+  const [commentCount, setCommentCount] = useState(0);
+  const handleCommentClick = () => {
+    document.getElementById('comments')?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    });
+
+  };
 
   useLayoutEffect(() => {
     const editorRoot = bodyRef.current?.querySelector<HTMLElement>('.orot-md-content');
@@ -204,6 +215,19 @@ function Article({ post, cover, published, headings, tags, articleRef }: Article
     });
   }, [headings, post.content]);
 
+  const refreshCommentCount = useCallback(async () => {
+    try {
+      const count = await publicCommentsService.countByPost(post.id);
+      setCommentCount(count);
+    } catch {
+      setCommentCount(0);
+    }
+  }, [post.id]);
+
+  useEffect(() => {
+    refreshCommentCount();
+  }, [refreshCommentCount]);
+
   return (
     <article className={styles.article} ref={articleRef}>
       <Link href="/posts" className={styles.backLink}>
@@ -236,6 +260,9 @@ function Article({ post, cover, published, headings, tags, articleRef }: Article
           </span>
           <span className={styles.metaItem}>
             <Eye size={14} /> {post.viewCount.toLocaleString('ko-KR')}
+          </span>
+          <span className={styles.metaItem} onClick={handleCommentClick} role="button" tabIndex={0}>
+            <MessageSquare size={14} /> {commentCount}
           </span>
         </div>
       </header>
@@ -310,7 +337,7 @@ function Article({ post, cover, published, headings, tags, articleRef }: Article
       )}
 
       {post.status === 'PUBLISHED' && (
-        <DeferredCommentsSection postId={post.id} />
+        <DeferredCommentsSection postId={post.id} onCommentChanged={refreshCommentCount} />
       )}
     </article>
   );

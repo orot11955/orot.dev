@@ -22,7 +22,7 @@ type PublicCommentTree = PublicComment & { replies: PublicCommentTree[] };
 
 @Injectable()
 export class CommentsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   private async getFilterKeywords(): Promise<string[]> {
     const setting = await this.prisma.siteSetting.findUnique({
@@ -85,6 +85,33 @@ export class CommentsService {
     });
 
     return this.buildCommentTree(comments);
+  }
+
+  async countByPost(postId: number) {
+    const post = await this.prisma.post.findUnique({
+      where: { id: postId },
+      select: {
+        id: true,
+        status: true,
+      },
+    });
+
+    if (!post) {
+      throw new NotFoundException('Post not found');
+    }
+
+    if (post.status !== PostStatus.PUBLISHED) {
+      throw new NotFoundException('Post not found');
+    }
+
+    const count = await this.prisma.comment.count({
+      where: {
+        postId,
+        status: CommentStatus.APPROVED,
+      },
+    });
+
+    return { count };
   }
 
   async findAll(query: QueryCommentDto) {

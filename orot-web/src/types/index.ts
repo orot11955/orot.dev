@@ -216,6 +216,10 @@ export interface Comment {
   } | null;
 }
 
+export type CommentCountResponse = {
+  count: number;
+};
+
 export interface CreateCommentPayload {
   authorName: string;
   authorEmail: string;

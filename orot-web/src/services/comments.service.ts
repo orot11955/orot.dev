@@ -11,6 +11,7 @@ import type {
   CommentListResponse,
   CommentQuery,
   CreateCommentPayload,
+  CommentCountResponse
 } from '@/types';
 
 const commentRoutes = createAreaRoutes('comments');
@@ -26,6 +27,14 @@ function toCommentParams(query: CommentQuery) {
 export const publicCommentsService = {
   async getByPost(postId: number): Promise<Comment[]> {
     return getResource<Comment[]>(apiPaths.public('posts', postId, 'comments'));
+  },
+
+  async countByPost(postId: number): Promise<number> {
+    const result = await getResource<{ count: number }>(
+      apiPaths.public('posts', postId, 'comments', 'count'),
+    );
+
+    return result.count;
   },
 
   async create(postId: number, payload: CreateCommentPayload): Promise<Comment> {

@@ -13,6 +13,7 @@ import styles from './CommentsSection.module.css';
 
 interface CommentsSectionProps {
   postId: number;
+  onCommentChanged?: () => void;
 }
 
 interface FormState {
@@ -62,7 +63,7 @@ function buildTree(flat: Comment[]): Comment[] {
   return roots;
 }
 
-export function CommentsSection({ postId }: CommentsSectionProps) {
+export function CommentsSection({ postId, onCommentChanged }: CommentsSectionProps) {
   const { user } = useAuth();
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -112,6 +113,7 @@ export function CommentsSection({ postId }: CommentsSectionProps) {
       setForm(EMPTY_FORM);
       setReplyTo(null);
       await load();
+      onCommentChanged?.();
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -141,13 +143,14 @@ export function CommentsSection({ postId }: CommentsSectionProps) {
           setReplyTo(null);
         }
         await load();
+        onCommentChanged?.();
       } catch (err) {
         setError(getErrorMessage(err));
       } finally {
         setDeletingId(null);
       }
     },
-    [canDelete, load, replyTo],
+    [canDelete, load, replyTo, onCommentChanged],
   );
 
   const flatComments = flattenComments(comments);
@@ -155,7 +158,7 @@ export function CommentsSection({ postId }: CommentsSectionProps) {
   const total = flatComments.length;
 
   return (
-    <section className={styles.section} aria-label="댓글">
+    <section id="comments" className={styles.section} aria-label="댓글">
       <header className={styles.header}>
         <MessageCircle size={18} />
         <h2 className={styles.title}>댓글</h2>

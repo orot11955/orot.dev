@@ -23,12 +23,18 @@ import { Roles } from '../common/decorators/roles.decorator';
 @ApiTags('Public / Comments')
 @Controller('public/posts/:postId/comments')
 export class PublicCommentsController {
-  constructor(private readonly commentsService: CommentsService) {}
+  constructor(private readonly commentsService: CommentsService) { }
 
   @Get()
   @ApiOperation({ summary: 'Get approved comments for a post' })
   findByPost(@Param('postId', ParseIntPipe) postId: number) {
     return this.commentsService.findByPost(postId);
+  }
+
+  @Get('count')
+  @ApiOperation({ summary: 'Get approved comment count for a post' })
+  countByPost(@Param('postId', ParseIntPipe) postId: number) {
+    return this.commentsService.countByPost(postId);
   }
 
   @Post()
@@ -49,7 +55,7 @@ export class PublicCommentsController {
 @Roles('ADMIN', 'EDITOR')
 @Controller('studio/comments')
 export class StudioCommentsController {
-  constructor(private readonly commentsService: CommentsService) {}
+  constructor(private readonly commentsService: CommentsService) { }
 
   @Get()
   @ApiOperation({ summary: 'List all comments with filters' })

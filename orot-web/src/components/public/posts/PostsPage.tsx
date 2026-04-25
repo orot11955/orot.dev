@@ -33,10 +33,10 @@ export function PostsPage({
 }: PostsPageProps) {
   const hasFilters = Boolean(
     currentSearch ||
-      currentTag ||
-      currentSeries ||
-      currentCategory ||
-      currentSort !== 'latest',
+    currentTag ||
+    currentSeries ||
+    currentCategory ||
+    currentSort !== 'latest',
   );
 
   return (

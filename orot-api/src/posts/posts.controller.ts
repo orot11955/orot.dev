@@ -80,7 +80,7 @@ export class PublicPostsController {
   constructor(
     private readonly postsService: PostsService,
     private readonly configService: ConfigService,
-  ) {}
+  ) { }
 
   @Get('tags')
   @ApiOperation({ summary: 'Get all published post tags' })
@@ -163,7 +163,7 @@ export class PublicPostsController {
 @Roles('ADMIN', 'EDITOR')
 @Controller('editor/posts')
 export class EditorPostsController {
-  constructor(private readonly postsService: PostsService) {}
+  constructor(private readonly postsService: PostsService) { }
 
   @Post()
   @ApiOperation({ summary: 'Create editor draft' })
@@ -264,7 +264,7 @@ export class EditorPostsController {
 @Roles('ADMIN', 'EDITOR')
 @Controller('studio/posts')
 export class StudioPostsController {
-  constructor(private readonly postsService: PostsService) {}
+  constructor(private readonly postsService: PostsService) { }
 
   @Get()
   @ApiOperation({ summary: 'List studio-visible posts' })

@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
   OnModuleInit,
 } from '@nestjs/common';
@@ -20,6 +21,7 @@ import { CreatePostDto } from './dto/create-post.dto';
 import { QueryPostDto } from './dto/query-post.dto';
 import { TransitionPostDto } from './dto/transition-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
+import { log } from 'console';
 
 const VALID_TRANSITIONS: Record<PostStatus, PostStatus[]> = {
   DRAFT: ['COMPLETED'],
@@ -197,9 +199,10 @@ function removeUploadedPaths(paths: Iterable<string>) {
 
 @Injectable()
 export class PostsService implements OnModuleInit {
+  private readonly logger = new Logger(PostsService.name);
   private cachedTags: CachedTags | null = null;
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async onModuleInit() {
     await this.backfillSearchTextAndInlineImages();
@@ -209,6 +212,7 @@ export class PostsService implements OnModuleInit {
     const slug = this.resolveBaseSlug(dto.slug, dto.title);
     const uniqueSlug = await this.ensureUniqueSlug(slug);
     const preparedContent = this.preparePostContentForStorage(dto.content);
+    const normalizedTags = this.normalizeTags(dto.tags);
 
     if (dto.categoryId != null) {
       await this.assertCategoryExists(dto.categoryId);
@@ -226,7 +230,7 @@ export class PostsService implements OnModuleInit {
           status: dto.status ?? PostStatus.DRAFT,
           metaTitle: dto.metaTitle,
           metaDesc: dto.metaDesc,
-          tags: dto.tags,
+          tags: normalizedTags,
           scheduledAt: dto.scheduledAt ? new Date(dto.scheduledAt) : undefined,
           categoryId: dto.categoryId ?? null,
         },
@@ -261,16 +265,16 @@ export class PostsService implements OnModuleInit {
     const orderBy =
       sort === 'popular'
         ? [
-            { viewCount: 'desc' as const },
-            { publishedAt: 'desc' as const },
-            { updatedAt: 'desc' as const },
-            { createdAt: 'desc' as const },
-          ]
+          { viewCount: 'desc' as const },
+          { publishedAt: 'desc' as const },
+          { updatedAt: 'desc' as const },
+          { createdAt: 'desc' as const },
+        ]
         : [
-            { publishedAt: 'desc' as const },
-            { updatedAt: 'desc' as const },
-            { createdAt: 'desc' as const },
-          ];
+          { publishedAt: 'desc' as const },
+          { updatedAt: 'desc' as const },
+          { createdAt: 'desc' as const },
+        ];
 
     if (area === 'public') {
       where.status = PostStatus.PUBLISHED;
@@ -455,6 +459,9 @@ export class PostsService implements OnModuleInit {
     if (dto.slug !== undefined) {
       const slug = this.resolveBaseSlug(dto.slug);
       data.slug = await this.ensureUniqueSlug(slug, id);
+    }
+    if (dto.tags !== undefined) {
+      data.tags = this.normalizeTags(dto.tags);
     }
     if (dto.scheduledAt) data.scheduledAt = new Date(dto.scheduledAt);
     if (dto.categoryId !== undefined) {
@@ -856,5 +863,34 @@ export class PostsService implements OnModuleInit {
       prev: publishedPosts[currentIndex - 1] ?? null,
       next: publishedPosts[currentIndex + 1] ?? null,
     };
+  }
+
+  private normalizeTags(tags?: string | string[] | null): string {
+    if (!tags) {
+      return '';
+    }
+
+    const rawTags = Array.isArray(tags)
+      ? tags
+      : tags.split(',');
+
+    const seen = new Set<string>();
+
+    const normalizedTags = rawTags
+      .map((tag) => tag.trim())
+      .filter(Boolean)
+      .filter((tag) => {
+        const key = tag.toLowerCase();
+
+        if (seen.has(key)) {
+          return false;
+        }
+
+        seen.add(key);
+        return true;
+      })
+      .join(',');
+
+    return normalizedTags;
   }
 }

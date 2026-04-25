@@ -1,7 +1,6 @@
 import {
   BadRequestException,
   Injectable,
-  Logger,
   NotFoundException,
   OnModuleInit,
 } from '@nestjs/common';
@@ -21,7 +20,6 @@ import { CreatePostDto } from './dto/create-post.dto';
 import { QueryPostDto } from './dto/query-post.dto';
 import { TransitionPostDto } from './dto/transition-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
-import { log } from 'console';
 
 const VALID_TRANSITIONS: Record<PostStatus, PostStatus[]> = {
   DRAFT: ['COMPLETED'],
@@ -199,10 +197,9 @@ function removeUploadedPaths(paths: Iterable<string>) {
 
 @Injectable()
 export class PostsService implements OnModuleInit {
-  private readonly logger = new Logger(PostsService.name);
   private cachedTags: CachedTags | null = null;
 
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   async onModuleInit() {
     await this.backfillSearchTextAndInlineImages();
@@ -265,16 +262,16 @@ export class PostsService implements OnModuleInit {
     const orderBy =
       sort === 'popular'
         ? [
-          { viewCount: 'desc' as const },
-          { publishedAt: 'desc' as const },
-          { updatedAt: 'desc' as const },
-          { createdAt: 'desc' as const },
-        ]
+            { viewCount: 'desc' as const },
+            { publishedAt: 'desc' as const },
+            { updatedAt: 'desc' as const },
+            { createdAt: 'desc' as const },
+          ]
         : [
-          { publishedAt: 'desc' as const },
-          { updatedAt: 'desc' as const },
-          { createdAt: 'desc' as const },
-        ];
+            { publishedAt: 'desc' as const },
+            { updatedAt: 'desc' as const },
+            { createdAt: 'desc' as const },
+          ];
 
     if (area === 'public') {
       where.status = PostStatus.PUBLISHED;
@@ -870,9 +867,7 @@ export class PostsService implements OnModuleInit {
       return '';
     }
 
-    const rawTags = Array.isArray(tags)
-      ? tags
-      : tags.split(',');
+    const rawTags = Array.isArray(tags) ? tags : tags.split(',');
 
     const seen = new Set<string>();
 

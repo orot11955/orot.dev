@@ -22,7 +22,7 @@ type PublicCommentTree = PublicComment & { replies: PublicCommentTree[] };
 
 @Injectable()
 export class CommentsService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   private async getFilterKeywords(): Promise<string[]> {
     const setting = await this.prisma.siteSetting.findUnique({
